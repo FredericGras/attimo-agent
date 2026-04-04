@@ -1,0 +1,87 @@
+{
+    "app": {
+        "subtitle": "Feltagent"
+    },
+
+    "login": {
+        "email": "E-post",
+        "password": "Passord",
+        "remember": "Husk meg",
+        "submit": "Logg inn",
+        "email_placeholder": "fotograf@example.com"
+    },
+
+    "events": {
+        "title": "Velg ditt arrangement",
+        "loading": "Laster arrangementer...",
+        "empty": "Ingen aktive arrangementer. Opprett et arrangement i Attimo-dashbordet ditt.",
+        "photos_one": "{count} bilde online",
+        "photos_other": "{count} bilder online",
+        "no_photos": "Ingen bilder ennå",
+        "checkpoints_one": "{count} checkpoint",
+        "checkpoints_other": "{count} checkpoints",
+        "logout_title": "Logg ut"
+    },
+
+    "config": {
+        "back_title": "Tilbake",
+        "checkpoint": "Checkpoint (valgfritt)",
+        "checkpoint_none": "Ingen (alle bilder)",
+        "folder": "Overvåket mappe",
+        "folder_placeholder": "Klikk på Bla gjennom...",
+        "folder_browse": "Bla gjennom...",
+        "folder_dialog": "Velg mappen som skal overvåkes",
+        "folder_required": "Velg en mappe å overvåke.",
+        "existing_files": "Eksisterende filer",
+        "existing_include": "Laste opp eksisterende filer i mappen",
+        "existing_exclude": "Laste opp bare nye filer",
+        "parallel": "Parallelle opplastinger",
+        "parallel_hint": "Med svakt 4G, bruk 1. Med stabilt 5G gir 3 raskere opplasting.",
+        "start": "Start overvåking"
+    },
+
+    "dashboard": {
+        "status_active": "Aktiv",
+        "sent": "Sendt",
+        "pending": "Ventende",
+        "failed": "Mislykket",
+        "speed_unit": "KB/s",
+        "log_title": "Logg",
+        "log_empty": "Venter på filer...",
+        "pause": "Pause",
+        "resume": "Gjenoppta",
+        "stop": "Stopp",
+        "retry_btn": "Prøv mislykkede på nytt",
+        "confirm_stop": "Stopp overvåking og gå tilbake til arrangementvalg?",
+        "msg_paused": "Opplastinger på pause",
+        "msg_resumed": "Opplastinger gjenopptatt",
+        "msg_stopped": "Økt stoppet",
+        "msg_retry_queued": "{count} fil(er) satt i kø igjen",
+        "msg_error": "Feil: {error}"
+    },
+
+    "watcher": {
+        "detected": "Oppdaget ({size} MB)",
+        "scan_started": "Mappeskanning: {count} JPEGs funnet",
+        "scan_complete": "Mappeskanning fullført"
+    },
+
+    "upload": {
+        "in_progress": "Laster opp...",
+        "attempt": "Opplasting (forsøk {attempt}/3)",
+        "success": "OK på {duration}s ({speed} KB/s)",
+        "failed": "Mislykket {attempt}/{max}: {error}",
+        "retry_scheduled": "Nytt forsøk om {delay}s (forsøk {attempt}/3)"
+    },
+
+    "connection": {
+        "restored": "Tilkobling gjenopprettet",
+        "lost": "Tilkobling mistet — filer samles opp",
+        "expired": "Økt utløpt — logg inn igjen"
+    },
+
+    "complete": {
+        "with_errors": "Ferdig: {sent} sendt, {failed} mislykket",
+        "success": "Ferdig: {count} bilder lastet opp!"
+    }
+}

@@ -1,0 +1,87 @@
+{
+    "app": {
+        "subtitle": "Terénny agent"
+    },
+
+    "login": {
+        "email": "E-mail",
+        "password": "Heslo",
+        "remember": "Zapamätať si ma",
+        "submit": "Prihlásiť sa",
+        "email_placeholder": "fotograf@example.com"
+    },
+
+    "events": {
+        "title": "Vyberte si udalosť",
+        "loading": "Načítavanie udalostí...",
+        "empty": "Žiadne aktívne udalosti. Vytvorte udalosť v paneli Attimo.",
+        "photos_one": "{count} fotografia online",
+        "photos_other": "{count} fotografií online",
+        "no_photos": "Zatiaľ žiadne fotografie",
+        "checkpoints_one": "{count} kontrolný bod",
+        "checkpoints_other": "{count} kontrolných bodov",
+        "logout_title": "Odhlásiť sa"
+    },
+
+    "config": {
+        "back_title": "Späť",
+        "checkpoint": "Kontrolný bod (voliteľné)",
+        "checkpoint_none": "Žiadny (všetky fotografie)",
+        "folder": "Sledovaný priečinok",
+        "folder_placeholder": "Kliknite na Prehľadávať...",
+        "folder_browse": "Prehľadávať...",
+        "folder_dialog": "Vyberte priečinok na sledovanie",
+        "folder_required": "Prosím vyberte priečinok na sledovanie.",
+        "existing_files": "Existujúce súbory",
+        "existing_include": "Nahrať existujúce súbory v priečinku",
+        "existing_exclude": "Nahrať iba nové súbory",
+        "parallel": "Paralelné nahrávanie",
+        "parallel_hint": "Pri slabom 4G použite 1. Pri stabilnom 5G zrýchli 3.",
+        "start": "Začať sledovanie"
+    },
+
+    "dashboard": {
+        "status_active": "Aktívny",
+        "sent": "Odoslané",
+        "pending": "Čakajúce",
+        "failed": "Neúspešné",
+        "speed_unit": "KB/s",
+        "log_title": "Protokol",
+        "log_empty": "Čakanie na súbory...",
+        "pause": "Pozastaviť",
+        "resume": "Pokračovať",
+        "stop": "Zastaviť",
+        "retry_btn": "Opakovať neúspešné",
+        "confirm_stop": "Zastaviť sledovanie a vrátiť sa k výberu udalosti?",
+        "msg_paused": "Nahrávanie pozastavené",
+        "msg_resumed": "Nahrávanie obnovené",
+        "msg_stopped": "Relácia zastavená",
+        "msg_retry_queued": "{count} súbor(ov) znovu v rade",
+        "msg_error": "Chyba: {error}"
+    },
+
+    "watcher": {
+        "detected": "Detegované ({size} MB)",
+        "scan_started": "Skenovanie priečinku: {count} JPEG nájdených",
+        "scan_complete": "Skenovanie priečinku dokončené"
+    },
+
+    "upload": {
+        "in_progress": "Nahrávanie...",
+        "attempt": "Nahrávanie (pokus {attempt}/3)",
+        "success": "OK za {duration}s ({speed} KB/s)",
+        "failed": "Zlyhanie {attempt}/{max}: {error}",
+        "retry_scheduled": "Nový pokus za {delay}s (pokus {attempt}/3)"
+    },
+
+    "connection": {
+        "restored": "Pripojenie obnovené",
+        "lost": "Pripojenie stratené — súbory sa hromadia",
+        "expired": "Relácia vypršala — prihláste sa znovu"
+    },
+
+    "complete": {
+        "with_errors": "Hotovo: {sent} odoslaných, {failed} neúspešných",
+        "success": "Hotovo: {count} fotografií úspešne nahraných!"
+    }
+}

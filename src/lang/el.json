@@ -1,0 +1,77 @@
+{
+    "app": { "subtitle": "Πράκτορας πεδίου" },
+    "login": {
+        "email": "Email",
+        "password": "Κωδικός",
+        "remember": "Να με θυμάσαι",
+        "submit": "Σύνδεση",
+        "email_placeholder": "fotografos@example.com"
+    },
+    "events": {
+        "title": "Επιλέξτε την εκδήλωσή σας",
+        "loading": "Φόρτωση εκδηλώσεων...",
+        "empty": "Δεν υπάρχουν ενεργές εκδηλώσεις. Δημιουργήστε μία στον πίνακα ελέγχου Attimo.",
+        "photos_one": "{count} φωτογραφία online",
+        "photos_other": "{count} φωτογραφίες online",
+        "no_photos": "Δεν υπάρχουν φωτογραφίες ακόμα",
+        "checkpoints_one": "{count} σημείο ελέγχου",
+        "checkpoints_other": "{count} σημεία ελέγχου",
+        "logout_title": "Αποσύνδεση"
+    },
+    "config": {
+        "back_title": "Πίσω",
+        "checkpoint": "Σημείο ελέγχου (προαιρετικό)",
+        "checkpoint_none": "Κανένα (όλες οι φωτογραφίες)",
+        "folder": "Παρακολουθούμενος φάκελος",
+        "folder_placeholder": "Κάντε κλικ στο Αναζήτηση...",
+        "folder_browse": "Αναζήτηση...",
+        "folder_dialog": "Επιλέξτε τον φάκελο για παρακολούθηση",
+        "folder_required": "Παρακαλώ επιλέξτε έναν φάκελο για παρακολούθηση.",
+        "existing_files": "Υπάρχοντα αρχεία",
+        "existing_include": "Μεταφόρτωση υπαρχόντων αρχείων στον φάκελο",
+        "existing_exclude": "Μεταφόρτωση μόνο νέων αρχείων",
+        "parallel": "Παράλληλες μεταφορτώσεις",
+        "parallel_hint": "Σε αδύναμο 4G, χρησιμοποιήστε 1. Σε σταθερό 5G, το 3 επιταχύνει.",
+        "start": "Έναρξη παρακολούθησης"
+    },
+    "dashboard": {
+        "status_active": "Ενεργό",
+        "sent": "Απεσταλμένα",
+        "pending": "Σε αναμονή",
+        "failed": "Αποτυχημένα",
+        "speed_unit": "KB/s",
+        "log_title": "Αρχείο καταγραφής",
+        "log_empty": "Αναμονή αρχείων...",
+        "pause": "Παύση",
+        "resume": "Συνέχεια",
+        "stop": "Διακοπή",
+        "retry_btn": "Επανάληψη αποτυχημένων",
+        "confirm_stop": "Διακοπή παρακολούθησης και επιστροφή στην επιλογή εκδήλωσης;",
+        "msg_paused": "Μεταφορτώσεις σε παύση",
+        "msg_resumed": "Μεταφορτώσεις συνεχίστηκαν",
+        "msg_stopped": "Συνεδρία σταμάτησε",
+        "msg_retry_queued": "{count} αρχείο(-α) επαναπροωθήθηκαν στην ουρά",
+        "msg_error": "Σφάλμα: {error}"
+    },
+    "watcher": {
+        "detected": "Εντοπίστηκε ({size} MB)",
+        "scan_started": "Σάρωση φακέλου: {count} JPEG βρέθηκαν",
+        "scan_complete": "Σάρωση φακέλου ολοκληρώθηκε"
+    },
+    "upload": {
+        "in_progress": "Μεταφόρτωση...",
+        "attempt": "Μεταφόρτωση (προσπάθεια {attempt}/3)",
+        "success": "OK σε {duration}s ({speed} KB/s)",
+        "failed": "Αποτυχία {attempt}/{max}: {error}",
+        "retry_scheduled": "Επανάληψη σε {delay}s (προσπάθεια {attempt}/3)"
+    },
+    "connection": {
+        "restored": "Σύνδεση αποκαταστάθηκε",
+        "lost": "Σύνδεση χάθηκε — τα αρχεία συσσωρεύονται",
+        "expired": "Συνεδρία έληξε — συνδεθείτε ξανά"
+    },
+    "complete": {
+        "with_errors": "Ολοκληρώθηκε: {sent} απεσταλμένα, {failed} αποτυχημένα",
+        "success": "Ολοκληρώθηκε: {count} φωτογραφίες μεταφορτώθηκαν επιτυχώς!"
+    }
+}

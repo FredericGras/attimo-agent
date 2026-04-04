@@ -1,0 +1,87 @@
+{
+    "app": {
+        "subtitle": "Agent terenowy"
+    },
+
+    "login": {
+        "email": "E-mail",
+        "password": "Hasło",
+        "remember": "Zapamiętaj mnie",
+        "submit": "Zaloguj się",
+        "email_placeholder": "fotograf@example.com"
+    },
+
+    "events": {
+        "title": "Wybierz swoje wydarzenie",
+        "loading": "Ładowanie wydarzeń...",
+        "empty": "Brak aktywnych wydarzeń. Utwórz wydarzenie w panelu Attimo.",
+        "photos_one": "{count} zdjęcie online",
+        "photos_other": "{count} zdjęć online",
+        "no_photos": "Brak zdjęć",
+        "checkpoints_one": "{count} punkt kontrolny",
+        "checkpoints_other": "{count} punktów kontrolnych",
+        "logout_title": "Wyloguj się"
+    },
+
+    "config": {
+        "back_title": "Wstecz",
+        "checkpoint": "Punkt kontrolny (opcjonalnie)",
+        "checkpoint_none": "Brak (wszystkie zdjęcia)",
+        "folder": "Obserwowany folder",
+        "folder_placeholder": "Kliknij Przeglądaj...",
+        "folder_browse": "Przeglądaj...",
+        "folder_dialog": "Wybierz folder do obserwacji",
+        "folder_required": "Proszę wybrać folder do obserwacji.",
+        "existing_files": "Istniejące pliki",
+        "existing_include": "Prześlij istniejące pliki z folderu",
+        "existing_exclude": "Prześlij tylko nowe pliki",
+        "parallel": "Równoległe przesyłanie",
+        "parallel_hint": "Przy słabym 4G użyj 1. Przy stabilnym 5G, 3 przyspiesza.",
+        "start": "Rozpocznij obserwację"
+    },
+
+    "dashboard": {
+        "status_active": "Aktywny",
+        "sent": "Wysłane",
+        "pending": "Oczekujące",
+        "failed": "Nieudane",
+        "speed_unit": "KB/s",
+        "log_title": "Dziennik",
+        "log_empty": "Oczekiwanie na pliki...",
+        "pause": "Pauza",
+        "resume": "Wznów",
+        "stop": "Zatrzymaj",
+        "retry_btn": "Ponów nieudane",
+        "confirm_stop": "Zatrzymać obserwację i wrócić do wyboru wydarzenia?",
+        "msg_paused": "Przesyłanie wstrzymane",
+        "msg_resumed": "Przesyłanie wznowione",
+        "msg_stopped": "Sesja zatrzymana",
+        "msg_retry_queued": "{count} plik(ów) ponownie w kolejce",
+        "msg_error": "Błąd: {error}"
+    },
+
+    "watcher": {
+        "detected": "Wykryto ({size} MB)",
+        "scan_started": "Skanowanie folderu: {count} plików JPEG",
+        "scan_complete": "Skanowanie folderu zakończone"
+    },
+
+    "upload": {
+        "in_progress": "Przesyłanie...",
+        "attempt": "Przesyłanie (próba {attempt}/3)",
+        "success": "OK w {duration}s ({speed} KB/s)",
+        "failed": "Błąd {attempt}/{max}: {error}",
+        "retry_scheduled": "Ponowna próba za {delay}s (próba {attempt}/3)"
+    },
+
+    "connection": {
+        "restored": "Połączenie przywrócone",
+        "lost": "Połączenie utracone — pliki się gromadzą",
+        "expired": "Sesja wygasła — zaloguj się ponownie"
+    },
+
+    "complete": {
+        "with_errors": "Gotowe: {sent} wysłanych, {failed} nieudanych",
+        "success": "Gotowe: {count} zdjęć przesłanych pomyślnie!"
+    }
+}

@@ -1,0 +1,77 @@
+{
+    "app": { "subtitle": "Lauko agentas" },
+    "login": {
+        "email": "El. paštas",
+        "password": "Slaptažodis",
+        "remember": "Prisiminti mane",
+        "submit": "Prisijungti",
+        "email_placeholder": "fotografas@example.com"
+    },
+    "events": {
+        "title": "Pasirinkite savo renginį",
+        "loading": "Kraunami renginiai...",
+        "empty": "Nėra aktyvių renginių. Sukurkite renginį Attimo valdymo skydelyje.",
+        "photos_one": "{count} nuotrauka internete",
+        "photos_other": "{count} nuotraukų internete",
+        "no_photos": "Dar nėra nuotraukų",
+        "checkpoints_one": "{count} kontrolinis taškas",
+        "checkpoints_other": "{count} kontrolinių taškų",
+        "logout_title": "Atsijungti"
+    },
+    "config": {
+        "back_title": "Atgal",
+        "checkpoint": "Kontrolinis taškas (neprivaloma)",
+        "checkpoint_none": "Nėra (visos nuotraukos)",
+        "folder": "Stebimas aplankas",
+        "folder_placeholder": "Spustelėkite Naršyti...",
+        "folder_browse": "Naršyti...",
+        "folder_dialog": "Pasirinkite aplanką stebėjimui",
+        "folder_required": "Prašome pasirinkti aplanką stebėjimui.",
+        "existing_files": "Esami failai",
+        "existing_include": "Įkelti esamus failus iš aplanko",
+        "existing_exclude": "Įkelti tik naujus failus",
+        "parallel": "Lygiagretūs įkėlimai",
+        "parallel_hint": "Su silpnu 4G naudokite 1. Su stabiliu 5G, 3 pagreitina.",
+        "start": "Pradėti stebėjimą"
+    },
+    "dashboard": {
+        "status_active": "Aktyvus",
+        "sent": "Išsiųsta",
+        "pending": "Laukia",
+        "failed": "Nepavyko",
+        "speed_unit": "KB/s",
+        "log_title": "Žurnalas",
+        "log_empty": "Laukiama failų...",
+        "pause": "Pauzė",
+        "resume": "Tęsti",
+        "stop": "Sustabdyti",
+        "retry_btn": "Pakartoti nepavykusius",
+        "confirm_stop": "Sustabdyti stebėjimą ir grįžti prie renginio pasirinkimo?",
+        "msg_paused": "Įkėlimai pristabdyti",
+        "msg_resumed": "Įkėlimai atnaujinti",
+        "msg_stopped": "Sesija sustabdyta",
+        "msg_retry_queued": "{count} failas(-ai) grąžintas(-i) į eilę",
+        "msg_error": "Klaida: {error}"
+    },
+    "watcher": {
+        "detected": "Aptikta ({size} MB)",
+        "scan_started": "Aplanko nuskaitymas: {count} JPEG rasta",
+        "scan_complete": "Aplanko nuskaitymas baigtas"
+    },
+    "upload": {
+        "in_progress": "Įkeliama...",
+        "attempt": "Įkėlimas (bandymas {attempt}/3)",
+        "success": "OK per {duration}s ({speed} KB/s)",
+        "failed": "Nepavyko {attempt}/{max}: {error}",
+        "retry_scheduled": "Naujas bandymas po {delay}s (bandymas {attempt}/3)"
+    },
+    "connection": {
+        "restored": "Ryšys atkurtas",
+        "lost": "Ryšys prarastas — failai kaupiasi",
+        "expired": "Sesija pasibaigė — prisijunkite iš naujo"
+    },
+    "complete": {
+        "with_errors": "Baigta: {sent} išsiųsta, {failed} nepavyko",
+        "success": "Baigta: {count} nuotraukų sėkmingai įkelta!"
+    }
+}

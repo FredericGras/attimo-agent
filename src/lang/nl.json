@@ -1,0 +1,87 @@
+{
+    "app": {
+        "subtitle": "Veldagent"
+    },
+
+    "login": {
+        "email": "E-mail",
+        "password": "Wachtwoord",
+        "remember": "Onthoud mij",
+        "submit": "Inloggen",
+        "email_placeholder": "fotograaf@example.com"
+    },
+
+    "events": {
+        "title": "Kies uw evenement",
+        "loading": "Evenementen laden...",
+        "empty": "Geen actieve evenementen. Maak een evenement aan in uw Attimo-dashboard.",
+        "photos_one": "{count} foto online",
+        "photos_other": "{count} foto's online",
+        "no_photos": "Nog geen foto's",
+        "checkpoints_one": "{count} checkpoint",
+        "checkpoints_other": "{count} checkpoints",
+        "logout_title": "Uitloggen"
+    },
+
+    "config": {
+        "back_title": "Terug",
+        "checkpoint": "Checkpoint (optioneel)",
+        "checkpoint_none": "Geen (alle foto's)",
+        "folder": "Bewaakte map",
+        "folder_placeholder": "Klik op Bladeren...",
+        "folder_browse": "Bladeren...",
+        "folder_dialog": "Kies de map om te bewaken",
+        "folder_required": "Selecteer een map om te bewaken.",
+        "existing_files": "Bestaande bestanden",
+        "existing_include": "Bestaande bestanden in de map uploaden",
+        "existing_exclude": "Alleen nieuwe bestanden uploaden",
+        "parallel": "Parallelle uploads",
+        "parallel_hint": "Bij zwak 4G, gebruik 1. Bij stabiel 5G versnelt 3.",
+        "start": "Bewaking starten"
+    },
+
+    "dashboard": {
+        "status_active": "Actief",
+        "sent": "Verzonden",
+        "pending": "Wachtend",
+        "failed": "Mislukt",
+        "speed_unit": "KB/s",
+        "log_title": "Logboek",
+        "log_empty": "Wachten op bestanden...",
+        "pause": "Pauzeren",
+        "resume": "Hervatten",
+        "stop": "Stoppen",
+        "retry_btn": "Mislukte opnieuw proberen",
+        "confirm_stop": "Bewaking stoppen en terug naar evenementselectie?",
+        "msg_paused": "Uploads gepauzeerd",
+        "msg_resumed": "Uploads hervat",
+        "msg_stopped": "Sessie gestopt",
+        "msg_retry_queued": "{count} bestand(en) opnieuw in de wachtrij",
+        "msg_error": "Fout: {error}"
+    },
+
+    "watcher": {
+        "detected": "Gedetecteerd ({size} MB)",
+        "scan_started": "Map scannen: {count} JPEGs gevonden",
+        "scan_complete": "Map scan voltooid"
+    },
+
+    "upload": {
+        "in_progress": "Uploaden...",
+        "attempt": "Upload (poging {attempt}/3)",
+        "success": "OK in {duration}s ({speed} KB/s)",
+        "failed": "Mislukt {attempt}/{max}: {error}",
+        "retry_scheduled": "Nieuwe poging over {delay}s (poging {attempt}/3)"
+    },
+
+    "connection": {
+        "restored": "Verbinding hersteld",
+        "lost": "Verbinding verbroken — bestanden worden verzameld",
+        "expired": "Sessie verlopen — log opnieuw in"
+    },
+
+    "complete": {
+        "with_errors": "Klaar: {sent} verzonden, {failed} mislukt",
+        "success": "Klaar: {count} foto's succesvol geüpload!"
+    }
+}

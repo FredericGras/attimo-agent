@@ -1,0 +1,87 @@
+{
+    "app": {
+        "subtitle": "Agente de Campo"
+    },
+
+    "login": {
+        "email": "Correo electrónico",
+        "password": "Contraseña",
+        "remember": "Recordarme",
+        "submit": "Iniciar sesión",
+        "email_placeholder": "fotografo@example.com"
+    },
+
+    "events": {
+        "title": "Elija su evento",
+        "loading": "Cargando eventos...",
+        "empty": "No hay eventos activos. Cree un evento en su panel de Attimo.",
+        "photos_one": "{count} foto en línea",
+        "photos_other": "{count} fotos en línea",
+        "no_photos": "Aún no hay fotos",
+        "checkpoints_one": "{count} checkpoint",
+        "checkpoints_other": "{count} checkpoints",
+        "logout_title": "Cerrar sesión"
+    },
+
+    "config": {
+        "back_title": "Volver",
+        "checkpoint": "Checkpoint (opcional)",
+        "checkpoint_none": "Ninguno (todas las fotos)",
+        "folder": "Carpeta vigilada",
+        "folder_placeholder": "Haga clic en Examinar...",
+        "folder_browse": "Examinar...",
+        "folder_dialog": "Elija la carpeta a vigilar",
+        "folder_required": "Por favor seleccione una carpeta a vigilar.",
+        "existing_files": "Archivos existentes",
+        "existing_include": "Subir los archivos existentes en la carpeta",
+        "existing_exclude": "Subir solo los archivos nuevos",
+        "parallel": "Subidas en paralelo",
+        "parallel_hint": "Con 4G débil, use 1. Con 5G estable, 3 acelera.",
+        "start": "Iniciar vigilancia"
+    },
+
+    "dashboard": {
+        "status_active": "Activo",
+        "sent": "Enviadas",
+        "pending": "Pendientes",
+        "failed": "Fallidas",
+        "speed_unit": "KB/s",
+        "log_title": "Registro",
+        "log_empty": "Esperando archivos...",
+        "pause": "Pausa",
+        "resume": "Reanudar",
+        "stop": "Detener",
+        "retry_btn": "Reintentar fallidas",
+        "confirm_stop": "¿Detener la vigilancia y volver a la selección de evento?",
+        "msg_paused": "Subidas en pausa",
+        "msg_resumed": "Subidas reanudadas",
+        "msg_stopped": "Sesión detenida",
+        "msg_retry_queued": "{count} archivo(s) reencolados",
+        "msg_error": "Error: {error}"
+    },
+
+    "watcher": {
+        "detected": "Detectado ({size} MB)",
+        "scan_started": "Escaneo de carpeta: {count} JPEGs encontrados",
+        "scan_complete": "Escaneo de carpeta completado"
+    },
+
+    "upload": {
+        "in_progress": "Subiendo...",
+        "attempt": "Subida (intento {attempt}/3)",
+        "success": "OK en {duration}s ({speed} KB/s)",
+        "failed": "Fallo {attempt}/{max}: {error}",
+        "retry_scheduled": "Reintento en {delay}s (intento {attempt}/3)"
+    },
+
+    "connection": {
+        "restored": "Conexión restablecida",
+        "lost": "Conexión perdida — los archivos se acumulan",
+        "expired": "Sesión expirada — inicie sesión de nuevo"
+    },
+
+    "complete": {
+        "with_errors": "Terminado: {sent} enviadas, {failed} fallidas",
+        "success": "¡Terminado: {count} fotos subidas con éxito!"
+    }
+}

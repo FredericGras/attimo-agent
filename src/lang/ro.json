@@ -1,0 +1,77 @@
+{
+    "app": { "subtitle": "Agent de teren" },
+    "login": {
+        "email": "E-mail",
+        "password": "Parolă",
+        "remember": "Ține-mă minte",
+        "submit": "Conectare",
+        "email_placeholder": "fotograf@example.com"
+    },
+    "events": {
+        "title": "Alegeți evenimentul",
+        "loading": "Se încarcă evenimentele...",
+        "empty": "Niciun eveniment activ. Creați un eveniment în panoul Attimo.",
+        "photos_one": "{count} fotografie online",
+        "photos_other": "{count} fotografii online",
+        "no_photos": "Nicio fotografie încă",
+        "checkpoints_one": "{count} punct de control",
+        "checkpoints_other": "{count} puncte de control",
+        "logout_title": "Deconectare"
+    },
+    "config": {
+        "back_title": "Înapoi",
+        "checkpoint": "Punct de control (opțional)",
+        "checkpoint_none": "Niciunul (toate fotografiile)",
+        "folder": "Dosar monitorizat",
+        "folder_placeholder": "Apăsați pe Răsfoire...",
+        "folder_browse": "Răsfoire...",
+        "folder_dialog": "Alegeți dosarul de monitorizat",
+        "folder_required": "Vă rugăm selectați un dosar de monitorizat.",
+        "existing_files": "Fișiere existente",
+        "existing_include": "Încarcă fișierele existente din dosar",
+        "existing_exclude": "Încarcă doar fișierele noi",
+        "parallel": "Încărcări paralele",
+        "parallel_hint": "Pe 4G slab, folosiți 1. Pe 5G stabil, 3 accelerează.",
+        "start": "Începe monitorizarea"
+    },
+    "dashboard": {
+        "status_active": "Activ",
+        "sent": "Trimise",
+        "pending": "În așteptare",
+        "failed": "Eșuate",
+        "speed_unit": "KB/s",
+        "log_title": "Jurnal",
+        "log_empty": "Se așteaptă fișiere...",
+        "pause": "Pauză",
+        "resume": "Reluare",
+        "stop": "Oprire",
+        "retry_btn": "Reîncearcă eșuatele",
+        "confirm_stop": "Opriți monitorizarea și reveniți la selecția evenimentului?",
+        "msg_paused": "Încărcări în pauză",
+        "msg_resumed": "Încărcări reluate",
+        "msg_stopped": "Sesiune oprită",
+        "msg_retry_queued": "{count} fișier(e) readăugate în coadă",
+        "msg_error": "Eroare: {error}"
+    },
+    "watcher": {
+        "detected": "Detectat ({size} MB)",
+        "scan_started": "Scanare dosar: {count} JPEG găsite",
+        "scan_complete": "Scanare dosar finalizată"
+    },
+    "upload": {
+        "in_progress": "Se încarcă...",
+        "attempt": "Încărcare (încercare {attempt}/3)",
+        "success": "OK în {duration}s ({speed} KB/s)",
+        "failed": "Eșec {attempt}/{max}: {error}",
+        "retry_scheduled": "Reîncercare în {delay}s (încercare {attempt}/3)"
+    },
+    "connection": {
+        "restored": "Conexiune restabilită",
+        "lost": "Conexiune pierdută — fișierele se acumulează",
+        "expired": "Sesiune expirată — conectați-vă din nou"
+    },
+    "complete": {
+        "with_errors": "Terminat: {sent} trimise, {failed} eșuate",
+        "success": "Terminat: {count} fotografii încărcate cu succes!"
+    }
+}

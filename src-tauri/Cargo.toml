@@ -1,0 +1,45 @@
+[package]
+name = "attimo-agent"
+version = "0.1.0"
+description = "Attimo Agent Terrain — Upload live terrain pour photographes sportifs"
+authors = ["Frédéric Gras"]
+edition = "2021"
+
+[lib]
+name = "attimo_agent_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# --- Tauri core ---
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+tauri-plugin-store = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-notification = "2"
+
+# --- Sérialisation ---
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# --- HTTP (appels API Attimo) ---
+reqwest = { version = "0.12", features = ["multipart", "json", "native-tls", "stream"] }
+
+# --- Async runtime ---
+tokio = { version = "1", features = ["full"] }
+
+# --- Base de données locale ---
+rusqlite = { version = "0.31", features = ["bundled"] }
+
+# --- Watch folder (événements filesystem natifs) ---
+notify = "6"
+
+# --- Utilitaires ---
+uuid = { version = "1", features = ["v4"] }
+log = "0.4"
+env_logger = "0.11"
+
+# --- Traitement image (compression JPEG optionnelle) ---
+image = { version = "0.25", default-features = false, features = ["jpeg"] }

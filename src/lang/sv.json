@@ -1,0 +1,87 @@
+{
+    "app": {
+        "subtitle": "Fältagent"
+    },
+
+    "login": {
+        "email": "E-post",
+        "password": "Lösenord",
+        "remember": "Kom ihåg mig",
+        "submit": "Logga in",
+        "email_placeholder": "fotograf@example.com"
+    },
+
+    "events": {
+        "title": "Välj ditt evenemang",
+        "loading": "Laddar evenemang...",
+        "empty": "Inga aktiva evenemang. Skapa ett evenemang i din Attimo-panel.",
+        "photos_one": "{count} foto online",
+        "photos_other": "{count} foton online",
+        "no_photos": "Inga foton ännu",
+        "checkpoints_one": "{count} checkpoint",
+        "checkpoints_other": "{count} checkpoints",
+        "logout_title": "Logga ut"
+    },
+
+    "config": {
+        "back_title": "Tillbaka",
+        "checkpoint": "Checkpoint (valfritt)",
+        "checkpoint_none": "Ingen (alla foton)",
+        "folder": "Övervakad mapp",
+        "folder_placeholder": "Klicka på Bläddra...",
+        "folder_browse": "Bläddra...",
+        "folder_dialog": "Välj mappen att övervaka",
+        "folder_required": "Välj en mapp att övervaka.",
+        "existing_files": "Befintliga filer",
+        "existing_include": "Ladda upp befintliga filer i mappen",
+        "existing_exclude": "Ladda upp bara nya filer",
+        "parallel": "Parallella uppladdningar",
+        "parallel_hint": "Med svagt 4G, använd 1. Med stabilt 5G snabbar 3 upp.",
+        "start": "Starta övervakning"
+    },
+
+    "dashboard": {
+        "status_active": "Aktiv",
+        "sent": "Skickade",
+        "pending": "Väntande",
+        "failed": "Misslyckade",
+        "speed_unit": "KB/s",
+        "log_title": "Logg",
+        "log_empty": "Väntar på filer...",
+        "pause": "Pausa",
+        "resume": "Återuppta",
+        "stop": "Stoppa",
+        "retry_btn": "Försök misslyckade igen",
+        "confirm_stop": "Stoppa övervakning och gå tillbaka till evenemangsval?",
+        "msg_paused": "Uppladdningar pausade",
+        "msg_resumed": "Uppladdningar återupptagna",
+        "msg_stopped": "Session stoppad",
+        "msg_retry_queued": "{count} fil(er) omköade",
+        "msg_error": "Fel: {error}"
+    },
+
+    "watcher": {
+        "detected": "Upptäckt ({size} MB)",
+        "scan_started": "Mappskanning: {count} JPEGs hittade",
+        "scan_complete": "Mappskanning klar"
+    },
+
+    "upload": {
+        "in_progress": "Laddar upp...",
+        "attempt": "Uppladdning (försök {attempt}/3)",
+        "success": "OK på {duration}s ({speed} KB/s)",
+        "failed": "Misslyckades {attempt}/{max}: {error}",
+        "retry_scheduled": "Nytt försök om {delay}s (försök {attempt}/3)"
+    },
+
+    "connection": {
+        "restored": "Anslutning återställd",
+        "lost": "Anslutning förlorad — filer köas",
+        "expired": "Session utgången — logga in igen"
+    },
+
+    "complete": {
+        "with_errors": "Klart: {sent} skickade, {failed} misslyckade",
+        "success": "Klart: {count} foton uppladdade!"
+    }
+}

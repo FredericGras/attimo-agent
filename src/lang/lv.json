@@ -1,0 +1,77 @@
+{
+    "app": { "subtitle": "Lauka aģents" },
+    "login": {
+        "email": "E-pasts",
+        "password": "Parole",
+        "remember": "Atcerēties mani",
+        "submit": "Pieteikties",
+        "email_placeholder": "fotografs@example.com"
+    },
+    "events": {
+        "title": "Izvēlieties savu pasākumu",
+        "loading": "Pasākumu ielāde...",
+        "empty": "Nav aktīvu pasākumu. Izveidojiet pasākumu Attimo vadības panelī.",
+        "photos_one": "{count} foto tiešsaistē",
+        "photos_other": "{count} foto tiešsaistē",
+        "no_photos": "Pagaidām nav fotoattēlu",
+        "checkpoints_one": "{count} kontrolpunkts",
+        "checkpoints_other": "{count} kontrolpunkti",
+        "logout_title": "Iziet"
+    },
+    "config": {
+        "back_title": "Atpakaļ",
+        "checkpoint": "Kontrolpunkts (neobligāts)",
+        "checkpoint_none": "Nav (visi fotoattēli)",
+        "folder": "Uzraudzītā mape",
+        "folder_placeholder": "Noklikšķiniet uz Pārlūkot...",
+        "folder_browse": "Pārlūkot...",
+        "folder_dialog": "Izvēlieties uzraudzāmo mapi",
+        "folder_required": "Lūdzu, izvēlieties uzraudzāmo mapi.",
+        "existing_files": "Esošie faili",
+        "existing_include": "Augšupielādēt esošos failus mapē",
+        "existing_exclude": "Augšupielādēt tikai jaunus failus",
+        "parallel": "Paralēlās augšupielādes",
+        "parallel_hint": "Ar vāju 4G izmantojiet 1. Ar stabilu 5G, 3 paātrina.",
+        "start": "Sākt uzraudzību"
+    },
+    "dashboard": {
+        "status_active": "Aktīvs",
+        "sent": "Nosūtīts",
+        "pending": "Gaida",
+        "failed": "Neizdevās",
+        "speed_unit": "KB/s",
+        "log_title": "Žurnāls",
+        "log_empty": "Gaida failus...",
+        "pause": "Pauze",
+        "resume": "Turpināt",
+        "stop": "Apturēt",
+        "retry_btn": "Atkārtot neizdevušos",
+        "confirm_stop": "Apturēt uzraudzību un atgriezties pie pasākuma izvēles?",
+        "msg_paused": "Augšupielādes pauzētas",
+        "msg_resumed": "Augšupielādes atsāktas",
+        "msg_stopped": "Sesija apturēta",
+        "msg_retry_queued": "{count} fails(-i) atgriezts(-i) rindā",
+        "msg_error": "Kļūda: {error}"
+    },
+    "watcher": {
+        "detected": "Atklāts ({size} MB)",
+        "scan_started": "Mapes skenēšana: {count} JPEG atrasti",
+        "scan_complete": "Mapes skenēšana pabeigta"
+    },
+    "upload": {
+        "in_progress": "Augšupielāde...",
+        "attempt": "Augšupielāde (mēģinājums {attempt}/3)",
+        "success": "OK {duration}s ({speed} KB/s)",
+        "failed": "Neizdevās {attempt}/{max}: {error}",
+        "retry_scheduled": "Atkārtots mēģinājums pēc {delay}s (mēģinājums {attempt}/3)"
+    },
+    "connection": {
+        "restored": "Savienojums atjaunots",
+        "lost": "Savienojums zaudēts — faili uzkrājas",
+        "expired": "Sesija beigusies — piesakieties vēlreiz"
+    },
+    "complete": {
+        "with_errors": "Gatavs: {sent} nosūtīti, {failed} neizdevušies",
+        "success": "Gatavs: {count} fotoattēli veiksmīgi augšupielādēti!"
+    }
+}

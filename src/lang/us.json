@@ -1,0 +1,87 @@
+{
+    "app": {
+        "subtitle": "Field Agent"
+    },
+
+    "login": {
+        "email": "Email",
+        "password": "Password",
+        "remember": "Remember me",
+        "submit": "Sign in",
+        "email_placeholder": "photographer@example.com"
+    },
+
+    "events": {
+        "title": "Choose your event",
+        "loading": "Loading events...",
+        "empty": "No active events. Create an event in your Attimo dashboard.",
+        "photos_one": "{count} photo online",
+        "photos_other": "{count} photos online",
+        "no_photos": "No photos yet",
+        "checkpoints_one": "{count} checkpoint",
+        "checkpoints_other": "{count} checkpoints",
+        "logout_title": "Sign out"
+    },
+
+    "config": {
+        "back_title": "Back",
+        "checkpoint": "Checkpoint (optional)",
+        "checkpoint_none": "None (all photos)",
+        "folder": "Watched folder",
+        "folder_placeholder": "Click Browse...",
+        "folder_browse": "Browse...",
+        "folder_dialog": "Choose the folder to watch",
+        "folder_required": "Please select a folder to watch.",
+        "existing_files": "Existing files",
+        "existing_include": "Upload existing files in the folder",
+        "existing_exclude": "Upload new files only",
+        "parallel": "Parallel uploads",
+        "parallel_hint": "On weak 4G, use 1. On stable 5G, 3 speeds things up.",
+        "start": "Start watching"
+    },
+
+    "dashboard": {
+        "status_active": "Active",
+        "sent": "Sent",
+        "pending": "Pending",
+        "failed": "Failed",
+        "speed_unit": "KB/s",
+        "log_title": "Log",
+        "log_empty": "Waiting for files...",
+        "pause": "Pause",
+        "resume": "Resume",
+        "stop": "Stop",
+        "retry_btn": "Retry failed",
+        "confirm_stop": "Stop watching and return to event selection?",
+        "msg_paused": "Uploads paused",
+        "msg_resumed": "Uploads resumed",
+        "msg_stopped": "Session stopped",
+        "msg_retry_queued": "{count} file(s) re-queued",
+        "msg_error": "Error: {error}"
+    },
+
+    "watcher": {
+        "detected": "Detected ({size} MB)",
+        "scan_started": "Folder scan: {count} JPEGs found",
+        "scan_complete": "Folder scan complete"
+    },
+
+    "upload": {
+        "in_progress": "Uploading...",
+        "attempt": "Upload (attempt {attempt}/3)",
+        "success": "OK in {duration}s ({speed} KB/s)",
+        "failed": "Failed {attempt}/{max}: {error}",
+        "retry_scheduled": "Retry in {delay}s (attempt {attempt}/3)"
+    },
+
+    "connection": {
+        "restored": "Connection restored",
+        "lost": "Connection lost — files are queuing up",
+        "expired": "Session expired — please sign in again"
+    },
+
+    "complete": {
+        "with_errors": "Done: {sent} sent, {failed} failed",
+        "success": "Done: {count} photos uploaded successfully!"
+    }
+}

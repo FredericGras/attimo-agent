@@ -1,0 +1,87 @@
+{
+    "app": {
+        "subtitle": "Terepi ügynök"
+    },
+
+    "login": {
+        "email": "E-mail",
+        "password": "Jelszó",
+        "remember": "Emlékezz rám",
+        "submit": "Bejelentkezés",
+        "email_placeholder": "fotograf@example.com"
+    },
+
+    "events": {
+        "title": "Válassza ki az eseményt",
+        "loading": "Események betöltése...",
+        "empty": "Nincsenek aktív események. Hozzon létre egyet az Attimo irányítópultján.",
+        "photos_one": "{count} fotó online",
+        "photos_other": "{count} fotó online",
+        "no_photos": "Még nincsenek fotók",
+        "checkpoints_one": "{count} ellenőrzőpont",
+        "checkpoints_other": "{count} ellenőrzőpont",
+        "logout_title": "Kijelentkezés"
+    },
+
+    "config": {
+        "back_title": "Vissza",
+        "checkpoint": "Ellenőrzőpont (opcionális)",
+        "checkpoint_none": "Nincs (minden fotó)",
+        "folder": "Figyelt mappa",
+        "folder_placeholder": "Kattintson a Tallózás gombra...",
+        "folder_browse": "Tallózás...",
+        "folder_dialog": "Válassza ki a figyelendő mappát",
+        "folder_required": "Kérjük, válasszon ki egy mappát a figyeléshez.",
+        "existing_files": "Meglévő fájlok",
+        "existing_include": "Meglévő fájlok feltöltése a mappából",
+        "existing_exclude": "Csak új fájlok feltöltése",
+        "parallel": "Párhuzamos feltöltések",
+        "parallel_hint": "Gyenge 4G esetén használjon 1-et. Stabil 5G mellett a 3 gyorsít.",
+        "start": "Figyelés indítása"
+    },
+
+    "dashboard": {
+        "status_active": "Aktív",
+        "sent": "Elküldve",
+        "pending": "Várakozó",
+        "failed": "Sikertelen",
+        "speed_unit": "KB/s",
+        "log_title": "Napló",
+        "log_empty": "Várakozás fájlokra...",
+        "pause": "Szünet",
+        "resume": "Folytatás",
+        "stop": "Leállítás",
+        "retry_btn": "Sikertelenek újrapróbálása",
+        "confirm_stop": "Figyelés leállítása és visszatérés az eseményválasztáshoz?",
+        "msg_paused": "Feltöltések szünetelnek",
+        "msg_resumed": "Feltöltések folytatódnak",
+        "msg_stopped": "Munkamenet leállítva",
+        "msg_retry_queued": "{count} fájl újra sorba állítva",
+        "msg_error": "Hiba: {error}"
+    },
+
+    "watcher": {
+        "detected": "Észlelve ({size} MB)",
+        "scan_started": "Mappa vizsgálata: {count} JPEG találat",
+        "scan_complete": "Mappa vizsgálata kész"
+    },
+
+    "upload": {
+        "in_progress": "Feltöltés...",
+        "attempt": "Feltöltés ({attempt}. kísérlet/3)",
+        "success": "OK {duration} mp alatt ({speed} KB/s)",
+        "failed": "Sikertelen {attempt}/{max}: {error}",
+        "retry_scheduled": "Újrapróbálás {delay} mp múlva ({attempt}. kísérlet/3)"
+    },
+
+    "connection": {
+        "restored": "Kapcsolat helyreállt",
+        "lost": "Kapcsolat megszakadt — a fájlok gyűlnek",
+        "expired": "Munkamenet lejárt — jelentkezzen be újra"
+    },
+
+    "complete": {
+        "with_errors": "Kész: {sent} elküldve, {failed} sikertelen",
+        "success": "Kész: {count} fotó sikeresen feltöltve!"
+    }
+}

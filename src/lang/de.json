@@ -1,0 +1,87 @@
+{
+    "app": {
+        "subtitle": "Feld-Agent"
+    },
+
+    "login": {
+        "email": "E-Mail",
+        "password": "Passwort",
+        "remember": "Angemeldet bleiben",
+        "submit": "Anmelden",
+        "email_placeholder": "fotograf@example.com"
+    },
+
+    "events": {
+        "title": "Wählen Sie Ihr Event",
+        "loading": "Events werden geladen...",
+        "empty": "Keine aktiven Events. Erstellen Sie ein Event in Ihrem Attimo-Dashboard.",
+        "photos_one": "{count} Foto online",
+        "photos_other": "{count} Fotos online",
+        "no_photos": "Noch keine Fotos",
+        "checkpoints_one": "{count} Checkpoint",
+        "checkpoints_other": "{count} Checkpoints",
+        "logout_title": "Abmelden"
+    },
+
+    "config": {
+        "back_title": "Zurück",
+        "checkpoint": "Checkpoint (optional)",
+        "checkpoint_none": "Keiner (alle Fotos)",
+        "folder": "Überwachter Ordner",
+        "folder_placeholder": "Klicken Sie auf Durchsuchen...",
+        "folder_browse": "Durchsuchen...",
+        "folder_dialog": "Wählen Sie den zu überwachenden Ordner",
+        "folder_required": "Bitte wählen Sie einen Ordner zur Überwachung aus.",
+        "existing_files": "Vorhandene Dateien",
+        "existing_include": "Vorhandene Dateien im Ordner hochladen",
+        "existing_exclude": "Nur neue Dateien hochladen",
+        "parallel": "Parallele Uploads",
+        "parallel_hint": "Bei schwachem 4G verwenden Sie 1. Bei stabilem 5G beschleunigt 3.",
+        "start": "Überwachung starten"
+    },
+
+    "dashboard": {
+        "status_active": "Aktiv",
+        "sent": "Gesendet",
+        "pending": "Ausstehend",
+        "failed": "Fehlgeschlagen",
+        "speed_unit": "KB/s",
+        "log_title": "Protokoll",
+        "log_empty": "Warten auf Dateien...",
+        "pause": "Pause",
+        "resume": "Fortsetzen",
+        "stop": "Stoppen",
+        "retry_btn": "Fehlgeschlagene erneut senden",
+        "confirm_stop": "Überwachung stoppen und zur Eventauswahl zurückkehren?",
+        "msg_paused": "Uploads pausiert",
+        "msg_resumed": "Uploads fortgesetzt",
+        "msg_stopped": "Sitzung beendet",
+        "msg_retry_queued": "{count} Datei(en) erneut in die Warteschlange gestellt",
+        "msg_error": "Fehler: {error}"
+    },
+
+    "watcher": {
+        "detected": "Erkannt ({size} MB)",
+        "scan_started": "Ordner-Scan: {count} JPEGs gefunden",
+        "scan_complete": "Ordner-Scan abgeschlossen"
+    },
+
+    "upload": {
+        "in_progress": "Upload läuft...",
+        "attempt": "Upload (Versuch {attempt}/3)",
+        "success": "OK in {duration}s ({speed} KB/s)",
+        "failed": "Fehler {attempt}/{max}: {error}",
+        "retry_scheduled": "Wiederholung in {delay}s (Versuch {attempt}/3)"
+    },
+
+    "connection": {
+        "restored": "Verbindung wiederhergestellt",
+        "lost": "Verbindung unterbrochen — Dateien werden gesammelt",
+        "expired": "Sitzung abgelaufen — bitte erneut anmelden"
+    },
+
+    "complete": {
+        "with_errors": "Fertig: {sent} gesendet, {failed} fehlgeschlagen",
+        "success": "Fertig: {count} Fotos erfolgreich hochgeladen!"
+    }
+}

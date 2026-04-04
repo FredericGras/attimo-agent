@@ -1,0 +1,77 @@
+{
+    "app": { "subtitle": "Välitööriist" },
+    "login": {
+        "email": "E-post",
+        "password": "Parool",
+        "remember": "Jäta mind meelde",
+        "submit": "Logi sisse",
+        "email_placeholder": "fotograaf@example.com"
+    },
+    "events": {
+        "title": "Valige oma üritus",
+        "loading": "Ürituste laadimine...",
+        "empty": "Aktiivseid üritusi pole. Looge üritus Attimo juhtpaneelil.",
+        "photos_one": "{count} foto veebis",
+        "photos_other": "{count} fotot veebis",
+        "no_photos": "Veel pole fotosid",
+        "checkpoints_one": "{count} kontrollpunkt",
+        "checkpoints_other": "{count} kontrollpunkti",
+        "logout_title": "Logi välja"
+    },
+    "config": {
+        "back_title": "Tagasi",
+        "checkpoint": "Kontrollpunkt (valikuline)",
+        "checkpoint_none": "Puudub (kõik fotod)",
+        "folder": "Jälgitav kaust",
+        "folder_placeholder": "Klõpsake Sirvi...",
+        "folder_browse": "Sirvi...",
+        "folder_dialog": "Valige jälgitav kaust",
+        "folder_required": "Palun valige jälgitav kaust.",
+        "existing_files": "Olemasolevad failid",
+        "existing_include": "Laadi üles kaustas olevad failid",
+        "existing_exclude": "Laadi üles ainult uued failid",
+        "parallel": "Paralleelsed üleslaadimised",
+        "parallel_hint": "Nõrga 4G puhul kasutage 1. Stabiilse 5G puhul kiirendab 3.",
+        "start": "Alusta jälgimist"
+    },
+    "dashboard": {
+        "status_active": "Aktiivne",
+        "sent": "Saadetud",
+        "pending": "Ootel",
+        "failed": "Ebaõnnestunud",
+        "speed_unit": "KB/s",
+        "log_title": "Logi",
+        "log_empty": "Failide ootamine...",
+        "pause": "Paus",
+        "resume": "Jätka",
+        "stop": "Peata",
+        "retry_btn": "Proovi ebaõnnestunuid uuesti",
+        "confirm_stop": "Peatada jälgimine ja naasta ürituse valikusse?",
+        "msg_paused": "Üleslaadimised peatatud",
+        "msg_resumed": "Üleslaadimised jätkuvad",
+        "msg_stopped": "Seanss peatatud",
+        "msg_retry_queued": "{count} fail(i) tagasi järjekorda",
+        "msg_error": "Viga: {error}"
+    },
+    "watcher": {
+        "detected": "Tuvastatud ({size} MB)",
+        "scan_started": "Kausta skannimine: {count} JPEG-i leitud",
+        "scan_complete": "Kausta skannimine lõpetatud"
+    },
+    "upload": {
+        "in_progress": "Üleslaadimine...",
+        "attempt": "Üleslaadimine (katse {attempt}/3)",
+        "success": "OK {duration}s-ga ({speed} KB/s)",
+        "failed": "Ebaõnnestus {attempt}/{max}: {error}",
+        "retry_scheduled": "Uus katse {delay}s pärast (katse {attempt}/3)"
+    },
+    "connection": {
+        "restored": "Ühendus taastatud",
+        "lost": "Ühendus kadunud — failid kogunevad",
+        "expired": "Seanss aegunud — logige uuesti sisse"
+    },
+    "complete": {
+        "with_errors": "Valmis: {sent} saadetud, {failed} ebaõnnestunud",
+        "success": "Valmis: {count} fotot edukalt üles laaditud!"
+    }
+}

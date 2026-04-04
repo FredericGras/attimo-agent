@@ -1,0 +1,77 @@
+{
+    "app": { "subtitle": "Aġent tal-Qasam" },
+    "login": {
+        "email": "Email",
+        "password": "Password",
+        "remember": "Ftakarni",
+        "submit": "Idħol",
+        "email_placeholder": "fotografu@example.com"
+    },
+    "events": {
+        "title": "Agħżel l-avveniment tiegħek",
+        "loading": "Jitgħabbew l-avvenimenti...",
+        "empty": "L-ebda avveniment attiv. Oħloq avveniment fid-dashboard ta' Attimo.",
+        "photos_one": "{count} ritratt online",
+        "photos_other": "{count} ritratti online",
+        "no_photos": "Għad m'hemm l-ebda ritratti",
+        "checkpoints_one": "{count} checkpoint",
+        "checkpoints_other": "{count} checkpoints",
+        "logout_title": "Oħroġ"
+    },
+    "config": {
+        "back_title": "Lura",
+        "checkpoint": "Checkpoint (mhux obbligatorju)",
+        "checkpoint_none": "Xejn (ir-ritratti kollha)",
+        "folder": "Folder sorveljat",
+        "folder_placeholder": "Ikklikkja Browse...",
+        "folder_browse": "Browse...",
+        "folder_dialog": "Agħżel il-folder biex tissorvelja",
+        "folder_required": "Jekk jogħġbok agħżel folder biex tissorvelja.",
+        "existing_files": "Fajls eżistenti",
+        "existing_include": "Ittella' l-fajls eżistenti fil-folder",
+        "existing_exclude": "Ittella' biss il-fajls ġodda",
+        "parallel": "Uploads paralleli",
+        "parallel_hint": "B'4G dgħajjef, uża 1. B'5G stabbli, 3 iżid il-veloċità.",
+        "start": "Ibda s-sorveljanza"
+    },
+    "dashboard": {
+        "status_active": "Attiv",
+        "sent": "Mibgħuta",
+        "pending": "Jistennew",
+        "failed": "Fallew",
+        "speed_unit": "KB/s",
+        "log_title": "Ġurnal",
+        "log_empty": "Jistenna l-fajls...",
+        "pause": "Pawża",
+        "resume": "Kompli",
+        "stop": "Ieqaf",
+        "retry_btn": "Erġa' pprova dawk li fallew",
+        "confirm_stop": "Twaqqaf is-sorveljanza u rritorna għall-għażla tal-avveniment?",
+        "msg_paused": "Uploads f'pawża",
+        "msg_resumed": "Uploads komplew",
+        "msg_stopped": "Sessjoni mwaqqfa",
+        "msg_retry_queued": "{count} fajl(s) impoġġija lura fil-kju",
+        "msg_error": "Żball: {error}"
+    },
+    "watcher": {
+        "detected": "Misjub ({size} MB)",
+        "scan_started": "Qed jiskenja l-folder: {count} JPEG misjuba",
+        "scan_complete": "L-iskenjar tal-folder lest"
+    },
+    "upload": {
+        "in_progress": "Qed jittella'...",
+        "attempt": "Upload (tentattiv {attempt}/3)",
+        "success": "OK fi {duration}s ({speed} KB/s)",
+        "failed": "Falla {attempt}/{max}: {error}",
+        "retry_scheduled": "Tentattiv ġdid fi {delay}s (tentattiv {attempt}/3)"
+    },
+    "connection": {
+        "restored": "Konnessjoni reġgħet lura",
+        "lost": "Konnessjoni mitlufa — il-fajls qed jinġabru",
+        "expired": "Sessjoni skadiet — idħol mill-ġdid"
+    },
+    "complete": {
+        "with_errors": "Lest: {sent} mibgħuta, {failed} fallew",
+        "success": "Lest: {count} ritratti ttellgħu b'suċċess!"
+    }
+}

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Attimo Agent Terrain</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- ÉCRAN 1 : CONNEXION                        -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div id="screen-login" class="screen active">
+        <div class="login-container">
+            <div class="login-logo">
+                <div class="logo-icon">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#6B9ECE" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                        <circle cx="12" cy="13" r="4"/>
+                    </svg>
+                </div>
+                <h1>ATTIMO</h1>
+                <p class="login-subtitle" data-i18n="app.subtitle">Agent Terrain</p>
+            </div>
+
+            <form id="login-form" onsubmit="return false;">
+                <div class="form-group">
+                    <label for="login-email" data-i18n="login.email">Email</label>
+                    <input type="email" id="login-email" data-i18n-placeholder="login.email_placeholder" placeholder="photographe@example.com" required autocomplete="email" />
+                </div>
+
+                <div class="form-group">
+                    <label for="login-password" data-i18n="login.password">Mot de passe</label>
+                    <input type="password" id="login-password" placeholder="••••••••" required autocomplete="current-password" />
+                </div>
+
+                <div class="form-check">
+                    <label class="toggle-label">
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="login-remember" checked />
+                            <span class="toggle-slider"></span>
+                        </div>
+                        <span data-i18n="login.remember">Se souvenir de moi</span>
+                    </label>
+                </div>
+
+                <button type="submit" id="login-btn" class="btn btn-primary btn-block">
+                    <span class="btn-text" data-i18n="login.submit">Se connecter</span>
+                    <span class="btn-loader" style="display:none;">
+                        <svg class="spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                        </svg>
+                    </span>
+                </button>
+
+                <div id="login-error" class="error-message" style="display:none;"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- ÉCRAN 2 : SÉLECTION ÉVÉNEMENT              -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div id="screen-events" class="screen">
+        <header class="app-header">
+            <div class="header-left">
+                <div class="header-logo">ATTIMO</div>
+                <span class="header-label" data-i18n="app.subtitle">Agent Terrain</span>
+            </div>
+            <div class="header-right">
+                <span id="user-name" class="user-name"></span>
+                <button id="logout-btn" class="btn btn-link" data-i18n-title="events.logout_title" title="Déconnexion">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <h2 class="screen-title" data-i18n="events.title">Choisissez votre événement</h2>
+            <div id="events-list" class="events-list">
+                <!-- Rempli dynamiquement par main.js -->
+            </div>
+            <div id="events-loading" class="loading-indicator" style="display:none;">
+                <svg class="spinner" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#6B9ECE" stroke-width="2">
+                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                </svg>
+                <p data-i18n="events.loading">Chargement des événements...</p>
+            </div>
+            <div id="events-error" class="error-message" style="display:none;"></div>
+        </main>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- ÉCRAN 3 : CONFIGURATION SESSION            -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div id="screen-config" class="screen">
+        <header class="app-header">
+            <div class="header-left">
+                <button id="config-back-btn" class="btn btn-icon" data-i18n-title="config.back_title" title="Retour">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                </button>
+                <span id="config-event-name" class="header-label"></span>
+            </div>
+            <div class="header-right">
+                <span id="config-user-name" class="user-name"></span>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="config-form">
+                <div class="form-group">
+                    <label for="config-checkpoint" data-i18n="config.checkpoint">Checkpoint (optionnel)</label>
+                    <select id="config-checkpoint" class="form-select">
+                        <option value="" data-i18n="config.checkpoint_none">Aucun (toutes les photos)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label data-i18n="config.folder">Dossier surveillé</label>
+                    <div class="folder-picker">
+                        <input type="text" id="config-folder" class="form-input" data-i18n-placeholder="config.folder_placeholder" placeholder="Cliquez sur Parcourir..." readonly />
+                        <button type="button" id="config-browse-btn" class="btn btn-secondary" data-i18n="config.folder_browse">Parcourir...</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label data-i18n="config.existing_files">Fichiers existants</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="existing-files" value="include" checked />
+                            <span data-i18n="config.existing_include">Uploader les fichiers existants dans le dossier</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="existing-files" value="exclude" />
+                            <span data-i18n="config.existing_exclude">Uploader uniquement les nouveaux fichiers</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="config-parallel" data-i18n="config.parallel">Uploads parallèles</label>
+                    <div class="parallel-picker">
+                        <button type="button" class="parallel-btn active" data-value="1">1</button>
+                        <button type="button" class="parallel-btn" data-value="2">2</button>
+                        <button type="button" class="parallel-btn" data-value="3">3</button>
+                    </div>
+                    <small class="form-hint" data-i18n="config.parallel_hint">Sur connexion 4G faible, utilisez 1. Sur 5G stable, 3 accélère.</small>
+                </div>
+
+                <button type="button" id="config-start-btn" class="btn btn-primary btn-block btn-lg">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="5 3 19 12 5 21 5 3"/>
+                    </svg>
+                    <span data-i18n="config.start">Démarrer la surveillance</span>
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- ÉCRAN 4 : DASHBOARD TEMPS RÉEL             -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div id="screen-dashboard" class="screen">
+        <header class="app-header">
+            <div class="header-left">
+                <div id="dash-status" class="status-dot status-active" data-i18n-title="dashboard.status_active" title="En cours"></div>
+                <span id="dash-event-name" class="header-label"></span>
+                <span id="dash-checkpoint-name" class="header-checkpoint"></span>
+            </div>
+            <div class="header-right">
+                <span id="dash-folder" class="header-folder" title=""></span>
+            </div>
+        </header>
+
+        <main class="main-content dashboard-content">
+            <!-- Compteurs -->
+            <div class="stats-grid">
+                <div class="stat-card stat-sent">
+                    <div class="stat-value" id="stat-sent">0</div>
+                    <div class="stat-label" data-i18n="dashboard.sent">Envoyées</div>
+                </div>
+                <div class="stat-card stat-pending">
+                    <div class="stat-value" id="stat-pending">0</div>
+                    <div class="stat-label" data-i18n="dashboard.pending">En attente</div>
+                </div>
+                <div class="stat-card stat-failed">
+                    <div class="stat-value" id="stat-failed">0</div>
+                    <div class="stat-label" data-i18n="dashboard.failed">Échouées</div>
+                </div>
+                <div class="stat-card stat-speed">
+                    <div class="stat-value" id="stat-speed">—</div>
+                    <div class="stat-label" data-i18n="dashboard.speed_unit">Ko/s</div>
+                </div>
+            </div>
+
+            <!-- Barre de progression globale -->
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                </div>
+                <div class="progress-text" id="progress-text">0 / 0</div>
+            </div>
+
+            <!-- Journal des uploads -->
+            <div class="log-section">
+                <h3 class="log-title" data-i18n="dashboard.log_title">Journal</h3>
+                <div id="upload-log" class="upload-log">
+                    <div class="log-empty" data-i18n="dashboard.log_empty">En attente de fichiers...</div>
+                </div>
+            </div>
+
+            <!-- Boutons d'action -->
+            <div class="dashboard-actions">
+                <button type="button" id="dash-pause-btn" class="btn btn-secondary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+                    </svg>
+                    <span data-i18n="dashboard.pause">Pause</span>
+                </button>
+                <button type="button" id="dash-stop-btn" class="btn btn-danger">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    </svg>
+                    <span data-i18n="dashboard.stop">Arrêter</span>
+                </button>
+                <button type="button" id="dash-retry-btn" class="btn btn-secondary" style="display:none;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                    </svg>
+                    <span data-i18n="dashboard.retry_btn">Relancer les échouées</span>
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts : i18n chargé en premier (global), puis main.js (module) -->
+    <script src="i18n.js"></script>
+    <script type="module" src="main.js"></script>
+</body>
+</html>

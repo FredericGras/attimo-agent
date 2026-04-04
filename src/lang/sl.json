@@ -1,0 +1,77 @@
+{
+    "app": { "subtitle": "Terenski agent" },
+    "login": {
+        "email": "E-pošta",
+        "password": "Geslo",
+        "remember": "Zapomni si me",
+        "submit": "Prijava",
+        "email_placeholder": "fotograf@example.com"
+    },
+    "events": {
+        "title": "Izberite svoj dogodek",
+        "loading": "Nalaganje dogodkov...",
+        "empty": "Ni aktivnih dogodkov. Ustvarite dogodek na nadzorni plošči Attimo.",
+        "photos_one": "{count} fotografija na spletu",
+        "photos_other": "{count} fotografij na spletu",
+        "no_photos": "Še ni fotografij",
+        "checkpoints_one": "{count} kontrolna točka",
+        "checkpoints_other": "{count} kontrolnih točk",
+        "logout_title": "Odjava"
+    },
+    "config": {
+        "back_title": "Nazaj",
+        "checkpoint": "Kontrolna točka (neobvezno)",
+        "checkpoint_none": "Brez (vse fotografije)",
+        "folder": "Nadzorovana mapa",
+        "folder_placeholder": "Kliknite na Prebrskaj...",
+        "folder_browse": "Prebrskaj...",
+        "folder_dialog": "Izberite mapo za nadzor",
+        "folder_required": "Prosimo, izberite mapo za nadzor.",
+        "existing_files": "Obstoječe datoteke",
+        "existing_include": "Naloži obstoječe datoteke v mapi",
+        "existing_exclude": "Naloži samo nove datoteke",
+        "parallel": "Vzporedni prenosi",
+        "parallel_hint": "Pri šibkem 4G uporabite 1. Pri stabilnem 5G 3 pospeši.",
+        "start": "Začni nadzor"
+    },
+    "dashboard": {
+        "status_active": "Aktivno",
+        "sent": "Poslano",
+        "pending": "V čakanju",
+        "failed": "Neuspešno",
+        "speed_unit": "KB/s",
+        "log_title": "Dnevnik",
+        "log_empty": "Čakanje na datoteke...",
+        "pause": "Premor",
+        "resume": "Nadaljuj",
+        "stop": "Ustavi",
+        "retry_btn": "Ponovi neuspešne",
+        "confirm_stop": "Ustaviti nadzor in se vrniti na izbiro dogodka?",
+        "msg_paused": "Prenosi začasno ustavljeni",
+        "msg_resumed": "Prenosi nadaljujejo",
+        "msg_stopped": "Seja ustavljena",
+        "msg_retry_queued": "{count} datotek(e) vrnjenih v vrsto",
+        "msg_error": "Napaka: {error}"
+    },
+    "watcher": {
+        "detected": "Zaznano ({size} MB)",
+        "scan_started": "Pregled mape: {count} JPEG najdenih",
+        "scan_complete": "Pregled mape končan"
+    },
+    "upload": {
+        "in_progress": "Nalaganje...",
+        "attempt": "Nalaganje (poskus {attempt}/3)",
+        "success": "OK v {duration}s ({speed} KB/s)",
+        "failed": "Neuspeh {attempt}/{max}: {error}",
+        "retry_scheduled": "Ponovni poskus čez {delay}s (poskus {attempt}/3)"
+    },
+    "connection": {
+        "restored": "Povezava obnovljena",
+        "lost": "Povezava izgubljena — datoteke se kopičijo",
+        "expired": "Seja potekla — prijavite se znova"
+    },
+    "complete": {
+        "with_errors": "Končano: {sent} poslanih, {failed} neuspešnih",
+        "success": "Končano: {count} fotografij uspešno naloženih!"
+    }
+}

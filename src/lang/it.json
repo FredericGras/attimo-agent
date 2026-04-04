@@ -1,0 +1,87 @@
+{
+    "app": {
+        "subtitle": "Agente sul Campo"
+    },
+
+    "login": {
+        "email": "Email",
+        "password": "Password",
+        "remember": "Ricordami",
+        "submit": "Accedi",
+        "email_placeholder": "fotografo@example.com"
+    },
+
+    "events": {
+        "title": "Scegli il tuo evento",
+        "loading": "Caricamento eventi...",
+        "empty": "Nessun evento attivo. Crea un evento nella tua dashboard Attimo.",
+        "photos_one": "{count} foto online",
+        "photos_other": "{count} foto online",
+        "no_photos": "Nessuna foto ancora",
+        "checkpoints_one": "{count} checkpoint",
+        "checkpoints_other": "{count} checkpoint",
+        "logout_title": "Esci"
+    },
+
+    "config": {
+        "back_title": "Indietro",
+        "checkpoint": "Checkpoint (opzionale)",
+        "checkpoint_none": "Nessuno (tutte le foto)",
+        "folder": "Cartella monitorata",
+        "folder_placeholder": "Clicca su Sfoglia...",
+        "folder_browse": "Sfoglia...",
+        "folder_dialog": "Scegli la cartella da monitorare",
+        "folder_required": "Seleziona una cartella da monitorare.",
+        "existing_files": "File esistenti",
+        "existing_include": "Caricare i file esistenti nella cartella",
+        "existing_exclude": "Caricare solo i nuovi file",
+        "parallel": "Upload paralleli",
+        "parallel_hint": "Con 4G debole, usa 1. Con 5G stabile, 3 accelera.",
+        "start": "Avvia il monitoraggio"
+    },
+
+    "dashboard": {
+        "status_active": "Attivo",
+        "sent": "Inviate",
+        "pending": "In attesa",
+        "failed": "Fallite",
+        "speed_unit": "KB/s",
+        "log_title": "Registro",
+        "log_empty": "In attesa di file...",
+        "pause": "Pausa",
+        "resume": "Riprendi",
+        "stop": "Ferma",
+        "retry_btn": "Ritenta le fallite",
+        "confirm_stop": "Fermare il monitoraggio e tornare alla selezione evento?",
+        "msg_paused": "Upload in pausa",
+        "msg_resumed": "Upload ripresi",
+        "msg_stopped": "Sessione fermata",
+        "msg_retry_queued": "{count} file rimessi in coda",
+        "msg_error": "Errore: {error}"
+    },
+
+    "watcher": {
+        "detected": "Rilevato ({size} MB)",
+        "scan_started": "Scansione cartella: {count} JPEG trovati",
+        "scan_complete": "Scansione cartella completata"
+    },
+
+    "upload": {
+        "in_progress": "Upload in corso...",
+        "attempt": "Upload (tentativo {attempt}/3)",
+        "success": "OK in {duration}s ({speed} KB/s)",
+        "failed": "Fallito {attempt}/{max}: {error}",
+        "retry_scheduled": "Nuovo tentativo tra {delay}s (tentativo {attempt}/3)"
+    },
+
+    "connection": {
+        "restored": "Connessione ripristinata",
+        "lost": "Connessione persa — i file si accumulano",
+        "expired": "Sessione scaduta — effettua nuovamente l'accesso"
+    },
+
+    "complete": {
+        "with_errors": "Completato: {sent} inviate, {failed} fallite",
+        "success": "Completato: {count} foto caricate con successo!"
+    }
+}

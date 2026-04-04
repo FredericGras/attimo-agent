@@ -1,0 +1,87 @@
+{
+    "app": {
+        "subtitle": "Agent Terrain"
+    },
+
+    "login": {
+        "email": "Email",
+        "password": "Mot de passe",
+        "remember": "Se souvenir de moi",
+        "submit": "Se connecter",
+        "email_placeholder": "photographe@example.com"
+    },
+
+    "events": {
+        "title": "Choisissez votre événement",
+        "loading": "Chargement des événements...",
+        "empty": "Aucun événement actif. Créez un événement dans votre dashboard Attimo.",
+        "photos_one": "{count} photo en ligne",
+        "photos_other": "{count} photos en ligne",
+        "no_photos": "Pas encore de photos",
+        "checkpoints_one": "{count} checkpoint",
+        "checkpoints_other": "{count} checkpoints",
+        "logout_title": "Déconnexion"
+    },
+
+    "config": {
+        "back_title": "Retour",
+        "checkpoint": "Checkpoint (optionnel)",
+        "checkpoint_none": "Aucun (toutes les photos)",
+        "folder": "Dossier surveillé",
+        "folder_placeholder": "Cliquez sur Parcourir...",
+        "folder_browse": "Parcourir...",
+        "folder_dialog": "Choisissez le dossier à surveiller",
+        "folder_required": "Veuillez sélectionner un dossier à surveiller.",
+        "existing_files": "Fichiers existants",
+        "existing_include": "Uploader les fichiers existants dans le dossier",
+        "existing_exclude": "Uploader uniquement les nouveaux fichiers",
+        "parallel": "Uploads parallèles",
+        "parallel_hint": "Sur connexion 4G faible, utilisez 1. Sur 5G stable, 3 accélère.",
+        "start": "Démarrer la surveillance"
+    },
+
+    "dashboard": {
+        "status_active": "En cours",
+        "sent": "Envoyées",
+        "pending": "En attente",
+        "failed": "Échouées",
+        "speed_unit": "Ko/s",
+        "log_title": "Journal",
+        "log_empty": "En attente de fichiers...",
+        "pause": "Pause",
+        "resume": "Reprendre",
+        "stop": "Arrêter",
+        "retry_btn": "Relancer les échouées",
+        "confirm_stop": "Arrêter la surveillance et revenir à la sélection d'événement ?",
+        "msg_paused": "Uploads en pause",
+        "msg_resumed": "Uploads repris",
+        "msg_stopped": "Session arrêtée",
+        "msg_retry_queued": "{count} fichier(s) remis en file",
+        "msg_error": "Erreur : {error}"
+    },
+
+    "watcher": {
+        "detected": "Détecté ({size} Mo)",
+        "scan_started": "Scan du dossier : {count} JPEG trouvés",
+        "scan_complete": "Scan du dossier terminé"
+    },
+
+    "upload": {
+        "in_progress": "Upload en cours...",
+        "attempt": "Upload (tentative {attempt}/3)",
+        "success": "OK en {duration}s ({speed} Ko/s)",
+        "failed": "Échec {attempt}/{max} : {error}",
+        "retry_scheduled": "Retry dans {delay}s (tentative {attempt}/3)"
+    },
+
+    "connection": {
+        "restored": "Connexion rétablie",
+        "lost": "Connexion perdue — les fichiers s'accumulent",
+        "expired": "Session expirée — reconnexion nécessaire"
+    },
+
+    "complete": {
+        "with_errors": "Terminé : {sent} envoyées, {failed} en échec",
+        "success": "Terminé : {count} photos envoyées avec succès !"
+    }
+}

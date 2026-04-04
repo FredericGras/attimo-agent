@@ -1,0 +1,87 @@
+{
+    "app": {
+        "subtitle": "Feltassistent"
+    },
+
+    "login": {
+        "email": "E-mail",
+        "password": "Adgangskode",
+        "remember": "Husk mig",
+        "submit": "Log ind",
+        "email_placeholder": "fotograf@example.com"
+    },
+
+    "events": {
+        "title": "Vælg dit event",
+        "loading": "Indlæser events...",
+        "empty": "Ingen aktive events. Opret et event i dit Attimo-dashboard.",
+        "photos_one": "{count} foto online",
+        "photos_other": "{count} fotos online",
+        "no_photos": "Ingen fotos endnu",
+        "checkpoints_one": "{count} checkpoint",
+        "checkpoints_other": "{count} checkpoints",
+        "logout_title": "Log ud"
+    },
+
+    "config": {
+        "back_title": "Tilbage",
+        "checkpoint": "Checkpoint (valgfrit)",
+        "checkpoint_none": "Ingen (alle fotos)",
+        "folder": "Overvåget mappe",
+        "folder_placeholder": "Klik på Gennemse...",
+        "folder_browse": "Gennemse...",
+        "folder_dialog": "Vælg mappen der skal overvåges",
+        "folder_required": "Vælg venligst en mappe at overvåge.",
+        "existing_files": "Eksisterende filer",
+        "existing_include": "Upload eksisterende filer i mappen",
+        "existing_exclude": "Upload kun nye filer",
+        "parallel": "Parallelle uploads",
+        "parallel_hint": "Ved svagt 4G, brug 1. Ved stabilt 5G fremskynder 3.",
+        "start": "Start overvågning"
+    },
+
+    "dashboard": {
+        "status_active": "Aktiv",
+        "sent": "Sendt",
+        "pending": "Ventende",
+        "failed": "Fejlet",
+        "speed_unit": "KB/s",
+        "log_title": "Log",
+        "log_empty": "Venter på filer...",
+        "pause": "Pause",
+        "resume": "Genoptag",
+        "stop": "Stop",
+        "retry_btn": "Prøv fejlede igen",
+        "confirm_stop": "Stop overvågning og vend tilbage til eventvalg?",
+        "msg_paused": "Uploads på pause",
+        "msg_resumed": "Uploads genoptaget",
+        "msg_stopped": "Session stoppet",
+        "msg_retry_queued": "{count} fil(er) sat i kø igen",
+        "msg_error": "Fejl: {error}"
+    },
+
+    "watcher": {
+        "detected": "Opdaget ({size} MB)",
+        "scan_started": "Mappescanning: {count} JPEGs fundet",
+        "scan_complete": "Mappescanning fuldført"
+    },
+
+    "upload": {
+        "in_progress": "Uploader...",
+        "attempt": "Upload (forsøg {attempt}/3)",
+        "success": "OK på {duration}s ({speed} KB/s)",
+        "failed": "Fejl {attempt}/{max}: {error}",
+        "retry_scheduled": "Nyt forsøg om {delay}s (forsøg {attempt}/3)"
+    },
+
+    "connection": {
+        "restored": "Forbindelse genoprettet",
+        "lost": "Forbindelse mistet — filer ophobes",
+        "expired": "Session udløbet — log ind igen"
+    },
+
+    "complete": {
+        "with_errors": "Færdig: {sent} sendt, {failed} fejlet",
+        "success": "Færdig: {count} fotos uploadet med succes!"
+    }
+}

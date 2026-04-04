@@ -1,0 +1,77 @@
+{
+    "app": { "subtitle": "Gníomhaire Páirce" },
+    "login": {
+        "email": "Ríomhphost",
+        "password": "Pasfhocal",
+        "remember": "Cuimhnigh orm",
+        "submit": "Logáil isteach",
+        "email_placeholder": "grianghrafadoir@example.com"
+    },
+    "events": {
+        "title": "Roghnaigh d'imeacht",
+        "loading": "Imeachtaí á lódáil...",
+        "empty": "Níl aon imeacht gníomhach. Cruthaigh imeacht ar do phainéal Attimo.",
+        "photos_one": "{count} grianghraf ar líne",
+        "photos_other": "{count} grianghraf ar líne",
+        "no_photos": "Níl aon ghrianghraf fós",
+        "checkpoints_one": "{count} seicphointe",
+        "checkpoints_other": "{count} seicphointe",
+        "logout_title": "Logáil amach"
+    },
+    "config": {
+        "back_title": "Ar ais",
+        "checkpoint": "Seicphointe (roghnach)",
+        "checkpoint_none": "Gan cheann (gach grianghraf)",
+        "folder": "Fillteán faireacháin",
+        "folder_placeholder": "Cliceáil Brabhsáil...",
+        "folder_browse": "Brabhsáil...",
+        "folder_dialog": "Roghnaigh an fillteán le faire",
+        "folder_required": "Roghnaigh fillteán le faire, le do thoil.",
+        "existing_files": "Comhaid atá ann cheana",
+        "existing_include": "Uaslódáil na comhaid atá ann cheana san fhillteán",
+        "existing_exclude": "Uaslódáil comhaid nua amháin",
+        "parallel": "Uaslódálacha comhthráthach",
+        "parallel_hint": "Le 4G lag, úsáid 1. Le 5G cobhsaí, luathann 3.",
+        "start": "Tosaigh ag faire"
+    },
+    "dashboard": {
+        "status_active": "Gníomhach",
+        "sent": "Seolta",
+        "pending": "Ag fanacht",
+        "failed": "Theip",
+        "speed_unit": "KB/s",
+        "log_title": "Logáil",
+        "log_empty": "Ag fanacht le comhaid...",
+        "pause": "Sos",
+        "resume": "Atosaigh",
+        "stop": "Stop",
+        "retry_btn": "Bain triail as na cinn a theip arís",
+        "confirm_stop": "Stop ag faire agus filleadh ar roghnú imeachta?",
+        "msg_paused": "Uaslódálacha ar sos",
+        "msg_resumed": "Uaslódálacha atosaithe",
+        "msg_stopped": "Seisiún stoptha",
+        "msg_retry_queued": "{count} comhad(-aid) curtha ar ais sa scuaine",
+        "msg_error": "Earráid: {error}"
+    },
+    "watcher": {
+        "detected": "Aimsíodh ({size} MB)",
+        "scan_started": "Scanadh fillteáin: {count} JPEG aimsithe",
+        "scan_complete": "Scanadh fillteáin críochnaithe"
+    },
+    "upload": {
+        "in_progress": "Á uaslódáil...",
+        "attempt": "Uaslódáil (iarracht {attempt}/3)",
+        "success": "OK i {duration}s ({speed} KB/s)",
+        "failed": "Theip {attempt}/{max}: {error}",
+        "retry_scheduled": "Iarracht nua i {delay}s (iarracht {attempt}/3)"
+    },
+    "connection": {
+        "restored": "Ceangal athbhunaithe",
+        "lost": "Ceangal caillte — comhaid ag cruinniú",
+        "expired": "Seisiún in éag — logáil isteach arís"
+    },
+    "complete": {
+        "with_errors": "Críochnaithe: {sent} seolta, {failed} theip",
+        "success": "Críochnaithe: {count} grianghraf uaslódáilte go rathúil!"
+    }
+}

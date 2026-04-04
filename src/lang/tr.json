@@ -1,0 +1,77 @@
+{
+    "app": { "subtitle": "Saha Aracısı" },
+    "login": {
+        "email": "E-posta",
+        "password": "Şifre",
+        "remember": "Beni hatırla",
+        "submit": "Giriş yap",
+        "email_placeholder": "fotografci@example.com"
+    },
+    "events": {
+        "title": "Etkinliğinizi seçin",
+        "loading": "Etkinlikler yükleniyor...",
+        "empty": "Aktif etkinlik yok. Attimo panelinde bir etkinlik oluşturun.",
+        "photos_one": "{count} fotoğraf çevrimiçi",
+        "photos_other": "{count} fotoğraf çevrimiçi",
+        "no_photos": "Henüz fotoğraf yok",
+        "checkpoints_one": "{count} kontrol noktası",
+        "checkpoints_other": "{count} kontrol noktası",
+        "logout_title": "Çıkış yap"
+    },
+    "config": {
+        "back_title": "Geri",
+        "checkpoint": "Kontrol noktası (isteğe bağlı)",
+        "checkpoint_none": "Yok (tüm fotoğraflar)",
+        "folder": "İzlenen klasör",
+        "folder_placeholder": "Göz At'a tıklayın...",
+        "folder_browse": "Göz At...",
+        "folder_dialog": "İzlenecek klasörü seçin",
+        "folder_required": "Lütfen izlenecek bir klasör seçin.",
+        "existing_files": "Mevcut dosyalar",
+        "existing_include": "Klasördeki mevcut dosyaları yükle",
+        "existing_exclude": "Sadece yeni dosyaları yükle",
+        "parallel": "Paralel yüklemeler",
+        "parallel_hint": "Zayıf 4G'de 1 kullanın. Kararlı 5G'de 3 hızlandırır.",
+        "start": "İzlemeyi başlat"
+    },
+    "dashboard": {
+        "status_active": "Aktif",
+        "sent": "Gönderilen",
+        "pending": "Bekleyen",
+        "failed": "Başarısız",
+        "speed_unit": "KB/s",
+        "log_title": "Günlük",
+        "log_empty": "Dosyalar bekleniyor...",
+        "pause": "Duraklat",
+        "resume": "Devam et",
+        "stop": "Durdur",
+        "retry_btn": "Başarısızları tekrar dene",
+        "confirm_stop": "İzlemeyi durdurup etkinlik seçimine dönmek istiyor musunuz?",
+        "msg_paused": "Yüklemeler duraklatıldı",
+        "msg_resumed": "Yüklemeler devam ediyor",
+        "msg_stopped": "Oturum durduruldu",
+        "msg_retry_queued": "{count} dosya sıraya geri eklendi",
+        "msg_error": "Hata: {error}"
+    },
+    "watcher": {
+        "detected": "Tespit edildi ({size} MB)",
+        "scan_started": "Klasör taraması: {count} JPEG bulundu",
+        "scan_complete": "Klasör taraması tamamlandı"
+    },
+    "upload": {
+        "in_progress": "Yükleniyor...",
+        "attempt": "Yükleme (deneme {attempt}/3)",
+        "success": "OK {duration}s'de ({speed} KB/s)",
+        "failed": "Başarısız {attempt}/{max}: {error}",
+        "retry_scheduled": "{delay}s sonra tekrar deneme (deneme {attempt}/3)"
+    },
+    "connection": {
+        "restored": "Bağlantı yeniden kuruldu",
+        "lost": "Bağlantı kesildi — dosyalar birikiyor",
+        "expired": "Oturum süresi doldu — tekrar giriş yapın"
+    },
+    "complete": {
+        "with_errors": "Tamamlandı: {sent} gönderildi, {failed} başarısız",
+        "success": "Tamamlandı: {count} fotoğraf başarıyla yüklendi!"
+    }
+}

@@ -1,0 +1,77 @@
+{
+    "app": { "subtitle": "Полеви агент" },
+    "login": {
+        "email": "Имейл",
+        "password": "Парола",
+        "remember": "Запомни ме",
+        "submit": "Вход",
+        "email_placeholder": "fotograf@example.com"
+    },
+    "events": {
+        "title": "Изберете събитие",
+        "loading": "Зареждане на събития...",
+        "empty": "Няма активни събития. Създайте събитие в панела на Attimo.",
+        "photos_one": "{count} снимка онлайн",
+        "photos_other": "{count} снимки онлайн",
+        "no_photos": "Все още няма снимки",
+        "checkpoints_one": "{count} контролна точка",
+        "checkpoints_other": "{count} контролни точки",
+        "logout_title": "Изход"
+    },
+    "config": {
+        "back_title": "Назад",
+        "checkpoint": "Контролна точка (по избор)",
+        "checkpoint_none": "Няма (всички снимки)",
+        "folder": "Наблюдавана папка",
+        "folder_placeholder": "Натиснете Преглед...",
+        "folder_browse": "Преглед...",
+        "folder_dialog": "Изберете папка за наблюдение",
+        "folder_required": "Моля, изберете папка за наблюдение.",
+        "existing_files": "Съществуващи файлове",
+        "existing_include": "Качване на съществуващите файлове в папката",
+        "existing_exclude": "Качване само на нови файлове",
+        "parallel": "Паралелни качвания",
+        "parallel_hint": "При слаб 4G използвайте 1. При стабилен 5G, 3 ускорява.",
+        "start": "Стартиране на наблюдение"
+    },
+    "dashboard": {
+        "status_active": "Активен",
+        "sent": "Изпратени",
+        "pending": "Чакащи",
+        "failed": "Неуспешни",
+        "speed_unit": "KB/s",
+        "log_title": "Дневник",
+        "log_empty": "Изчакване на файлове...",
+        "pause": "Пауза",
+        "resume": "Продължи",
+        "stop": "Спри",
+        "retry_btn": "Повтори неуспешните",
+        "confirm_stop": "Спиране на наблюдението и връщане към избора на събитие?",
+        "msg_paused": "Качванията са на пауза",
+        "msg_resumed": "Качванията са възобновени",
+        "msg_stopped": "Сесията е спряна",
+        "msg_retry_queued": "{count} файл(а) върнати в опашката",
+        "msg_error": "Грешка: {error}"
+    },
+    "watcher": {
+        "detected": "Открит ({size} MB)",
+        "scan_started": "Сканиране на папка: {count} JPEG намерени",
+        "scan_complete": "Сканирането на папката завърши"
+    },
+    "upload": {
+        "in_progress": "Качване...",
+        "attempt": "Качване (опит {attempt}/3)",
+        "success": "OK за {duration}s ({speed} KB/s)",
+        "failed": "Неуспех {attempt}/{max}: {error}",
+        "retry_scheduled": "Нов опит след {delay}s (опит {attempt}/3)"
+    },
+    "connection": {
+        "restored": "Връзката е възстановена",
+        "lost": "Връзката е загубена — файловете се натрупват",
+        "expired": "Сесията изтече — влезте отново"
+    },
+    "complete": {
+        "with_errors": "Готово: {sent} изпратени, {failed} неуспешни",
+        "success": "Готово: {count} снимки качени успешно!"
+    }
+}

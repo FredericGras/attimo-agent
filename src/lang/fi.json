@@ -1,0 +1,87 @@
+{
+    "app": {
+        "subtitle": "Kenttäagentti"
+    },
+
+    "login": {
+        "email": "Sähköposti",
+        "password": "Salasana",
+        "remember": "Muista minut",
+        "submit": "Kirjaudu sisään",
+        "email_placeholder": "valokuvaaja@example.com"
+    },
+
+    "events": {
+        "title": "Valitse tapahtumasi",
+        "loading": "Ladataan tapahtumia...",
+        "empty": "Ei aktiivisia tapahtumia. Luo tapahtuma Attimo-hallintapaneelissasi.",
+        "photos_one": "{count} kuva verkossa",
+        "photos_other": "{count} kuvaa verkossa",
+        "no_photos": "Ei vielä kuvia",
+        "checkpoints_one": "{count} tarkistuspiste",
+        "checkpoints_other": "{count} tarkistuspistettä",
+        "logout_title": "Kirjaudu ulos"
+    },
+
+    "config": {
+        "back_title": "Takaisin",
+        "checkpoint": "Tarkistuspiste (valinnainen)",
+        "checkpoint_none": "Ei mitään (kaikki kuvat)",
+        "folder": "Valvottu kansio",
+        "folder_placeholder": "Napsauta Selaa...",
+        "folder_browse": "Selaa...",
+        "folder_dialog": "Valitse valvottava kansio",
+        "folder_required": "Valitse valvottava kansio.",
+        "existing_files": "Olemassa olevat tiedostot",
+        "existing_include": "Lataa kansion olemassa olevat tiedostot",
+        "existing_exclude": "Lataa vain uudet tiedostot",
+        "parallel": "Rinnakkaiset lataukset",
+        "parallel_hint": "Heikolla 4G-yhteydellä käytä 1. Vakaalla 5G-yhteydellä 3 nopeuttaa.",
+        "start": "Aloita valvonta"
+    },
+
+    "dashboard": {
+        "status_active": "Aktiivinen",
+        "sent": "Lähetetyt",
+        "pending": "Odottavat",
+        "failed": "Epäonnistuneet",
+        "speed_unit": "KB/s",
+        "log_title": "Loki",
+        "log_empty": "Odotetaan tiedostoja...",
+        "pause": "Tauko",
+        "resume": "Jatka",
+        "stop": "Pysäytä",
+        "retry_btn": "Yritä epäonnistuneita uudelleen",
+        "confirm_stop": "Pysäytä valvonta ja palaa tapahtuman valintaan?",
+        "msg_paused": "Lataukset tauolla",
+        "msg_resumed": "Lataukset jatkettu",
+        "msg_stopped": "Istunto pysäytetty",
+        "msg_retry_queued": "{count} tiedosto(a) lisätty uudelleen jonoon",
+        "msg_error": "Virhe: {error}"
+    },
+
+    "watcher": {
+        "detected": "Havaittu ({size} Mt)",
+        "scan_started": "Kansioskannaus: {count} JPEG-tiedostoa löytyi",
+        "scan_complete": "Kansioskannaus valmis"
+    },
+
+    "upload": {
+        "in_progress": "Ladataan...",
+        "attempt": "Lataus (yritys {attempt}/3)",
+        "success": "OK {duration}s:ssa ({speed} KB/s)",
+        "failed": "Epäonnistui {attempt}/{max}: {error}",
+        "retry_scheduled": "Uusi yritys {delay}s:n kuluttua (yritys {attempt}/3)"
+    },
+
+    "connection": {
+        "restored": "Yhteys palautettu",
+        "lost": "Yhteys katkennut — tiedostot kerääntyvät",
+        "expired": "Istunto vanhentunut — kirjaudu uudelleen"
+    },
+
+    "complete": {
+        "with_errors": "Valmis: {sent} lähetetty, {failed} epäonnistunut",
+        "success": "Valmis: {count} kuvaa ladattu onnistuneesti!"
+    }
+}

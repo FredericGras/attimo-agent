@@ -1,0 +1,77 @@
+{
+    "app": { "subtitle": "Terenski agent" },
+    "login": {
+        "email": "E-pošta",
+        "password": "Lozinka",
+        "remember": "Zapamti me",
+        "submit": "Prijava",
+        "email_placeholder": "fotograf@example.com"
+    },
+    "events": {
+        "title": "Odaberite svoj događaj",
+        "loading": "Učitavanje događaja...",
+        "empty": "Nema aktivnih događaja. Kreirajte događaj na Attimo upravljačkoj ploči.",
+        "photos_one": "{count} fotografija online",
+        "photos_other": "{count} fotografija online",
+        "no_photos": "Još nema fotografija",
+        "checkpoints_one": "{count} kontrolna točka",
+        "checkpoints_other": "{count} kontrolnih točaka",
+        "logout_title": "Odjava"
+    },
+    "config": {
+        "back_title": "Natrag",
+        "checkpoint": "Kontrolna točka (opcionalno)",
+        "checkpoint_none": "Nema (sve fotografije)",
+        "folder": "Praćena mapa",
+        "folder_placeholder": "Kliknite na Pregledaj...",
+        "folder_browse": "Pregledaj...",
+        "folder_dialog": "Odaberite mapu za praćenje",
+        "folder_required": "Molimo odaberite mapu za praćenje.",
+        "existing_files": "Postojeće datoteke",
+        "existing_include": "Prenesi postojeće datoteke iz mape",
+        "existing_exclude": "Prenesi samo nove datoteke",
+        "parallel": "Paralelni prijenosi",
+        "parallel_hint": "Na slabom 4G, koristite 1. Na stabilnom 5G, 3 ubrzava.",
+        "start": "Pokreni praćenje"
+    },
+    "dashboard": {
+        "status_active": "Aktivno",
+        "sent": "Poslano",
+        "pending": "Na čekanju",
+        "failed": "Neuspjelo",
+        "speed_unit": "KB/s",
+        "log_title": "Dnevnik",
+        "log_empty": "Čekanje na datoteke...",
+        "pause": "Pauza",
+        "resume": "Nastavi",
+        "stop": "Zaustavi",
+        "retry_btn": "Ponovi neuspjele",
+        "confirm_stop": "Zaustaviti praćenje i vratiti se na odabir događaja?",
+        "msg_paused": "Prijenosi pauzirani",
+        "msg_resumed": "Prijenosi nastavljeni",
+        "msg_stopped": "Sesija zaustavljena",
+        "msg_retry_queued": "{count} datoteka vraćeno u red",
+        "msg_error": "Greška: {error}"
+    },
+    "watcher": {
+        "detected": "Otkriveno ({size} MB)",
+        "scan_started": "Skeniranje mape: {count} JPEG pronađeno",
+        "scan_complete": "Skeniranje mape završeno"
+    },
+    "upload": {
+        "in_progress": "Prijenos...",
+        "attempt": "Prijenos (pokušaj {attempt}/3)",
+        "success": "OK za {duration}s ({speed} KB/s)",
+        "failed": "Neuspjeh {attempt}/{max}: {error}",
+        "retry_scheduled": "Ponovni pokušaj za {delay}s (pokušaj {attempt}/3)"
+    },
+    "connection": {
+        "restored": "Veza obnovljena",
+        "lost": "Veza izgubljena — datoteke se gomilaju",
+        "expired": "Sesija istekla — prijavite se ponovo"
+    },
+    "complete": {
+        "with_errors": "Gotovo: {sent} poslano, {failed} neuspjelo",
+        "success": "Gotovo: {count} fotografija uspješno preneseno!"
+    }
+}
