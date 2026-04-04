@@ -1,0 +1,46 @@
+# ═══════════════════════════════════════════════════════
+# ATTIMO AGENT TERRAIN — Build macOS via GitHub Actions
+# Compile le .dmg sur un Mac virtuel hébergé par GitHub
+# Déclenché manuellement depuis l'onglet Actions de GitHub
+# ═══════════════════════════════════════════════════════
+
+name: Build macOS
+
+# Déclenchement manuel uniquement (bouton "Run workflow" sur GitHub)
+on:
+  workflow_dispatch:
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+      # 1. Récupérer le code depuis le dépôt
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Installer Rust
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      # 3. Installer Node.js
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # 4. Installer les dépendances npm
+      - name: Install npm dependencies
+        run: npm install
+
+      # 5. Compiler l'application Tauri pour macOS
+      - name: Build Tauri app
+        run: npm run tauri build
+
+      # 6. Uploader le .dmg comme artefact téléchargeable
+      - name: Upload macOS DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: Attimo-Agent-Terrain-macOS
+          path: src-tauri/target/release/bundle/dmg/*.dmg
+          retention-days: 90
