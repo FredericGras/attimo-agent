@@ -37,6 +37,14 @@ pub fn open_db() -> Result<Connection> {
     Ok(conn)
 }
 
+/// Ouvre une connexion à la base locale.
+///
+/// Exposée pour que le module de file vidéo puisse s'y greffer : une seule
+/// base pour tout l'agent, plutôt qu'un second fichier à gérer.
+pub fn connexion() -> Result<Connection> {
+    open_db()
+}
+
 /// Crée les tables si elles n'existent pas encore
 pub fn init_db() -> Result<()> {
     let conn = open_db()?;

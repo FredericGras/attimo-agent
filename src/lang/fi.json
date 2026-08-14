@@ -2,15 +2,16 @@
     "app": {
         "subtitle": "Kenttäagentti"
     },
-
     "login": {
         "email": "Sähköposti",
         "password": "Salasana",
         "remember": "Muista minut",
         "submit": "Kirjaudu sisään",
-        "email_placeholder": "valokuvaaja@example.com"
+        "email_placeholder": "valokuvaaja@example.com",
+        "app_password_label": "Sovellussalasana",
+        "app_password_placeholder": "attimo_pat_...",
+        "app_password_help": "Luo sovellussalasana Attimo-tietoturvaprofiilistasi (alue Agent Studio) ja liitä se tähän."
     },
-
     "events": {
         "title": "Valitse tapahtumasi",
         "loading": "Ladataan tapahtumia...",
@@ -22,7 +23,6 @@
         "checkpoints_other": "{count} tarkistuspistettä",
         "logout_title": "Kirjaudu ulos"
     },
-
     "config": {
         "back_title": "Takaisin",
         "checkpoint": "Tarkistuspiste (valinnainen)",
@@ -37,11 +37,43 @@
         "existing_exclude": "Lataa vain uudet tiedostot",
         "parallel": "Rinnakkaiset lataukset",
         "parallel_hint": "Heikolla 4G-yhteydellä käytä 1. Vakaalla 5G-yhteydellä 3 nopeuttaa.",
-        "start": "Aloita valvonta"
+        "start": "Aloita istunto",
+        "photos_title": "Kuvat",
+        "video_title": "Video",
+        "video_checkpoint": "Kuvattu tarkastuspiste (valinnainen)",
+        "video_checkpoint_none": "Ei mitään (kaikki videot)",
+        "video_camera": "Kamera",
+        "video_camera_required": "Valitse kamera tai kytke videolohko pois.",
+        "video_micro": "Mikrofoni",
+        "video_micro_none": "Ei mitään (video ilman ääntä)",
+        "video_micro_warning": "Ilman mikrofonia videot jäävät äänettömiksi.",
+        "video_devices_loading": "Etsitään laitteita...",
+        "video_devices_none": "Kameraa ei löytynyt",
+        "video_devices_refresh": "Etsi uudelleen",
+        "video_device_mode": "{width}×{height}, {fps} kuvaa sekunnissa",
+        "video_quality": "Laatu",
+        "video_quality_option": "{width} × {height} — {fps} kuvaa sekunnissa",
+        "video_quality_hint": "{rate} Mb/s. Pienempi tarkkuus täyttää levyä vähemmän ja luetaan yhtä hyvin.",
+        "video_folder": "Tallennuskansio",
+        "video_folder_dialog": "Valitse videon tallennuskansio",
+        "video_folder_required": "Valitse videolle tallennuskansio.",
+        "video_split": "Jako",
+        "video_clip_unit": "s klippiä kohti",
+        "video_overlap_unit": "s limitystä",
+        "video_split_ok": "Klippi alkaa {step} sekunnin välein, {segment} sekunnin paloina ({count} klippiä kohti).",
+        "video_split_warning": "Hankala jako: {segment} sekunnin paloja, {count} klippiä kohti. Kokeile tasaisempia arvoja.",
+        "video_split_invalid": "Limityksen on oltava lyhyempi kuin klipin kesto.",
+        "video_send_hd": "Lähetä täysi laatu kilpailun aikana",
+        "video_send_hd_hint": "Muuten klipit kertyvät ja lähtevät jälkeenpäin. Ruuhkaisessa verkossa tämä pitää kuvien lähetyksen nopeana.",
+        "disk_pending": "Valitse kamera ja kansio, niin tilantarve arvioidaan.",
+        "disk_rate": "{rate} Gt tunnissa",
+        "disk_hours": "noin {hours} h kuvausta",
+        "disk_detail": "{free} Gt vapaana, {reserved} Gt varattu järjestelmälle",
+        "nothing_enabled": "Kytke päälle vähintään kuvat tai video."
     },
-
     "dashboard": {
         "status_active": "Aktiivinen",
+        "photos_section": "Kuvat",
         "sent": "Lähetetyt",
         "pending": "Odottavat",
         "failed": "Epäonnistuneet",
@@ -50,8 +82,27 @@
         "log_empty": "Odotetaan tiedostoja...",
         "pause": "Tauko",
         "resume": "Jatka",
-        "stop": "Pysäytä",
+        "stop": "Päätä istunto",
         "retry_btn": "Yritä epäonnistuneita uudelleen",
+        "back_title": "Asetukset",
+        "video_recording": "Kuvaus käynnissä",
+        "video_stop": "Pysäytä video",
+        "video_clips": "klippiä tehty",
+        "video_frames": "analyysikuvaa",
+        "video_queue": "jonossa",
+        "video_queue_size": "jonossa — {size} Mt",
+        "video_disk": "Levytila",
+        "video_disk_autonomy": "{hours} h jäljellä",
+        "video_disk_minutes": "{minutes} min jäljellä",
+        "video_disk_detail": "{written} Gt kirjoitettu, {rate} Gt/h mitattu",
+        "video_disk_estimated": "{written} Gt kirjoitettu, {rate} Gt/h arvioitu",
+        "video_started": "Kuvaus alkoi — klippi {step} sekunnin välein",
+        "video_stopped": "Kuvaus päättyi — {clips} klippiä tehty",
+        "video_clip_ready": "Klippi {index} koottu",
+        "video_clip_sent": "Klippi {index} lähetetty",
+        "video_frames_ready": "{count} analyysikuvaa poimittu",
+        "video_bibs_read": "{count} kilpailunumeroa luettu",
+        "video_disk_full": "Levytila ei riitä — kuvaus pysäytetty",
         "confirm_stop": "Pysäytä valvonta ja palaa tapahtuman valintaan?",
         "msg_paused": "Lataukset tauolla",
         "msg_resumed": "Lataukset jatkettu",
@@ -59,13 +110,11 @@
         "msg_retry_queued": "{count} tiedosto(a) lisätty uudelleen jonoon",
         "msg_error": "Virhe: {error}"
     },
-
     "watcher": {
         "detected": "Havaittu ({size} Mt)",
         "scan_started": "Kansioskannaus: {count} JPEG-tiedostoa löytyi",
         "scan_complete": "Kansioskannaus valmis"
     },
-
     "upload": {
         "in_progress": "Ladataan...",
         "attempt": "Lataus (yritys {attempt}/3)",
@@ -73,13 +122,11 @@
         "failed": "Epäonnistui {attempt}/{max}: {error}",
         "retry_scheduled": "Uusi yritys {delay}s:n kuluttua (yritys {attempt}/3)"
     },
-
     "connection": {
         "restored": "Yhteys palautettu",
         "lost": "Yhteys katkennut — tiedostot kerääntyvät",
         "expired": "Istunto vanhentunut — kirjaudu uudelleen"
     },
-
     "complete": {
         "with_errors": "Valmis: {sent} lähetetty, {failed} epäonnistunut",
         "success": "Valmis: {count} kuvaa ladattu onnistuneesti!"

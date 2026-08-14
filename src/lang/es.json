@@ -2,15 +2,16 @@
     "app": {
         "subtitle": "Agente de Campo"
     },
-
     "login": {
         "email": "Correo electrónico",
         "password": "Contraseña",
         "remember": "Recordarme",
         "submit": "Iniciar sesión",
-        "email_placeholder": "fotografo@example.com"
+        "email_placeholder": "fotografo@example.com",
+        "app_password_label": "Contraseña de aplicación",
+        "app_password_placeholder": "attimo_pat_...",
+        "app_password_help": "Genere una contraseña de aplicación desde su perfil de seguridad Attimo (alcance Agent Studio) y péguela aquí."
     },
-
     "events": {
         "title": "Elija su evento",
         "loading": "Cargando eventos...",
@@ -22,7 +23,6 @@
         "checkpoints_other": "{count} checkpoints",
         "logout_title": "Cerrar sesión"
     },
-
     "config": {
         "back_title": "Volver",
         "checkpoint": "Checkpoint (opcional)",
@@ -37,11 +37,43 @@
         "existing_exclude": "Subir solo los archivos nuevos",
         "parallel": "Subidas en paralelo",
         "parallel_hint": "Con 4G débil, use 1. Con 5G estable, 3 acelera.",
-        "start": "Iniciar vigilancia"
+        "start": "Iniciar la sesión",
+        "photos_title": "Fotos",
+        "video_title": "Vídeo",
+        "video_checkpoint": "Punto de control filmado (opcional)",
+        "video_checkpoint_none": "Ninguno (todos los vídeos)",
+        "video_camera": "Cámara",
+        "video_camera_required": "Elija una cámara o desactive el bloque de vídeo.",
+        "video_micro": "Micrófono",
+        "video_micro_none": "Ninguno (vídeo sin sonido)",
+        "video_micro_warning": "Sin micrófono, los vídeos no tendrán sonido.",
+        "video_devices_loading": "Buscando dispositivos...",
+        "video_devices_none": "No se ha detectado ninguna cámara",
+        "video_devices_refresh": "Buscar de nuevo",
+        "video_device_mode": "{width}×{height} a {fps} imágenes por segundo",
+        "video_quality": "Calidad",
+        "video_quality_option": "{width} × {height} — {fps} imágenes por segundo",
+        "video_quality_hint": "{rate} Mb/s. Una resolución menor llena menos el disco y se lee igual de bien.",
+        "video_folder": "Carpeta de grabación",
+        "video_folder_dialog": "Elija la carpeta de grabación de vídeo",
+        "video_folder_required": "Elija una carpeta de grabación para el vídeo.",
+        "video_split": "División",
+        "video_clip_unit": "s por clip",
+        "video_overlap_unit": "s de solapamiento",
+        "video_split_ok": "Un clip empieza cada {step} s, en fragmentos de {segment} s ({count} por clip).",
+        "video_split_warning": "División poco práctica: fragmentos de {segment} s, {count} por clip. Pruebe valores más redondos.",
+        "video_split_invalid": "El solapamiento debe ser menor que la duración del clip.",
+        "video_send_hd": "Enviar la calidad completa durante la carrera",
+        "video_send_hd_hint": "Si no, los clips se acumulan y saldrán a la vuelta. En una red saturada, así no se ralentiza el envío de fotos.",
+        "disk_pending": "Elija una cámara y una carpeta para estimar el espacio necesario.",
+        "disk_rate": "{rate} GB por hora",
+        "disk_hours": "unas {hours} h de grabación",
+        "disk_detail": "{free} GB libres, {reserved} GB reservados para el sistema",
+        "nothing_enabled": "Active al menos las fotos o el vídeo."
     },
-
     "dashboard": {
         "status_active": "Activo",
+        "photos_section": "Fotos",
         "sent": "Enviadas",
         "pending": "Pendientes",
         "failed": "Fallidas",
@@ -50,8 +82,27 @@
         "log_empty": "Esperando archivos...",
         "pause": "Pausa",
         "resume": "Reanudar",
-        "stop": "Detener",
+        "stop": "Terminar la sesión",
         "retry_btn": "Reintentar fallidas",
+        "back_title": "Ajustes",
+        "video_recording": "Grabación en curso",
+        "video_stop": "Detener el vídeo",
+        "video_clips": "clips creados",
+        "video_frames": "imágenes de análisis",
+        "video_queue": "en cola",
+        "video_queue_size": "en cola — {size} MB",
+        "video_disk": "Espacio en disco",
+        "video_disk_autonomy": "{hours} h restantes",
+        "video_disk_minutes": "{minutes} min restantes",
+        "video_disk_detail": "{written} GB escritos, {rate} GB/h medidos",
+        "video_disk_estimated": "{written} GB escritos, {rate} GB/h estimados",
+        "video_started": "Grabación iniciada — un clip cada {step} s",
+        "video_stopped": "Grabación detenida — {clips} clip(s) creado(s)",
+        "video_clip_ready": "Clip {index} montado",
+        "video_clip_sent": "Clip {index} enviado",
+        "video_frames_ready": "{count} imagen(es) de análisis extraída(s)",
+        "video_bibs_read": "{count} dorsal(es) leído(s)",
+        "video_disk_full": "Espacio en disco insuficiente — grabación detenida",
         "confirm_stop": "¿Detener la vigilancia y volver a la selección de evento?",
         "msg_paused": "Subidas en pausa",
         "msg_resumed": "Subidas reanudadas",
@@ -59,13 +110,11 @@
         "msg_retry_queued": "{count} archivo(s) reencolados",
         "msg_error": "Error: {error}"
     },
-
     "watcher": {
         "detected": "Detectado ({size} MB)",
         "scan_started": "Escaneo de carpeta: {count} JPEGs encontrados",
         "scan_complete": "Escaneo de carpeta completado"
     },
-
     "upload": {
         "in_progress": "Subiendo...",
         "attempt": "Subida (intento {attempt}/3)",
@@ -73,13 +122,11 @@
         "failed": "Fallo {attempt}/{max}: {error}",
         "retry_scheduled": "Reintento en {delay}s (intento {attempt}/3)"
     },
-
     "connection": {
         "restored": "Conexión restablecida",
         "lost": "Conexión perdida — los archivos se acumulan",
         "expired": "Sesión expirada — inicie sesión de nuevo"
     },
-
     "complete": {
         "with_errors": "Terminado: {sent} enviadas, {failed} fallidas",
         "success": "¡Terminado: {count} fotos subidas con éxito!"

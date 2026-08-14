@@ -2,15 +2,16 @@
     "app": {
         "subtitle": "Feltagent"
     },
-
     "login": {
         "email": "E-post",
         "password": "Passord",
         "remember": "Husk meg",
         "submit": "Logg inn",
-        "email_placeholder": "fotograf@example.com"
+        "email_placeholder": "fotograf@example.com",
+        "app_password_label": "App-passord",
+        "app_password_placeholder": "attimo_pat_...",
+        "app_password_help": "Generer et app-passord fra Attimo-sikkerhetsprofilen din (omfang Agent Studio), og lim det inn her."
     },
-
     "events": {
         "title": "Velg ditt arrangement",
         "loading": "Laster arrangementer...",
@@ -22,7 +23,6 @@
         "checkpoints_other": "{count} checkpoints",
         "logout_title": "Logg ut"
     },
-
     "config": {
         "back_title": "Tilbake",
         "checkpoint": "Checkpoint (valgfritt)",
@@ -37,11 +37,43 @@
         "existing_exclude": "Laste opp bare nye filer",
         "parallel": "Parallelle opplastinger",
         "parallel_hint": "Med svakt 4G, bruk 1. Med stabilt 5G gir 3 raskere opplasting.",
-        "start": "Start overvåking"
+        "start": "Start økten",
+        "photos_title": "Bilder",
+        "video_title": "Video",
+        "video_checkpoint": "Filmet checkpoint (valgfritt)",
+        "video_checkpoint_none": "Ingen (alle videoer)",
+        "video_camera": "Kamera",
+        "video_camera_required": "Velg et kamera, eller slå av videoblokken.",
+        "video_micro": "Mikrofon",
+        "video_micro_none": "Ingen (video uten lyd)",
+        "video_micro_warning": "Uten mikrofon blir videoene uten lyd.",
+        "video_devices_loading": "Søker etter enheter...",
+        "video_devices_none": "Fant ingen kamera",
+        "video_devices_refresh": "Søk på nytt",
+        "video_device_mode": "{width}×{height} ved {fps} bilder per sekund",
+        "video_quality": "Kvalitet",
+        "video_quality_option": "{width} × {height} — {fps} bilder per sekund",
+        "video_quality_hint": "{rate} Mb/s. Lavere oppløsning fyller disken mindre og leses like godt.",
+        "video_folder": "Opptaksmappe",
+        "video_folder_dialog": "Velg mappe for videoopptak",
+        "video_folder_required": "Velg en opptaksmappe for videoen.",
+        "video_split": "Oppdeling",
+        "video_clip_unit": "s per klipp",
+        "video_overlap_unit": "s overlapp",
+        "video_split_ok": "Et klipp starter hvert {step}. sekund, i biter på {segment} s ({count} per klipp).",
+        "video_split_warning": "Upraktisk oppdeling: biter på {segment} s, {count} per klipp. Prøv rundere verdier.",
+        "video_split_invalid": "Overlappet må være kortere enn klippets varighet.",
+        "video_send_hd": "Send full kvalitet under løpet",
+        "video_send_hd_hint": "Ellers hoper klippene seg opp og sendes etterpå. På et travelt nett holder det bildeopplastingen rask.",
+        "disk_pending": "Velg kamera og mappe for å anslå nødvendig plass.",
+        "disk_rate": "{rate} GB per time",
+        "disk_hours": "omtrent {hours} t opptak",
+        "disk_detail": "{free} GB ledig, {reserved} GB reservert til systemet",
+        "nothing_enabled": "Slå på minst bilder eller video."
     },
-
     "dashboard": {
         "status_active": "Aktiv",
+        "photos_section": "Bilder",
         "sent": "Sendt",
         "pending": "Ventende",
         "failed": "Mislykket",
@@ -50,8 +82,27 @@
         "log_empty": "Venter på filer...",
         "pause": "Pause",
         "resume": "Gjenoppta",
-        "stop": "Stopp",
+        "stop": "Avslutt økten",
         "retry_btn": "Prøv mislykkede på nytt",
+        "back_title": "Innstillinger",
+        "video_recording": "Opptak pågår",
+        "video_stop": "Stopp videoen",
+        "video_clips": "klipp laget",
+        "video_frames": "analysebilder",
+        "video_queue": "i kø",
+        "video_queue_size": "i kø — {size} MB",
+        "video_disk": "Diskplass",
+        "video_disk_autonomy": "{hours} t igjen",
+        "video_disk_minutes": "{minutes} min igjen",
+        "video_disk_detail": "{written} GB skrevet, {rate} GB/t målt",
+        "video_disk_estimated": "{written} GB skrevet, {rate} GB/t anslått",
+        "video_started": "Opptak startet — ett klipp hvert {step}. sekund",
+        "video_stopped": "Opptak stoppet — {clips} klipp laget",
+        "video_clip_ready": "Klipp {index} satt sammen",
+        "video_clip_sent": "Klipp {index} sendt",
+        "video_frames_ready": "{count} analysebilde(r) hentet ut",
+        "video_bibs_read": "{count} startnummer avlest",
+        "video_disk_full": "Ikke nok diskplass — opptaket stoppet",
         "confirm_stop": "Stopp overvåking og gå tilbake til arrangementvalg?",
         "msg_paused": "Opplastinger på pause",
         "msg_resumed": "Opplastinger gjenopptatt",
@@ -59,13 +110,11 @@
         "msg_retry_queued": "{count} fil(er) satt i kø igjen",
         "msg_error": "Feil: {error}"
     },
-
     "watcher": {
         "detected": "Oppdaget ({size} MB)",
         "scan_started": "Mappeskanning: {count} JPEGs funnet",
         "scan_complete": "Mappeskanning fullført"
     },
-
     "upload": {
         "in_progress": "Laster opp...",
         "attempt": "Opplasting (forsøk {attempt}/3)",
@@ -73,13 +122,11 @@
         "failed": "Mislykket {attempt}/{max}: {error}",
         "retry_scheduled": "Nytt forsøk om {delay}s (forsøk {attempt}/3)"
     },
-
     "connection": {
         "restored": "Tilkobling gjenopprettet",
         "lost": "Tilkobling mistet — filer samles opp",
         "expired": "Økt utløpt — logg inn igjen"
     },
-
     "complete": {
         "with_errors": "Ferdig: {sent} sendt, {failed} mislykket",
         "success": "Ferdig: {count} bilder lastet opp!"

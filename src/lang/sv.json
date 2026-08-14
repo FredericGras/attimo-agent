@@ -2,15 +2,16 @@
     "app": {
         "subtitle": "Fältagent"
     },
-
     "login": {
         "email": "E-post",
         "password": "Lösenord",
         "remember": "Kom ihåg mig",
         "submit": "Logga in",
-        "email_placeholder": "fotograf@example.com"
+        "email_placeholder": "fotograf@example.com",
+        "app_password_label": "Applösenord",
+        "app_password_placeholder": "attimo_pat_...",
+        "app_password_help": "Generera ett applösenord från din Attimo-säkerhetsprofil (omfattning Agent Studio) och klistra in det här."
     },
-
     "events": {
         "title": "Välj ditt evenemang",
         "loading": "Laddar evenemang...",
@@ -22,7 +23,6 @@
         "checkpoints_other": "{count} checkpoints",
         "logout_title": "Logga ut"
     },
-
     "config": {
         "back_title": "Tillbaka",
         "checkpoint": "Checkpoint (valfritt)",
@@ -37,11 +37,43 @@
         "existing_exclude": "Ladda upp bara nya filer",
         "parallel": "Parallella uppladdningar",
         "parallel_hint": "Med svagt 4G, använd 1. Med stabilt 5G snabbar 3 upp.",
-        "start": "Starta övervakning"
+        "start": "Starta sessionen",
+        "photos_title": "Foton",
+        "video_title": "Video",
+        "video_checkpoint": "Filmad kontrollpunkt (valfritt)",
+        "video_checkpoint_none": "Ingen (alla videor)",
+        "video_camera": "Kamera",
+        "video_camera_required": "Välj en kamera eller stäng av videoblocket.",
+        "video_micro": "Mikrofon",
+        "video_micro_none": "Ingen (video utan ljud)",
+        "video_micro_warning": "Utan mikrofon blir videorna ljudlösa.",
+        "video_devices_loading": "Söker enheter...",
+        "video_devices_none": "Ingen kamera hittades",
+        "video_devices_refresh": "Sök igen",
+        "video_device_mode": "{width}×{height} vid {fps} bilder per sekund",
+        "video_quality": "Kvalitet",
+        "video_quality_option": "{width} × {height} — {fps} bilder per sekund",
+        "video_quality_hint": "{rate} Mb/s. En lägre upplösning fyller disken mindre och läses lika bra.",
+        "video_folder": "Inspelningsmapp",
+        "video_folder_dialog": "Välj mapp för videoinspelning",
+        "video_folder_required": "Välj en inspelningsmapp för videon.",
+        "video_split": "Uppdelning",
+        "video_clip_unit": "s per klipp",
+        "video_overlap_unit": "s överlapp",
+        "video_split_ok": "Ett klipp startar var {step} s, i bitar om {segment} s ({count} per klipp).",
+        "video_split_warning": "Opraktisk uppdelning: bitar om {segment} s, {count} per klipp. Prova jämnare värden.",
+        "video_split_invalid": "Överlappet måste vara kortare än klippets längd.",
+        "video_send_hd": "Skicka full kvalitet under loppet",
+        "video_send_hd_hint": "Annars samlas klippen och skickas efteråt. På ett belastat nät håller det fotouppladdningen snabb.",
+        "disk_pending": "Välj kamera och mapp för att uppskatta utrymmet som behövs.",
+        "disk_rate": "{rate} GB per timme",
+        "disk_hours": "cirka {hours} h inspelning",
+        "disk_detail": "{free} GB ledigt, {reserved} GB reserverat för systemet",
+        "nothing_enabled": "Slå på minst foton eller video."
     },
-
     "dashboard": {
         "status_active": "Aktiv",
+        "photos_section": "Foton",
         "sent": "Skickade",
         "pending": "Väntande",
         "failed": "Misslyckade",
@@ -50,8 +82,27 @@
         "log_empty": "Väntar på filer...",
         "pause": "Pausa",
         "resume": "Återuppta",
-        "stop": "Stoppa",
+        "stop": "Avsluta sessionen",
         "retry_btn": "Försök misslyckade igen",
+        "back_title": "Inställningar",
+        "video_recording": "Inspelning pågår",
+        "video_stop": "Stoppa videon",
+        "video_clips": "skapade klipp",
+        "video_frames": "analysbilder",
+        "video_queue": "i kö",
+        "video_queue_size": "i kö — {size} MB",
+        "video_disk": "Diskutrymme",
+        "video_disk_autonomy": "{hours} h kvar",
+        "video_disk_minutes": "{minutes} min kvar",
+        "video_disk_detail": "{written} GB skrivet, {rate} GB/h uppmätt",
+        "video_disk_estimated": "{written} GB skrivet, {rate} GB/h uppskattat",
+        "video_started": "Inspelning startad — ett klipp var {step} s",
+        "video_stopped": "Inspelning stoppad — {clips} klipp skapade",
+        "video_clip_ready": "Klipp {index} sammanfogat",
+        "video_clip_sent": "Klipp {index} skickat",
+        "video_frames_ready": "{count} analysbild(er) uttagna",
+        "video_bibs_read": "{count} nummerlapp(ar) avlästa",
+        "video_disk_full": "Otillräckligt diskutrymme — inspelningen stoppad",
         "confirm_stop": "Stoppa övervakning och gå tillbaka till evenemangsval?",
         "msg_paused": "Uppladdningar pausade",
         "msg_resumed": "Uppladdningar återupptagna",
@@ -59,13 +110,11 @@
         "msg_retry_queued": "{count} fil(er) omköade",
         "msg_error": "Fel: {error}"
     },
-
     "watcher": {
         "detected": "Upptäckt ({size} MB)",
         "scan_started": "Mappskanning: {count} JPEGs hittade",
         "scan_complete": "Mappskanning klar"
     },
-
     "upload": {
         "in_progress": "Laddar upp...",
         "attempt": "Uppladdning (försök {attempt}/3)",
@@ -73,13 +122,11 @@
         "failed": "Misslyckades {attempt}/{max}: {error}",
         "retry_scheduled": "Nytt försök om {delay}s (försök {attempt}/3)"
     },
-
     "connection": {
         "restored": "Anslutning återställd",
         "lost": "Anslutning förlorad — filer köas",
         "expired": "Session utgången — logga in igen"
     },
-
     "complete": {
         "with_errors": "Klart: {sent} skickade, {failed} misslyckade",
         "success": "Klart: {count} foton uppladdade!"

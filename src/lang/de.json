@@ -2,15 +2,16 @@
     "app": {
         "subtitle": "Feld-Agent"
     },
-
     "login": {
         "email": "E-Mail",
         "password": "Passwort",
         "remember": "Angemeldet bleiben",
         "submit": "Anmelden",
-        "email_placeholder": "fotograf@example.com"
+        "email_placeholder": "fotograf@example.com",
+        "app_password_label": "Anwendungspasswort",
+        "app_password_placeholder": "attimo_pat_...",
+        "app_password_help": "Generieren Sie ein Anwendungspasswort in Ihrem Attimo-Sicherheitsprofil (Bereich Agent Studio) und fügen Sie es hier ein."
     },
-
     "events": {
         "title": "Wählen Sie Ihr Event",
         "loading": "Events werden geladen...",
@@ -22,7 +23,6 @@
         "checkpoints_other": "{count} Checkpoints",
         "logout_title": "Abmelden"
     },
-
     "config": {
         "back_title": "Zurück",
         "checkpoint": "Checkpoint (optional)",
@@ -37,11 +37,43 @@
         "existing_exclude": "Nur neue Dateien hochladen",
         "parallel": "Parallele Uploads",
         "parallel_hint": "Bei schwachem 4G verwenden Sie 1. Bei stabilem 5G beschleunigt 3.",
-        "start": "Überwachung starten"
+        "start": "Sitzung starten",
+        "photos_title": "Fotos",
+        "video_title": "Video",
+        "video_checkpoint": "Gefilmter Checkpoint (optional)",
+        "video_checkpoint_none": "Keiner (alle Videos)",
+        "video_camera": "Kamera",
+        "video_camera_required": "Wählen Sie eine Kamera oder schalten Sie den Videobereich aus.",
+        "video_micro": "Mikrofon",
+        "video_micro_none": "Keines (Video ohne Ton)",
+        "video_micro_warning": "Ohne Mikrofon bleiben die Videos stumm.",
+        "video_devices_loading": "Geräte werden gesucht...",
+        "video_devices_none": "Keine Kamera erkannt",
+        "video_devices_refresh": "Erneut suchen",
+        "video_device_mode": "{width}×{height} bei {fps} Bildern pro Sekunde",
+        "video_quality": "Qualität",
+        "video_quality_option": "{width} × {height} — {fps} Bilder pro Sekunde",
+        "video_quality_hint": "{rate} Mb/s. Eine niedrigere Auflösung füllt die Festplatte weniger und ist ebenso gut lesbar.",
+        "video_folder": "Aufnahmeordner",
+        "video_folder_dialog": "Wählen Sie den Ordner für die Videoaufnahme",
+        "video_folder_required": "Bitte wählen Sie einen Aufnahmeordner für das Video.",
+        "video_split": "Aufteilung",
+        "video_clip_unit": "s pro Clip",
+        "video_overlap_unit": "s Überlappung",
+        "video_split_ok": "Ein Clip beginnt alle {step} s, in Abschnitten von {segment} s ({count} pro Clip).",
+        "video_split_warning": "Ungünstige Aufteilung: Abschnitte von {segment} s, {count} pro Clip. Versuchen Sie rundere Werte.",
+        "video_split_invalid": "Die Überlappung muss kürzer sein als die Clipdauer.",
+        "video_send_hd": "Volle Qualität während des Rennens senden",
+        "video_send_hd_hint": "Andernfalls sammeln sich die Clips an und werden nach der Rückkehr gesendet. In einem ausgelasteten Netz bleibt so der Fotoversand schnell.",
+        "disk_pending": "Wählen Sie eine Kamera und einen Ordner, um den Speicherbedarf zu schätzen.",
+        "disk_rate": "{rate} GB pro Stunde",
+        "disk_hours": "etwa {hours} h Aufnahme",
+        "disk_detail": "{free} GB frei, {reserved} GB für das System reserviert",
+        "nothing_enabled": "Schalten Sie mindestens Fotos oder Video ein."
     },
-
     "dashboard": {
         "status_active": "Aktiv",
+        "photos_section": "Fotos",
         "sent": "Gesendet",
         "pending": "Ausstehend",
         "failed": "Fehlgeschlagen",
@@ -50,8 +82,27 @@
         "log_empty": "Warten auf Dateien...",
         "pause": "Pause",
         "resume": "Fortsetzen",
-        "stop": "Stoppen",
+        "stop": "Sitzung beenden",
         "retry_btn": "Fehlgeschlagene erneut senden",
+        "back_title": "Einstellungen",
+        "video_recording": "Aufnahme läuft",
+        "video_stop": "Video stoppen",
+        "video_clips": "erstellte Clips",
+        "video_frames": "Analysebilder",
+        "video_queue": "in Warteschlange",
+        "video_queue_size": "in Warteschlange — {size} MB",
+        "video_disk": "Speicherplatz",
+        "video_disk_autonomy": "{hours} h übrig",
+        "video_disk_minutes": "{minutes} min übrig",
+        "video_disk_detail": "{written} GB geschrieben, {rate} GB/h gemessen",
+        "video_disk_estimated": "{written} GB geschrieben, {rate} GB/h geschätzt",
+        "video_started": "Aufnahme gestartet — ein Clip alle {step} s",
+        "video_stopped": "Aufnahme beendet — {clips} Clip(s) erstellt",
+        "video_clip_ready": "Clip {index} zusammengesetzt",
+        "video_clip_sent": "Clip {index} gesendet",
+        "video_frames_ready": "{count} Analysebild(er) extrahiert",
+        "video_bibs_read": "{count} Startnummer(n) gelesen",
+        "video_disk_full": "Zu wenig Speicherplatz — Aufnahme gestoppt",
         "confirm_stop": "Überwachung stoppen und zur Eventauswahl zurückkehren?",
         "msg_paused": "Uploads pausiert",
         "msg_resumed": "Uploads fortgesetzt",
@@ -59,13 +110,11 @@
         "msg_retry_queued": "{count} Datei(en) erneut in die Warteschlange gestellt",
         "msg_error": "Fehler: {error}"
     },
-
     "watcher": {
         "detected": "Erkannt ({size} MB)",
         "scan_started": "Ordner-Scan: {count} JPEGs gefunden",
         "scan_complete": "Ordner-Scan abgeschlossen"
     },
-
     "upload": {
         "in_progress": "Upload läuft...",
         "attempt": "Upload (Versuch {attempt}/3)",
@@ -73,13 +122,11 @@
         "failed": "Fehler {attempt}/{max}: {error}",
         "retry_scheduled": "Wiederholung in {delay}s (Versuch {attempt}/3)"
     },
-
     "connection": {
         "restored": "Verbindung wiederhergestellt",
         "lost": "Verbindung unterbrochen — Dateien werden gesammelt",
         "expired": "Sitzung abgelaufen — bitte erneut anmelden"
     },
-
     "complete": {
         "with_errors": "Fertig: {sent} gesendet, {failed} fehlgeschlagen",
         "success": "Fertig: {count} Fotos erfolgreich hochgeladen!"

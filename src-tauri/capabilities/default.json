@@ -8,6 +8,7 @@
     "opener:default",
     "store:default",
     "dialog:default",
-    "notification:default"
+    "notification:default",
+    "shell:allow-execute"
   ]
 }

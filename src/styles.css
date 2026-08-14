@@ -672,3 +672,279 @@ body {
     gap: 8px;
     flex-shrink: 0;
 }
+
+/* ═══════════════════════════════════════════════
+   SAAS 431 — ÉCRAN CONFIGURATION PHOTO + VIDÉO
+   ═══════════════════════════════════════════════ */
+
+/* La fenêtre s'ouvre maximisée : sans plafond, les champs s'étireraient
+   sur toute la largeur d'un écran 32 pouces. L'espace en trop devient
+   de la marge, pas des contrôles démesurés. */
+.config-layout {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 20px;
+    max-width: 1100px;
+    margin: 0 auto;
+    align-items: start;
+}
+
+.config-submit {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+/* Un message tient en une ligne : l'étirer sur toute la largeur le rend
+   moins lisible, pas plus visible. */
+.config-submit .error-message {
+    max-width: 550px;
+    margin: 0 auto 10px;
+    text-align: center;
+}
+
+/* Barre d'action ancrée en bas de fenêtre. Le photographe ne doit jamais
+   avoir à faire défiler pour trouver le bouton de démarrage. */
+.config-footer {
+    flex-shrink: 0;
+    background: #fff;
+    border-top: 1px solid #e8e8e8;
+    padding: 14px 20px;
+}
+
+.config-card {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 12px;
+    padding: 18px 20px;
+}
+
+.config-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 14px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.config-card-title {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #333;
+}
+
+.config-card-body .form-group:last-child {
+    margin-bottom: 0;
+}
+
+/* L'interrupteur d'en-tête est un label : sans display en bloc, sa
+   largeur et sa hauteur seraient ignorées. */
+.config-card-head .toggle-switch {
+    display: inline-block;
+}
+
+/* Bloc désactivé : estompé et inerte, mais toujours lisible — le
+   photographe doit voir ce qu'il obtiendrait en l'activant. */
+.config-disabled {
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+/* --- Découpage vidéo --- */
+.split-picker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.split-picker .form-input {
+    width: 76px;
+    flex-shrink: 0;
+    text-align: center;
+}
+
+.split-unit {
+    font-size: 13px;
+    color: #888;
+    white-space: nowrap;
+}
+
+/* --- Estimation disque --- */
+.disk-estimate {
+    background: #f0f4f8;
+    border-radius: 8px;
+    padding: 11px 13px;
+    margin-bottom: 18px;
+}
+
+.disk-estimate-main {
+    font-size: 13px;
+    color: #3a4553;
+}
+
+.disk-estimate-main strong {
+    font-weight: 600;
+}
+
+.disk-estimate-sub {
+    font-size: 12px;
+    color: #888;
+    margin-top: 3px;
+}
+
+/* Alerte : l'autonomie ne couvre pas une course, ou les réglages
+   produisent un découpage absurde. */
+.disk-estimate.is-warning {
+    background: #fdf4e7;
+}
+
+.disk-estimate.is-warning .disk-estimate-main {
+    color: #8a6420;
+}
+
+.form-hint.is-warning {
+    color: #b8752a;
+}
+
+.config-hd-check {
+    margin-bottom: 0;
+}
+
+.config-hd-check .form-hint {
+    margin-top: 8px;
+}
+
+/* --- Largeur plafonnée du tableau de bord --- */
+.dashboard-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* ═══════════════════════════════════════════════
+   SAAS 431 — BLOC CAPTATION VIDÉO (DASHBOARD)
+   ═══════════════════════════════════════════════ */
+
+.video-panel {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 12px;
+    padding: 16px 18px;
+}
+
+.video-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.video-panel-title {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+}
+
+/* Le point rouge de l'enregistrement, distinct du vert de la
+   surveillance photo : deux activités, deux états à lire d'un coup. */
+.status-recording {
+    background: #E8998D;
+    box-shadow: 0 0 6px rgba(232, 153, 141, 0.5);
+    animation: pulse 2s infinite;
+}
+
+.video-elapsed {
+    font-size: 13px;
+    font-weight: 400;
+    color: #888;
+    font-variant-numeric: tabular-nums;
+}
+
+.video-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.video-stat {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 12px 14px;
+}
+
+.video-stat-value {
+    font-size: 20px;
+    font-weight: 600;
+    color: #333;
+}
+
+.video-stat-label {
+    font-size: 12px;
+    color: #999;
+    margin-top: 2px;
+}
+
+.video-disk {
+    border-top: 1px solid #f0f0f0;
+    padding-top: 13px;
+}
+
+.video-disk-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #555;
+    margin-bottom: 7px;
+}
+
+.video-disk-head span:last-child {
+    font-weight: 600;
+}
+
+.video-disk-detail {
+    font-size: 12px;
+    color: #888;
+    margin-top: 7px;
+}
+
+/* Le disque se remplit : la jauge passe du vert au jaune, puis au
+   corail. Le photographe doit le voir sans lire les chiffres. */
+.video-disk.is-warning .progress-fill {
+    background: #F0DBA5;
+}
+
+.video-disk.is-critical .progress-fill {
+    background: #E8998D;
+}
+
+.video-disk.is-warning .video-disk-head span:last-child {
+    color: #8a6420;
+}
+
+.video-disk.is-critical .video-disk-head span:last-child {
+    color: #c25f4e;
+}
+
+/* Le photographe doit pouvoir copier une ligne du journal pour
+   signaler un incident. */
+.upload-log {
+    user-select: text;
+}
+
+/* Photo et vidéo ont chacune ses compteurs. Sans intitulé, on attribue
+   naturellement les premiers chiffres venus à ce qu'on vient de lancer —
+   et on croit que rien ne part. */
+.section-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: -6px;
+}

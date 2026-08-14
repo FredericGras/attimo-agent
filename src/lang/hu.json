@@ -2,15 +2,16 @@
     "app": {
         "subtitle": "Terepi ügynök"
     },
-
     "login": {
         "email": "E-mail",
         "password": "Jelszó",
         "remember": "Emlékezz rám",
         "submit": "Bejelentkezés",
-        "email_placeholder": "fotograf@example.com"
+        "email_placeholder": "fotograf@example.com",
+        "app_password_label": "Alkalmazásjelszó",
+        "app_password_placeholder": "attimo_pat_...",
+        "app_password_help": "Hozzon létre egy alkalmazásjelszót az Attimo biztonsági profiljából (Agent Studio hatókör), majd illessze be ide."
     },
-
     "events": {
         "title": "Válassza ki az eseményt",
         "loading": "Események betöltése...",
@@ -22,7 +23,6 @@
         "checkpoints_other": "{count} ellenőrzőpont",
         "logout_title": "Kijelentkezés"
     },
-
     "config": {
         "back_title": "Vissza",
         "checkpoint": "Ellenőrzőpont (opcionális)",
@@ -37,11 +37,43 @@
         "existing_exclude": "Csak új fájlok feltöltése",
         "parallel": "Párhuzamos feltöltések",
         "parallel_hint": "Gyenge 4G esetén használjon 1-et. Stabil 5G mellett a 3 gyorsít.",
-        "start": "Figyelés indítása"
+        "start": "Munkamenet indítása",
+        "photos_title": "Fényképek",
+        "video_title": "Videó",
+        "video_checkpoint": "Filmezett checkpoint (opcionális)",
+        "video_checkpoint_none": "Nincs (minden videó)",
+        "video_camera": "Kamera",
+        "video_camera_required": "Válasszon kamerát, vagy kapcsolja ki a videóblokkot.",
+        "video_micro": "Mikrofon",
+        "video_micro_none": "Nincs (néma videó)",
+        "video_micro_warning": "Mikrofon nélkül a videók némák lesznek.",
+        "video_devices_loading": "Eszközök keresése...",
+        "video_devices_none": "Nem található kamera",
+        "video_devices_refresh": "Keresés újra",
+        "video_device_mode": "{width}×{height}, {fps} képkocka másodpercenként",
+        "video_quality": "Minőség",
+        "video_quality_option": "{width} × {height} — {fps} képkocka másodpercenként",
+        "video_quality_hint": "{rate} Mb/s. Az alacsonyabb felbontás kevésbé tölti meg a lemezt, és ugyanolyan jól olvasható.",
+        "video_folder": "Felvételi mappa",
+        "video_folder_dialog": "Válassza ki a videofelvétel mappáját",
+        "video_folder_required": "Válasszon felvételi mappát a videóhoz.",
+        "video_split": "Felosztás",
+        "video_clip_unit": "mp klipenként",
+        "video_overlap_unit": "mp átfedés",
+        "video_split_ok": "Klip indul minden {step} másodpercben, {segment} mp-es darabokban ({count} klipenként).",
+        "video_split_warning": "Kényelmetlen felosztás: {segment} mp-es darabok, {count} klipenként. Próbáljon kerekebb értékeket.",
+        "video_split_invalid": "Az átfedésnek rövidebbnek kell lennie a klip hosszánál.",
+        "video_send_hd": "Teljes minőség küldése a verseny alatt",
+        "video_send_hd_hint": "Különben a klipek felhalmozódnak, és visszatérés után mennek el. Terhelt hálózaton így gyors marad a fényképek küldése.",
+        "disk_pending": "Válasszon kamerát és mappát a szükséges hely becsléséhez.",
+        "disk_rate": "{rate} GB óránként",
+        "disk_hours": "körülbelül {hours} óra felvétel",
+        "disk_detail": "{free} GB szabad, {reserved} GB a rendszernek fenntartva",
+        "nothing_enabled": "Kapcsolja be legalább a fényképeket vagy a videót."
     },
-
     "dashboard": {
         "status_active": "Aktív",
+        "photos_section": "Fényképek",
         "sent": "Elküldve",
         "pending": "Várakozó",
         "failed": "Sikertelen",
@@ -50,8 +82,27 @@
         "log_empty": "Várakozás fájlokra...",
         "pause": "Szünet",
         "resume": "Folytatás",
-        "stop": "Leállítás",
+        "stop": "Munkamenet befejezése",
         "retry_btn": "Sikertelenek újrapróbálása",
+        "back_title": "Beállítások",
+        "video_recording": "Felvétel folyamatban",
+        "video_stop": "Videó leállítása",
+        "video_clips": "elkészült klip",
+        "video_frames": "elemzési képkocka",
+        "video_queue": "sorban",
+        "video_queue_size": "sorban — {size} MB",
+        "video_disk": "Lemezterület",
+        "video_disk_autonomy": "{hours} óra van hátra",
+        "video_disk_minutes": "{minutes} perc van hátra",
+        "video_disk_detail": "{written} GB kiírva, mért {rate} GB/óra",
+        "video_disk_estimated": "{written} GB kiírva, becsült {rate} GB/óra",
+        "video_started": "Felvétel elindult — klip minden {step} másodpercben",
+        "video_stopped": "Felvétel leállt — {clips} klip készült",
+        "video_clip_ready": "{index}. klip összeállítva",
+        "video_clip_sent": "{index}. klip elküldve",
+        "video_frames_ready": "{count} elemzési képkocka kinyerve",
+        "video_bibs_read": "{count} rajtszám beolvasva",
+        "video_disk_full": "Nincs elég lemezterület — a felvétel leállt",
         "confirm_stop": "Figyelés leállítása és visszatérés az eseményválasztáshoz?",
         "msg_paused": "Feltöltések szünetelnek",
         "msg_resumed": "Feltöltések folytatódnak",
@@ -59,13 +110,11 @@
         "msg_retry_queued": "{count} fájl újra sorba állítva",
         "msg_error": "Hiba: {error}"
     },
-
     "watcher": {
         "detected": "Észlelve ({size} MB)",
         "scan_started": "Mappa vizsgálata: {count} JPEG találat",
         "scan_complete": "Mappa vizsgálata kész"
     },
-
     "upload": {
         "in_progress": "Feltöltés...",
         "attempt": "Feltöltés ({attempt}. kísérlet/3)",
@@ -73,13 +122,11 @@
         "failed": "Sikertelen {attempt}/{max}: {error}",
         "retry_scheduled": "Újrapróbálás {delay} mp múlva ({attempt}. kísérlet/3)"
     },
-
     "connection": {
         "restored": "Kapcsolat helyreállt",
         "lost": "Kapcsolat megszakadt — a fájlok gyűlnek",
         "expired": "Munkamenet lejárt — jelentkezzen be újra"
     },
-
     "complete": {
         "with_errors": "Kész: {sent} elküldve, {failed} sikertelen",
         "success": "Kész: {count} fotó sikeresen feltöltve!"

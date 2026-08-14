@@ -2,15 +2,16 @@
     "app": {
         "subtitle": "Field Agent"
     },
-
     "login": {
         "email": "Email",
         "password": "Password",
         "remember": "Remember me",
         "submit": "Sign in",
-        "email_placeholder": "photographer@example.com"
+        "email_placeholder": "photographer@example.com",
+        "app_password_label": "App password",
+        "app_password_placeholder": "attimo_pat_...",
+        "app_password_help": "Generate an app password from your Attimo security profile (Agent Studio scope), then paste it here."
     },
-
     "events": {
         "title": "Choose your event",
         "loading": "Loading events...",
@@ -22,7 +23,6 @@
         "checkpoints_other": "{count} checkpoints",
         "logout_title": "Sign out"
     },
-
     "config": {
         "back_title": "Back",
         "checkpoint": "Checkpoint (optional)",
@@ -37,11 +37,43 @@
         "existing_exclude": "Upload new files only",
         "parallel": "Parallel uploads",
         "parallel_hint": "On weak 4G, use 1. On stable 5G, 3 speeds things up.",
-        "start": "Start watching"
+        "start": "Start session",
+        "photos_title": "Photos",
+        "video_title": "Video",
+        "video_checkpoint": "Filmed checkpoint (optional)",
+        "video_checkpoint_none": "None (all videos)",
+        "video_camera": "Camera",
+        "video_camera_required": "Choose a camera, or turn off the video block.",
+        "video_micro": "Microphone",
+        "video_micro_none": "None (silent video)",
+        "video_micro_warning": "Without a microphone, videos will be silent.",
+        "video_devices_loading": "Looking for devices...",
+        "video_devices_none": "No camera detected",
+        "video_devices_refresh": "Search again",
+        "video_device_mode": "{width}×{height} at {fps} frames per second",
+        "video_quality": "Quality",
+        "video_quality_option": "{width} × {height} — {fps} frames per second",
+        "video_quality_hint": "{rate} Mb/s. A lower definition fills the disk less and reads just as well.",
+        "video_folder": "Recording folder",
+        "video_folder_dialog": "Choose the video recording folder",
+        "video_folder_required": "Please choose a recording folder for the video.",
+        "video_split": "Splitting",
+        "video_clip_unit": "s per clip",
+        "video_overlap_unit": "s of overlap",
+        "video_split_ok": "A clip starts every {step} s, in {segment} s pieces ({count} per clip).",
+        "video_split_warning": "Awkward split: {segment} s pieces, {count} per clip. Try rounder values.",
+        "video_split_invalid": "Overlap must stay shorter than the clip duration.",
+        "video_send_hd": "Send full quality during the race",
+        "video_send_hd_hint": "Otherwise clips pile up and go out afterwards. On a busy network this keeps photo uploads fast.",
+        "disk_pending": "Choose a camera and a folder to estimate the space needed.",
+        "disk_rate": "{rate} GB per hour",
+        "disk_hours": "about {hours} h of recording",
+        "disk_detail": "{free} GB free, {reserved} GB reserved for the system",
+        "nothing_enabled": "Turn on photos or video, at least one."
     },
-
     "dashboard": {
         "status_active": "Active",
+        "photos_section": "Photos",
         "sent": "Sent",
         "pending": "Pending",
         "failed": "Failed",
@@ -52,6 +84,25 @@
         "resume": "Resume",
         "stop": "Stop",
         "retry_btn": "Retry failed",
+        "back_title": "Settings",
+        "video_recording": "Recording",
+        "video_stop": "Stop video",
+        "video_clips": "clips produced",
+        "video_frames": "analysis frames",
+        "video_queue": "queued",
+        "video_queue_size": "queued — {size} MB",
+        "video_disk": "Disk space",
+        "video_disk_autonomy": "{hours} h left",
+        "video_disk_minutes": "{minutes} min left",
+        "video_disk_detail": "{written} GB written, {rate} GB/h measured",
+        "video_disk_estimated": "{written} GB written, {rate} GB/h estimated",
+        "video_started": "Recording started — a clip every {step} s",
+        "video_stopped": "Recording stopped — {clips} clip(s) produced",
+        "video_clip_ready": "Clip {index} assembled",
+        "video_clip_sent": "Clip {index} sent",
+        "video_frames_ready": "{count} analysis frame(s) extracted",
+        "video_bibs_read": "{count} bib number(s) read",
+        "video_disk_full": "Not enough disk space — recording stopped",
         "confirm_stop": "Stop watching and return to event selection?",
         "msg_paused": "Uploads paused",
         "msg_resumed": "Uploads resumed",
@@ -59,13 +110,11 @@
         "msg_retry_queued": "{count} file(s) re-queued",
         "msg_error": "Error: {error}"
     },
-
     "watcher": {
         "detected": "Detected ({size} MB)",
         "scan_started": "Folder scan: {count} JPEGs found",
         "scan_complete": "Folder scan complete"
     },
-
     "upload": {
         "in_progress": "Uploading...",
         "attempt": "Upload (attempt {attempt}/3)",
@@ -73,13 +122,11 @@
         "failed": "Failed {attempt}/{max}: {error}",
         "retry_scheduled": "Retry in {delay}s (attempt {attempt}/3)"
     },
-
     "connection": {
         "restored": "Connection restored",
         "lost": "Connection lost — files are queuing up",
         "expired": "Session expired — please sign in again"
     },
-
     "complete": {
         "with_errors": "Done: {sent} sent, {failed} failed",
         "success": "Done: {count} photos uploaded successfully!"

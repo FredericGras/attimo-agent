@@ -2,15 +2,16 @@
     "app": {
         "subtitle": "Terénny agent"
     },
-
     "login": {
         "email": "E-mail",
         "password": "Heslo",
         "remember": "Zapamätať si ma",
         "submit": "Prihlásiť sa",
-        "email_placeholder": "fotograf@example.com"
+        "email_placeholder": "fotograf@example.com",
+        "app_password_label": "Heslo aplikácie",
+        "app_password_placeholder": "attimo_pat_...",
+        "app_password_help": "Vygenerujte heslo aplikácie zo svojho bezpečnostného profilu Attimo (rozsah Agent Studio) a vložte ho sem."
     },
-
     "events": {
         "title": "Vyberte si udalosť",
         "loading": "Načítavanie udalostí...",
@@ -22,7 +23,6 @@
         "checkpoints_other": "{count} kontrolných bodov",
         "logout_title": "Odhlásiť sa"
     },
-
     "config": {
         "back_title": "Späť",
         "checkpoint": "Kontrolný bod (voliteľné)",
@@ -37,11 +37,43 @@
         "existing_exclude": "Nahrať iba nové súbory",
         "parallel": "Paralelné nahrávanie",
         "parallel_hint": "Pri slabom 4G použite 1. Pri stabilnom 5G zrýchli 3.",
-        "start": "Začať sledovanie"
+        "start": "Spustiť reláciu",
+        "photos_title": "Fotografie",
+        "video_title": "Video",
+        "video_checkpoint": "Natáčaný checkpoint (voliteľné)",
+        "video_checkpoint_none": "Žiadny (všetky videá)",
+        "video_camera": "Kamera",
+        "video_camera_required": "Vyberte kameru alebo vypnite blok videa.",
+        "video_micro": "Mikrofón",
+        "video_micro_none": "Žiadny (video bez zvuku)",
+        "video_micro_warning": "Bez mikrofónu budú videá bez zvuku.",
+        "video_devices_loading": "Hľadanie zariadení...",
+        "video_devices_none": "Kamera sa nenašla",
+        "video_devices_refresh": "Hľadať znova",
+        "video_device_mode": "{width}×{height} pri {fps} snímkach za sekundu",
+        "video_quality": "Kvalita",
+        "video_quality_option": "{width} × {height} — {fps} snímok za sekundu",
+        "video_quality_hint": "{rate} Mb/s. Nižšie rozlíšenie menej zapĺňa disk a číta sa rovnako dobre.",
+        "video_folder": "Priečinok nahrávok",
+        "video_folder_dialog": "Vyberte priečinok na nahrávanie videa",
+        "video_folder_required": "Vyberte priečinok na nahrávanie videa.",
+        "video_split": "Rozdelenie",
+        "video_clip_unit": "s na klip",
+        "video_overlap_unit": "s prekryvu",
+        "video_split_ok": "Klip začína každých {step} s, po častiach {segment} s ({count} na klip).",
+        "video_split_warning": "Nepraktické rozdelenie: časti po {segment} s, {count} na klip. Skúste okrúhlejšie hodnoty.",
+        "video_split_invalid": "Prekryv musí byť kratší ako dĺžka klipu.",
+        "video_send_hd": "Odosielať plnú kvalitu počas pretekov",
+        "video_send_hd_hint": "Inak sa klipy hromadia a odídu po návrate. Na vyťaženej sieti to udrží odosielanie fotografií rýchle.",
+        "disk_pending": "Vyberte kameru a priečinok na odhad potrebného miesta.",
+        "disk_rate": "{rate} GB za hodinu",
+        "disk_hours": "približne {hours} h natáčania",
+        "disk_detail": "{free} GB voľných, {reserved} GB vyhradených pre systém",
+        "nothing_enabled": "Zapnite aspoň fotografie alebo video."
     },
-
     "dashboard": {
         "status_active": "Aktívny",
+        "photos_section": "Fotografie",
         "sent": "Odoslané",
         "pending": "Čakajúce",
         "failed": "Neúspešné",
@@ -50,8 +82,27 @@
         "log_empty": "Čakanie na súbory...",
         "pause": "Pozastaviť",
         "resume": "Pokračovať",
-        "stop": "Zastaviť",
+        "stop": "Ukončiť reláciu",
         "retry_btn": "Opakovať neúspešné",
+        "back_title": "Nastavenia",
+        "video_recording": "Prebieha natáčanie",
+        "video_stop": "Zastaviť video",
+        "video_clips": "vytvorených klipov",
+        "video_frames": "snímok na analýzu",
+        "video_queue": "v rade",
+        "video_queue_size": "v rade — {size} MB",
+        "video_disk": "Miesto na disku",
+        "video_disk_autonomy": "zostáva {hours} h",
+        "video_disk_minutes": "zostáva {minutes} min",
+        "video_disk_detail": "zapísaných {written} GB, namerané {rate} GB/h",
+        "video_disk_estimated": "zapísaných {written} GB, odhad {rate} GB/h",
+        "video_started": "Natáčanie spustené — klip každých {step} s",
+        "video_stopped": "Natáčanie zastavené — vytvorených {clips} klipov",
+        "video_clip_ready": "Klip {index} zostavený",
+        "video_clip_sent": "Klip {index} odoslaný",
+        "video_frames_ready": "Extrahovaných {count} snímok na analýzu",
+        "video_bibs_read": "Prečítaných {count} štartových čísel",
+        "video_disk_full": "Nedostatok miesta na disku — natáčanie zastavené",
         "confirm_stop": "Zastaviť sledovanie a vrátiť sa k výberu udalosti?",
         "msg_paused": "Nahrávanie pozastavené",
         "msg_resumed": "Nahrávanie obnovené",
@@ -59,13 +110,11 @@
         "msg_retry_queued": "{count} súbor(ov) znovu v rade",
         "msg_error": "Chyba: {error}"
     },
-
     "watcher": {
         "detected": "Detegované ({size} MB)",
         "scan_started": "Skenovanie priečinku: {count} JPEG nájdených",
         "scan_complete": "Skenovanie priečinku dokončené"
     },
-
     "upload": {
         "in_progress": "Nahrávanie...",
         "attempt": "Nahrávanie (pokus {attempt}/3)",
@@ -73,13 +122,11 @@
         "failed": "Zlyhanie {attempt}/{max}: {error}",
         "retry_scheduled": "Nový pokus za {delay}s (pokus {attempt}/3)"
     },
-
     "connection": {
         "restored": "Pripojenie obnovené",
         "lost": "Pripojenie stratené — súbory sa hromadia",
         "expired": "Relácia vypršala — prihláste sa znovu"
     },
-
     "complete": {
         "with_errors": "Hotovo: {sent} odoslaných, {failed} neúspešných",
         "success": "Hotovo: {count} fotografií úspešne nahraných!"

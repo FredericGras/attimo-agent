@@ -2,15 +2,16 @@
     "app": {
         "subtitle": "Veldagent"
     },
-
     "login": {
         "email": "E-mail",
         "password": "Wachtwoord",
         "remember": "Onthoud mij",
         "submit": "Inloggen",
-        "email_placeholder": "fotograaf@example.com"
+        "email_placeholder": "fotograaf@example.com",
+        "app_password_label": "App-wachtwoord",
+        "app_password_placeholder": "attimo_pat_...",
+        "app_password_help": "Genereer een app-wachtwoord vanuit uw Attimo-beveiligingsprofiel (bereik Agent Studio) en plak het hier."
     },
-
     "events": {
         "title": "Kies uw evenement",
         "loading": "Evenementen laden...",
@@ -22,7 +23,6 @@
         "checkpoints_other": "{count} checkpoints",
         "logout_title": "Uitloggen"
     },
-
     "config": {
         "back_title": "Terug",
         "checkpoint": "Checkpoint (optioneel)",
@@ -37,11 +37,43 @@
         "existing_exclude": "Alleen nieuwe bestanden uploaden",
         "parallel": "Parallelle uploads",
         "parallel_hint": "Bij zwak 4G, gebruik 1. Bij stabiel 5G versnelt 3.",
-        "start": "Bewaking starten"
+        "start": "Sessie starten",
+        "photos_title": "Foto's",
+        "video_title": "Video",
+        "video_checkpoint": "Gefilmd checkpoint (optioneel)",
+        "video_checkpoint_none": "Geen (alle video's)",
+        "video_camera": "Camera",
+        "video_camera_required": "Kies een camera of schakel het videoblok uit.",
+        "video_micro": "Microfoon",
+        "video_micro_none": "Geen (video zonder geluid)",
+        "video_micro_warning": "Zonder microfoon blijven de video's stil.",
+        "video_devices_loading": "Apparaten zoeken...",
+        "video_devices_none": "Geen camera gevonden",
+        "video_devices_refresh": "Opnieuw zoeken",
+        "video_device_mode": "{width}×{height} bij {fps} beelden per seconde",
+        "video_quality": "Kwaliteit",
+        "video_quality_option": "{width} × {height} — {fps} beelden per seconde",
+        "video_quality_hint": "{rate} Mb/s. Een lagere resolutie vult de schijf minder en is even goed leesbaar.",
+        "video_folder": "Opnamemap",
+        "video_folder_dialog": "Kies de map voor de video-opname",
+        "video_folder_required": "Kies een opnamemap voor de video.",
+        "video_split": "Opdeling",
+        "video_clip_unit": "s per clip",
+        "video_overlap_unit": "s overlap",
+        "video_split_ok": "Een clip start elke {step} s, in stukken van {segment} s ({count} per clip).",
+        "video_split_warning": "Onhandige opdeling: stukken van {segment} s, {count} per clip. Probeer rondere waarden.",
+        "video_split_invalid": "De overlap moet korter blijven dan de clipduur.",
+        "video_send_hd": "Volledige kwaliteit tijdens de wedstrijd versturen",
+        "video_send_hd_hint": "Anders stapelen de clips zich op en gaan ze na afloop weg. Op een druk netwerk blijft het versturen van foto's zo snel.",
+        "disk_pending": "Kies een camera en een map om de benodigde ruimte te schatten.",
+        "disk_rate": "{rate} GB per uur",
+        "disk_hours": "ongeveer {hours} u opname",
+        "disk_detail": "{free} GB vrij, {reserved} GB gereserveerd voor het systeem",
+        "nothing_enabled": "Schakel minstens foto's of video in."
     },
-
     "dashboard": {
         "status_active": "Actief",
+        "photos_section": "Foto's",
         "sent": "Verzonden",
         "pending": "Wachtend",
         "failed": "Mislukt",
@@ -50,8 +82,27 @@
         "log_empty": "Wachten op bestanden...",
         "pause": "Pauzeren",
         "resume": "Hervatten",
-        "stop": "Stoppen",
+        "stop": "Sessie beëindigen",
         "retry_btn": "Mislukte opnieuw proberen",
+        "back_title": "Instellingen",
+        "video_recording": "Opname bezig",
+        "video_stop": "Video stoppen",
+        "video_clips": "gemaakte clips",
+        "video_frames": "analysebeelden",
+        "video_queue": "in wachtrij",
+        "video_queue_size": "in wachtrij — {size} MB",
+        "video_disk": "Schijfruimte",
+        "video_disk_autonomy": "{hours} u over",
+        "video_disk_minutes": "{minutes} min over",
+        "video_disk_detail": "{written} GB geschreven, {rate} GB/u gemeten",
+        "video_disk_estimated": "{written} GB geschreven, {rate} GB/u geschat",
+        "video_started": "Opname gestart — een clip elke {step} s",
+        "video_stopped": "Opname gestopt — {clips} clip(s) gemaakt",
+        "video_clip_ready": "Clip {index} samengevoegd",
+        "video_clip_sent": "Clip {index} verstuurd",
+        "video_frames_ready": "{count} analysebeeld(en) uitgesneden",
+        "video_bibs_read": "{count} rugnummer(s) gelezen",
+        "video_disk_full": "Te weinig schijfruimte — opname gestopt",
         "confirm_stop": "Bewaking stoppen en terug naar evenementselectie?",
         "msg_paused": "Uploads gepauzeerd",
         "msg_resumed": "Uploads hervat",
@@ -59,13 +110,11 @@
         "msg_retry_queued": "{count} bestand(en) opnieuw in de wachtrij",
         "msg_error": "Fout: {error}"
     },
-
     "watcher": {
         "detected": "Gedetecteerd ({size} MB)",
         "scan_started": "Map scannen: {count} JPEGs gevonden",
         "scan_complete": "Map scan voltooid"
     },
-
     "upload": {
         "in_progress": "Uploaden...",
         "attempt": "Upload (poging {attempt}/3)",
@@ -73,13 +122,11 @@
         "failed": "Mislukt {attempt}/{max}: {error}",
         "retry_scheduled": "Nieuwe poging over {delay}s (poging {attempt}/3)"
     },
-
     "connection": {
         "restored": "Verbinding hersteld",
         "lost": "Verbinding verbroken — bestanden worden verzameld",
         "expired": "Sessie verlopen — log opnieuw in"
     },
-
     "complete": {
         "with_errors": "Klaar: {sent} verzonden, {failed} mislukt",
         "success": "Klaar: {count} foto's succesvol geüpload!"

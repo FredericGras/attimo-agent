@@ -1,2 +1,7 @@
 src-tauri/target/ 
-node_modules/ 
+node_modules/
+
+# Exécutables FFmpeg embarqués — 102 Mo pièce, au-delà de la limite
+# de 100 Mo de GitHub. Ils ne changent jamais et se retéléchargent
+# depuis ffmpeg.org en cas de besoin.
+src-tauri/binaries/

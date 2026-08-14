@@ -19,6 +19,7 @@ tauri-plugin-opener = "2"
 tauri-plugin-store = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-notification = "2"
+tauri-plugin-shell = "2"
 
 # --- Sérialisation ---
 serde = { version = "1", features = ["derive"] }
@@ -43,3 +44,7 @@ env_logger = "0.11"
 
 # --- Traitement image (compression JPEG optionnelle) ---
 image = { version = "0.25", default-features = false, features = ["jpeg"] }
+
+# --- Espace disque (SAAS 430) ---
+# Lecture multiplateforme de l'espace libre, sans `unsafe` côté agent.
+fs4 = "1"
