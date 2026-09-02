@@ -3,8 +3,11 @@ use std::fs;
 use std::path::PathBuf;
 
 // ─── URL de base de l'API Attimo ───
-// TODO: passer en "https://app.attimo-gallery.com" pour la production
-const API_BASE_URL: &str = "https://dev-saas.attimo-gallery.com";
+// Injectée à la COMPILATION via la variable d'environnement ATTIMO_API_URL.
+// Utiliser les scripts build-prod.bat / build-preprod.bat.
+// env!() échoue le build si la variable est absente : impossible de produire
+// par erreur un binaire pointant sur le mauvais environnement.
+pub const API_BASE_URL: &str = env!("ATTIMO_API_URL");
 
 // ─── Préfixe identifiant un App Password Attimo (SAAS 240 — Phase 6) ───
 // Doit rester synchronisé avec App\Modules\TwoFactor\Models\AppPassword::TOKEN_PREFIX_BRAND

@@ -893,7 +893,7 @@ function initDashboard() {
             // La captation d'abord : elle doit clore son manifeste pendant
             // que la session est encore ouverte.
             await arreterCaptation();
-            arreterFileVideo();
+            demarrerVidageFinal();
 
             try {
                 await invoke('stop_session');
@@ -1123,6 +1123,20 @@ let videoImages = 0;
 let videoChronoTimer = null;
 let videoFileTimer = null;
 
+// Vidage final : l'assemblage du dernier clip se termine APRÈS l'arrêt de
+// la captation. Couper la file à ce moment laisse ce clip en attente
+// indéfiniment. On la laisse donc tourner jusqu'à ce qu'elle soit vide.
+let videoVidageEnCours = false;
+
+// L'événement est figé au moment de l'arrêt : l'interface retourne à la
+// liste des événements, et le photographe peut en ouvrir un autre pendant
+// que les derniers fichiers montent encore.
+let videoVidageEventId = null;
+
+// Morceaux en cours de traitement. Tant que ce compteur n'est pas à zéro,
+// un clip peut encore entrer en file : la déclarer vide serait prématuré.
+let videoTraitementsEnCours = 0;
+
 /**
  * Branche les écoutes du backend.
  *
@@ -1130,7 +1144,7 @@ let videoFileTimer = null;
  * successives, et en créer un par session les empilerait.
  */
 async function initVideo() {
-    await listen('segment-ready', surMorceauPret);
+    await listen('segment-ready', surMorceauPretSuivi);
     await listen('disk-status', surEtatDisque);
 
     document.getElementById('dash-video-stop-btn').addEventListener('click', () => {
@@ -1218,6 +1232,23 @@ async function arreterCaptation() {
     }
 
     document.getElementById('dash-video-panel').style.display = 'none';
+}
+
+/**
+ * Enveloppe de surMorceauPret qui compte les traitements en cours.
+ *
+ * Le comptage est isolé ici pour ne pas parsemer la fonction de traitement
+ * de compteurs : elle a plusieurs sorties, et en oublier une bloquerait le
+ * vidage final pour toujours.
+ */
+async function surMorceauPretSuivi(evt) {
+    videoTraitementsEnCours++;
+
+    try {
+        await surMorceauPret(evt);
+    } finally {
+        videoTraitementsEnCours--;
+    }
 }
 
 /**
@@ -1423,17 +1454,53 @@ function arreterFileVideo() {
         clearInterval(videoFileTimer);
         videoFileTimer = null;
     }
+
+    videoVidageEnCours = false;
+    videoVidageEventId = null;
+}
+
+/**
+ * Bascule la file en vidage final.
+ *
+ * Appelé à l'arrêt de la session : la file n'est pas coupée, elle continue
+ * d'écouler ce qui reste puis s'arrête seule. Si l'agent est fermé entre
+ * temps, rien n'est perdu — la file est persistante et reprendra à la
+ * prochaine ouverture de cet événement.
+ */
+function demarrerVidageFinal() {
+    if (AppState.selectedEvent) {
+        videoVidageEventId = AppState.selectedEvent.id;
+    }
+
+    videoVidageEnCours = true;
+    demarrerFileVideo();
+}
+
+/**
+ * Événement auquel rattacher les envois.
+ *
+ * Pendant un vidage final, c'est l'événement figé à l'arrêt — pas celui que
+ * le photographe vient éventuellement d'ouvrir.
+ */
+function eventIdFile() {
+    if (videoVidageEnCours && videoVidageEventId) {
+        return videoVidageEventId;
+    }
+
+    return AppState.selectedEvent ? AppState.selectedEvent.id : null;
 }
 
 async function traiterFileVideo() {
-    if (!AppState.selectedEvent) {
+    const eventId = eventIdFile();
+
+    if (!eventId) {
         return;
     }
 
     try {
         const resultat = await invoke('process_video_queue', {
             token: AppState.token,
-            eventId: AppState.selectedEvent.id,
+            eventId: eventId,
             checkpointId: null
         });
 
@@ -1455,20 +1522,30 @@ async function traiterFileVideo() {
     } catch (e) {
         if (e === 'SESSION_EXPIRED') {
             arreterFileVideo();
+            return;
         }
     }
 
-    await rafraichirFileVideo();
+    const restant = await rafraichirFileVideo();
+
+    // Fin du vidage final. Les deux conditions comptent : une file vide
+    // pendant qu'un morceau s'assemble encore serait un faux signal, et le
+    // clip produit une seconde plus tard resterait en attente.
+    if (videoVidageEnCours && restant === 0 && videoTraitementsEnCours === 0) {
+        arreterFileVideo();
+    }
 }
 
 async function rafraichirFileVideo() {
-    if (!AppState.selectedEvent) {
-        return;
+    const eventId = eventIdFile();
+
+    if (!eventId) {
+        return 0;
     }
 
     try {
         const stats = await invoke('video_queue_stats', {
-            eventId: AppState.selectedEvent.id
+            eventId: eventId
         });
 
         const total = stats.frames_pending + stats.proxy_pending + stats.hd_pending;
@@ -1482,7 +1559,12 @@ async function rafraichirFileVideo() {
                 ? t('dashboard.video_queue_size', { size: mo })
                 : t('dashboard.video_queue');
 
+        return total;
+
     } catch (e) {
         // Sans importance : l'affichage se rafraîchira au prochain passage.
+        // On renvoie une file non vide par prudence : interrompre un vidage
+        // final sur une lecture ratée perdrait le dernier clip.
+        return -1;
     }
 }

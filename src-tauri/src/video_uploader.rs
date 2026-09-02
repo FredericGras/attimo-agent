@@ -39,7 +39,8 @@ use std::time::Duration;
 // CONSTANTES
 // ═══════════════════════════════════════════════════════════════════════
 
-const API_BASE_URL: &str = "https://dev-saas.attimo-gallery.com";
+// URL injectée à la COMPILATION (voir auth.rs).
+const API_BASE_URL: &str = env!("ATTIMO_API_URL");
 
 /// Taille d'un morceau d'envoi.
 ///

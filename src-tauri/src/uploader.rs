@@ -35,8 +35,8 @@ use crate::watcher::FileJob;
 // ─── Constantes ─────────────────────────────────────────────
 
 /// URL de base de l'API Attimo (même que dans auth.rs)
-/// TODO: passer en "https://attimo-gallery.com" pour la production
-const API_BASE_URL: &str = "https://dev-saas.attimo-gallery.com";
+/// URL injectée à la COMPILATION (voir auth.rs). Build via build-prod.bat / build-preprod.bat.
+const API_BASE_URL: &str = env!("ATTIMO_API_URL");
 
 /// Endpoint d'upload des photos sport
 const UPLOAD_ENDPOINT: &str = "/api/sport/upload";
@@ -147,7 +147,9 @@ async fn upload_single_file(
     let response = client
         .post(&url)
         .header("Accept", "application/json")
-        .header("X-API-TOKEN", &config.token)
+        // SAAS 240 — Phase 6 : Bearer token (le middleware app-password
+        // ne lit plus X-API-TOKEN)
+        .bearer_auth(&config.token)
         .multipart(form)
         .send()
         .await

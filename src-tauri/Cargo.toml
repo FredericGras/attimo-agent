@@ -1,6 +1,6 @@
 [package]
 name = "attimo-agent"
-version = "0.2.0"
+version = "0.3.0"
 description = "Attimo Agent Terrain — Upload live terrain pour photographes sportifs"
 authors = ["Frédéric Gras"]
 edition = "2021"
