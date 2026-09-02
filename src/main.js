@@ -1145,6 +1145,7 @@ let videoTraitementsEnCours = 0;
  */
 async function initVideo() {
     await listen('segment-ready', surMorceauPretSuivi);
+    await listen('recording-final', surCaptationCoupee);
     await listen('disk-status', surEtatDisque);
 
     document.getElementById('dash-video-stop-btn').addEventListener('click', () => {
@@ -1215,10 +1216,22 @@ async function arreterCaptation() {
     // travaillerait sous une session déjà refermée.
     const sessionEnCours = videoSessionId;
 
+    let fin = null;
+
     try {
-        await invoke('stop_recording');
+        // L'arrêt attend désormais que FFmpeg ait refermé son fichier, et
+        // renvoie ce qu'il a pu rattraper : le morceau resté ouvert, ses
+        // images, et le ou les clips qu'il permet enfin d'assembler.
+        // Quelques secondes, une seule fois, à la fin d'une course.
+        fin = await invoke('stop_recording');
     } catch (e) {
         console.error('Stop recording error:', e);
+    }
+
+    // Mise en file AVANT de refermer la session : la file est rattachée à
+    // l'événement courant, et l'écran est sur le point d'en changer.
+    if (fin) {
+        await traiterFinDeCaptation(fin, sessionEnCours);
     }
 
     addLogEntry(timeNow(), '—', 'retry',
@@ -1287,24 +1300,7 @@ async function surMorceauPret(evt) {
             intervalSecs: VIDEO_FRAME_INTERVAL
         });
 
-        videoImages += res.frames.length;
-        majCompteursVideo();
-
-        // Mise en file plutôt qu'envoi direct : c'est ce qui permet de
-        // couper l'envoi vidéo sans rien perdre, et de le reprendre plus
-        // tard — y compris après avoir fermé l'agent.
-        for (const image of res.frames) {
-            await invoke('queue_video_file', {
-                sessionId: sessionEnCours,
-                eventId: AppState.selectedEvent.id,
-                kind: 'frames',
-                filePath: image.path,
-                clipIndex: null,
-                startedAt: null,
-                endedAt: null,
-                instantAt: image.instant_at
-            });
-        }
+        await mettreImagesEnFile(res.frames, sessionEnCours);
     } catch (e) {
         addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: e }));
     }
@@ -1317,52 +1313,136 @@ async function surMorceauPret(evt) {
             return;
         }
 
-        videoClips++;
-        majCompteursVideo();
-
-        addLogEntry(timeNow(), clip.filename, 'success',
-            t('dashboard.video_clip_ready', { index: clip.index }));
-
-        // Version légère : c'est elle que le coureur regarde pendant la
-        // course, le fichier lourd pouvant monter le soir.
-        const proxyPath = await invoke('generate_proxy', {
-            clipPath: clip.path,
-            height: 540,
-            bitrateMbps: 2
-        });
-
-        // Horodatages du clip, dérivés du départ de la session.
-        const debutMs = videoDebutMs + clip.offset_secs * 1000;
-        const finMs = debutMs + clip.duration_secs * 1000;
-        const iso = (ms) => new Date(ms).toISOString();
-
-        // Les deux variantes entrent en file. L'ordre d'envoi réel dépendra
-        // de la priorité et de l'autorisation HD, pas de l'ordre d'ajout.
-        await invoke('queue_video_file', {
-            sessionId: sessionEnCours,
-            eventId: AppState.selectedEvent.id,
-            kind: 'clip_proxy',
-            filePath: proxyPath,
-            clipIndex: clip.index,
-            startedAt: iso(debutMs),
-            endedAt: iso(finMs),
-            instantAt: null
-        });
-
-        await invoke('queue_video_file', {
-            sessionId: sessionEnCours,
-            eventId: AppState.selectedEvent.id,
-            kind: 'clip_hd',
-            filePath: clip.path,
-            clipIndex: clip.index,
-            startedAt: iso(debutMs),
-            endedAt: iso(finMs),
-            instantAt: null
-        });
+        await mettreClipEnFile(clip, sessionEnCours);
 
     } catch (e) {
         addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: e }));
     }
+}
+
+/**
+ * Fin de captation : ce que l'arrêt a rattrapé entre en file.
+ *
+ * Le dernier morceau n'est jamais annoncé par FFmpeg — son annonce serait
+ * déclenchée par l'ouverture du morceau suivant, qui n'existe pas. C'est
+ * donc l'arrêt lui-même qui le traite, et qui renvoie le résultat ici :
+ * ses images, et le ou les clips qu'il permet enfin d'assembler.
+ */
+async function traiterFinDeCaptation(fin, sessionEnCours) {
+    if (fin.avertissement) {
+        addLogEntry(timeNow(), '—', 'failed',
+            t('dashboard.msg_error', { error: fin.avertissement }));
+    }
+
+    try {
+        await mettreImagesEnFile(fin.frames, sessionEnCours);
+
+        for (const clip of fin.clips) {
+            await mettreClipEnFile(clip, sessionEnCours);
+        }
+    } catch (e) {
+        addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: e }));
+    }
+}
+
+/**
+ * Le disque plein a coupé la captation depuis le backend.
+ *
+ * Personne n'attend de valeur de retour dans ce cas : le résultat arrive
+ * par événement. Le compteur des traitements est indispensable ici — sans
+ * lui, le vidage final déclarerait la file vide pendant que le dernier clip
+ * s'assemble encore.
+ */
+async function surCaptationCoupee(evt) {
+    videoTraitementsEnCours++;
+
+    try {
+        await traiterFinDeCaptation(evt.payload, evt.payload.session_id);
+    } finally {
+        videoTraitementsEnCours--;
+    }
+}
+
+/**
+ * Met en file les images d'analyse d'un morceau.
+ *
+ * Mise en file plutôt qu'envoi direct : c'est ce qui permet de couper
+ * l'envoi vidéo sans rien perdre, et de le reprendre plus tard — y compris
+ * après avoir fermé l'agent.
+ */
+async function mettreImagesEnFile(images, sessionEnCours) {
+    for (const image of images) {
+        await invoke('queue_video_file', {
+            sessionId: sessionEnCours,
+            eventId: AppState.selectedEvent.id,
+            kind: 'frames',
+            filePath: image.path,
+            clipIndex: null,
+            startedAt: null,
+            endedAt: null,
+            instantAt: image.instant_at
+        });
+    }
+
+    videoImages += images.length;
+    majCompteursVideo();
+}
+
+/**
+ * Version légère, puis mise en file des deux variantes d'un clip.
+ *
+ * Sortie de surMorceauPret pour que l'arrêt de captation emprunte
+ * exactement le même chemin : un clip de fin ne doit pas être traité
+ * autrement qu'un clip de course.
+ */
+async function mettreClipEnFile(clip, sessionEnCours) {
+    videoClips++;
+    majCompteursVideo();
+
+    addLogEntry(timeNow(), clip.filename, 'success',
+        t('dashboard.video_clip_ready', { index: clip.index }));
+
+    // Version légère : c'est elle que le coureur regarde pendant la
+    // course, le fichier lourd pouvant monter le soir.
+    const proxyPath = await invoke('generate_proxy', {
+        clipPath: clip.path,
+        height: 540,
+        bitrateMbps: 2
+    });
+
+    // Horodatages du clip, dérivés du départ de la session.
+    //
+    // `duration_secs` est la durée MESURÉE pour les clips de fin : le
+    // dernier est plus court que les autres, et une fin annoncée trop tard
+    // rattacherait des coureurs à des secondes que le fichier ne contient
+    // pas.
+    const debutMs = videoDebutMs + clip.offset_secs * 1000;
+    const finMs = debutMs + clip.duration_secs * 1000;
+    const iso = (ms) => new Date(ms).toISOString();
+
+    // Les deux variantes entrent en file. L'ordre d'envoi réel dépendra
+    // de la priorité et de l'autorisation HD, pas de l'ordre d'ajout.
+    await invoke('queue_video_file', {
+        sessionId: sessionEnCours,
+        eventId: AppState.selectedEvent.id,
+        kind: 'clip_proxy',
+        filePath: proxyPath,
+        clipIndex: clip.index,
+        startedAt: iso(debutMs),
+        endedAt: iso(finMs),
+        instantAt: null
+    });
+
+    await invoke('queue_video_file', {
+        sessionId: sessionEnCours,
+        eventId: AppState.selectedEvent.id,
+        kind: 'clip_hd',
+        filePath: clip.path,
+        clipIndex: clip.index,
+        startedAt: iso(debutMs),
+        endedAt: iso(finMs),
+        instantAt: null
+    });
 }
 
 /**

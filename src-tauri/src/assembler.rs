@@ -166,6 +166,46 @@ impl ClipTracker {
     pub fn clip_courant(&self) -> u32 {
         self.prochain_clip
     }
+
+    /// Morceaux disponibles pour un DERNIER clip, forcément plus court.
+    ///
+    /// Appelé une seule fois, à l'arrêt de la captation. La géométrie ne
+    /// tombe presque jamais juste : une captation s'arrête au milieu d'un
+    /// clip, et tout ce qui a été filmé après le dernier clip complet
+    /// n'appartient à aucun clip. Sans ce rattrapage, ces secondes-là sont
+    /// perdues — c'est-à-dire les coureurs qui y passent.
+    ///
+    /// Ne renvoie rien si ces morceaux n'apportent aucune vidéo neuve : le
+    /// chevauchement fait qu'un clip final trop court serait déjà contenu
+    /// tout entier dans le précédent. Le seuil se lit dans le plan — il faut
+    /// dépasser le nombre de morceaux de chevauchement.
+    pub fn clip_final(&self) -> Option<Vec<u32>> {
+        let premier = (self.prochain_clip - 1) * self.plan.segments_step;
+
+        // On s'arrête au premier trou : un clip à trous serait un montage,
+        // pas un extrait.
+        let mut morceaux = Vec::new();
+
+        for index in premier..(premier + self.plan.segments_per_clip) {
+            if !self.morceaux_prets.contains(&index) {
+                break;
+            }
+
+            morceaux.push(index);
+        }
+
+        if morceaux.is_empty() {
+            return None;
+        }
+
+        let morceaux_de_chevauchement = self.plan.segments_per_clip - self.plan.segments_step;
+
+        if self.prochain_clip > 1 && morceaux.len() as u32 <= morceaux_de_chevauchement {
+            return None;
+        }
+
+        Some(morceaux)
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -312,6 +352,54 @@ pub async fn assembler_clip(
     let _ = session_id;
 
     Ok(clip)
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// MESURE
+// ═══════════════════════════════════════════════════════════════════════
+
+/// Durée réelle d'un fichier vidéo, en secondes.
+///
+/// Sert à deux choses, et la seconde est la plus importante :
+///
+///   1. Donner sa vraie longueur au dernier clip, plus court que les
+///      autres. Le manifeste en déduit l'heure de fin, et le serveur s'en
+///      sert pour rattacher les coureurs : une fin annoncée trop tard
+///      vendrait à un coureur un clip où il n'apparaît pas.
+///
+///   2. Vérifier qu'un morceau est exploitable. Un mp4 dont l'index n'a pas
+///      été écrit — FFmpeg tué avant la fin — n'a aucune durée lisible.
+///      C'est un test bien plus honnête qu'un code de retour.
+pub async fn duree_reelle(app: &AppHandle, chemin: &Path) -> Option<f64> {
+    if !chemin.exists() {
+        return None;
+    }
+
+    let arguments: Vec<String> = vec![
+        "-v".into(),
+        "error".into(),
+        "-show_entries".into(),
+        "format=duration".into(),
+        "-of".into(),
+        "default=noprint_wrappers=1:nokey=1".into(),
+        chemin.to_string_lossy().to_string(),
+    ];
+
+    let commande = app.shell().sidecar("ffprobe").ok()?.args(arguments);
+
+    let (mut evenements, _enfant) = commande.spawn().ok()?;
+
+    let mut sortie = String::new();
+
+    // Lecture jusqu'à la fermeture du canal, comme pour l'enregistreur :
+    // sortir sur `Terminated` risquerait de perdre la ligne attendue.
+    while let Some(evenement) = evenements.recv().await {
+        if let CommandEvent::Stdout(donnees) = evenement {
+            sortie.push_str(&String::from_utf8_lossy(&donnees));
+        }
+    }
+
+    sortie.trim().parse::<f64>().ok().filter(|duree| *duree > 0.0)
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -544,6 +632,59 @@ mod tests {
 
         let morceaux = t.segment_ready(3).unwrap();
         assert_eq!(morceaux, vec![0, 1, 2, 3, 4]);
+    }
+
+    #[test]
+    fn propose_un_clip_final_avec_ce_qui_reste() {
+        let mut t = tracker_de_test();
+
+        for i in 0..=4 {
+            t.segment_ready(i);
+        }
+        t.clip_termine();
+
+        // Le clip 2 attend les morceaux 4 à 8 ; la captation s'arrête à 6.
+        t.segment_ready(5);
+        t.segment_ready(6);
+
+        assert_eq!(t.clip_final(), Some(vec![4, 5, 6]));
+    }
+
+    #[test]
+    fn refuse_un_clip_final_deja_contenu_dans_le_precedent() {
+        let mut t = tracker_de_test();
+
+        for i in 0..=4 {
+            t.segment_ready(i);
+        }
+        t.clip_termine();
+
+        // Seul le morceau de chevauchement est là : il est déjà tout entier
+        // dans le clip 1, un clip final ne montrerait rien de neuf.
+        assert_eq!(t.clip_final(), None);
+    }
+
+    #[test]
+    fn accepte_un_premier_clip_final_meme_tres_court() {
+        let mut t = tracker_de_test();
+
+        // Captation arrêtée avant le premier clip complet : ce qui a été
+        // filmé n'est nulle part ailleurs.
+        t.segment_ready(0);
+        t.segment_ready(1);
+
+        assert_eq!(t.clip_final(), Some(vec![0, 1]));
+    }
+
+    #[test]
+    fn le_clip_final_sarrete_au_premier_trou() {
+        let mut t = tracker_de_test();
+
+        t.segment_ready(0);
+        t.segment_ready(1);
+        t.segment_ready(3);
+
+        assert_eq!(t.clip_final(), Some(vec![0, 1]));
     }
 
     #[test]

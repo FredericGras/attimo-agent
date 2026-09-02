@@ -47,11 +47,20 @@
 
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicI64, Ordering};
 use std::sync::Arc;
+use std::time::Duration;
 use tauri::{AppHandle, Emitter};
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
+use tokio::sync::Notify;
+
+/// Temps laissé à FFmpeg pour refermer son dernier fichier.
+///
+/// Écrire l'index d'un mp4 de trente secondes prend une fraction de
+/// seconde. Au-delà de dix, quelque chose ne répond plus, et mieux vaut un
+/// fichier tronqué qu'une interface bloquée sur le terrain.
+const DELAI_ARRET_SECS: u64 = 10;
 
 // ═══════════════════════════════════════════════════════════════════════
 // RÉGLAGES
@@ -161,20 +170,76 @@ pub struct RecordingHandle {
     /// coureur passe à la trentième seconde d'un morceau, mais pas à quelle
     /// heure réelle — et le rattachement aux clips serait impossible.
     pub started_at: crate::frames::chrono_simple::Instant,
+
+    /// Intervalle d'extraction des images, retenu au démarrage.
+    ///
+    /// En course, c'est l'interface qui le passe à chaque morceau. À
+    /// l'arrêt, l'agent traite le dernier morceau tout seul et doit donc le
+    /// connaître sans rien demander à personne.
+    pub interval_secs: f32,
+
+    /// Dernier morceau OUVERT par FFmpeg.
+    ///
+    /// Partagé avec la tâche d'écoute. C'est le seul morceau qui ne sera
+    /// jamais annoncé : l'annonce d'un morceau est déclenchée par
+    /// l'ouverture du suivant, et il n'y en aura pas.
+    pub dernier_morceau: Arc<AtomicI64>,
+
+    /// Signalé quand FFmpeg est parti ET que tout ce qu'il a écrit a été lu.
+    fin_ffmpeg: Arc<Notify>,
+
     child: Option<CommandChild>,
 }
 
 impl RecordingHandle {
-    /// Arrête proprement l'enregistrement.
+    /// Arrête l'enregistrement et attend que FFmpeg ait refermé son fichier.
     ///
-    /// FFmpeg reçoit une demande d'arrêt, ce qui lui laisse le temps de
-    /// clore correctement le morceau en cours. Le tuer brutalement
-    /// laisserait un fichier tronqué et illisible.
-    pub fn stop(&mut self) {
+    /// La touche « q » sur l'entrée standard est la seule demande d'arrêt
+    /// que FFmpeg comprend : il finit son image en cours, écrit l'index du
+    /// mp4, puis rend la main. Le tuer à la place laisse un fichier sans
+    /// index, donc illisible — et c'est précisément celui qui contient les
+    /// dernières secondes filmées.
+    ///
+    /// La version précédente faisait l'inverse de ce que son commentaire
+    /// annonçait : `kill()` est un `TerminateProcess` sous Windows.
+    ///
+    /// Renvoie le numéro du morceau resté ouvert, s'il y en a un.
+    pub async fn stop(&mut self) -> Option<u32> {
+        // Le drapeau tombe en premier : il coupe la surveillance disque, et
+        // il dit à la tâche d'écoute que la sortie de FFmpeg est attendue.
+        // FFmpeg rend 255 quand il quitte sur « q » ; sans ce drapeau, son
+        // départ normal serait journalisé comme une panne.
         self.running.store(false, Ordering::Relaxed);
 
+        if let Some(child) = self.child.as_mut() {
+            let _ = child.write(b"q");
+        }
+
+        let rendu = tokio::time::timeout(
+            Duration::from_secs(DELAI_ARRET_SECS),
+            self.fin_ffmpeg.notified(),
+        )
+        .await
+        .is_ok();
+
         if let Some(child) = self.child.take() {
-            let _ = child.kill();
+            if !rendu {
+                log::warn!(
+                    "FFmpeg n'a pas rendu la main en {} s : arrêt forcé, \
+                     le dernier morceau restera tronqué.",
+                    DELAI_ARRET_SECS
+                );
+
+                let _ = child.kill();
+            }
+        }
+
+        let dernier = self.dernier_morceau.load(Ordering::Relaxed);
+
+        if dernier >= 0 {
+            Some(dernier as u32)
+        } else {
+            None
         }
     }
 }
@@ -206,6 +271,7 @@ pub async fn start_recording(
     app: &AppHandle,
     config: RecordingConfig,
     session_id: String,
+    interval_secs: f32,
 ) -> Result<RecordingHandle, String> {
     let plan = config.plan()?;
 
@@ -248,15 +314,29 @@ pub async fn start_recording(
     let app_ecoute = app.clone();
     let session_ecoute = session_id.clone();
 
+    let dernier_morceau = Arc::new(AtomicI64::new(-1));
+    let dernier_ecoute = dernier_morceau.clone();
+
+    let fin_ffmpeg = Arc::new(Notify::new());
+    let fin_ecoute = fin_ffmpeg.clone();
+
     tauri::async_runtime::spawn(async move {
         let mut dernier_index: i64 = -1;
         let mut dernieres_lignes: Vec<String> = Vec::new();
 
+        // La boucle va jusqu'à la FERMETURE DU CANAL, et non jusqu'au
+        // premier signe d'arrêt. Deux raisons, apprises à nos dépens :
+        //
+        //   — sortir sur `running` jetait les dernières lignes de FFmpeg,
+        //     donc l'annonce du dernier morceau, sans même les lire ;
+        //   — sortir sur `Terminated` n'est pas plus sûr : la sortie
+        //     d'erreur et l'état de fin remontent par deux fils différents,
+        //     rien ne garantit leur ordre d'arrivée.
+        //
+        // Le canal se ferme quand FFmpeg est parti et que tout ce qu'il a
+        // écrit a été lu. C'est le seul instant où l'on sait vraiment quel
+        // était le dernier morceau.
         while let Some(evenement) = evenements.recv().await {
-            if !running_ecoute.load(Ordering::Relaxed) {
-                break;
-            }
-
             match evenement {
                 CommandEvent::Stderr(donnees) | CommandEvent::Stdout(donnees) => {
                     let texte = String::from_utf8_lossy(&donnees);
@@ -296,6 +376,10 @@ pub async fn start_recording(
                         }
 
                         dernier_index = index as i64;
+
+                        // Lisible depuis l'arrêt de captation : c'est ce
+                        // morceau-là qu'il faudra rattraper à la main.
+                        dernier_ecoute.store(dernier_index, Ordering::Relaxed);
                     }
                 }
                 CommandEvent::Terminated(statut) => {
@@ -318,12 +402,13 @@ pub async fn start_recording(
                             log::error!("  ffmpeg | {}", ligne);
                         }
                     }
-
-                    break;
                 }
                 _ => {}
             }
         }
+
+        // Plus rien à lire : le numéro du dernier morceau est définitif.
+        fin_ecoute.notify_one();
     });
 
     Ok(RecordingHandle {
@@ -332,6 +417,9 @@ pub async fn start_recording(
         plan,
         work_dir: PathBuf::from(&config.output_dir),
         started_at: crate::frames::chrono_simple::Instant::maintenant(),
+        interval_secs,
+        dernier_morceau,
+        fin_ffmpeg,
         child: Some(enfant),
     })
 }

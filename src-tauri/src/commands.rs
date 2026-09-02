@@ -22,6 +22,7 @@ use serde::Serialize;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use tauri::Emitter;
 use tokio::sync::mpsc;
 use log::info;
 
@@ -354,7 +355,10 @@ pub async fn start_recording(
 
         if let Some(mut precedente) = verrou.take() {
             info!("Arrêt de la captation précédente");
-            precedente.stop();
+
+            // Cas anormal : on ne rattrape pas son dernier morceau, mais on
+            // lui laisse au moins refermer son fichier.
+            precedente.stop().await;
         }
     }
 
@@ -390,7 +394,8 @@ pub async fn start_recording(
         estimation.autonomy_secs / 3600
     );
 
-    let poignee = crate::recorder::start_recording(&app, config, session_id.clone()).await?;
+    let poignee =
+        crate::recorder::start_recording(&app, config, session_id.clone(), interval_secs).await?;
     let debut = poignee.started_at;
 
     // Le drapeau est celui de la captation : la surveillance ne peut donc pas
@@ -451,6 +456,24 @@ pub async fn on_segment_ready(
     app: tauri::AppHandle,
     segment_index: u32,
 ) -> Result<Option<crate::assembler::AssembledClip>, String> {
+    assembler_si_pret(&state, &app, segment_index, false).await
+}
+
+/// Corps commun de l'assemblage.
+///
+/// Appelé par la commande pendant la course, et par l'arrêt de captation
+/// pour le morceau que FFmpeg n'aura jamais l'occasion d'annoncer.
+///
+/// `fin_de_captation` ne change qu'une chose : la durée du clip est alors
+/// mesurée au lieu d'être déduite. En course elle est exacte par
+/// construction ; à l'arrêt, le dernier morceau est presque toujours plus
+/// court que prévu.
+async fn assembler_si_pret(
+    state: &AppState,
+    app: &tauri::AppHandle,
+    segment_index: u32,
+    fin_de_captation: bool,
+) -> Result<Option<crate::assembler::AssembledClip>, String> {
     let verrou = state.active_recording.lock().await;
 
     let Some(enregistrement) = verrou.as_ref() else {
@@ -477,11 +500,17 @@ pub async fn on_segment_ready(
         return Ok(None);
     };
 
-    let clip = crate::assembler::assembler_clip(&app, tracker, &morceaux, &session).await?;
+    let mut clip = crate::assembler::assembler_clip(app, tracker, &morceaux, &session).await?;
 
     tracker.clip_termine();
 
     drop(suivi);
+
+    let complet = if fin_de_captation {
+        mesurer_duree(app, &mut clip).await
+    } else {
+        true
+    };
 
     // Le manifeste est réécrit à chaque clip : il doit refléter l'état réel
     // à tout instant, pas seulement en fin de session.
@@ -489,11 +518,42 @@ pub async fn on_segment_ready(
         let mut verrou = state.manifest_writer.lock().await;
 
         if let Some(writer) = verrou.as_mut() {
-            writer.ajouter_clip(&clip, true)?;
+            writer.ajouter_clip(&clip, complet)?;
         }
     }
 
     Ok(Some(clip))
+}
+
+/// Remplace la durée théorique d'un clip par sa durée mesurée.
+///
+/// Renvoie vrai si les deux coïncident, c'est-à-dire si le clip est
+/// complet. Un clip amputé qui annoncerait sa durée nominale ferait
+/// rattacher des coureurs à des secondes qu'il ne contient pas.
+async fn mesurer_duree(
+    app: &tauri::AppHandle,
+    clip: &mut crate::assembler::AssembledClip,
+) -> bool {
+    let chemin = PathBuf::from(&clip.path);
+
+    let Some(reelle) = crate::assembler::duree_reelle(app, &chemin).await else {
+        return false;
+    };
+
+    let arrondie = reelle.round() as u32;
+
+    if arrondie == 0 || arrondie >= clip.duration_secs {
+        return true;
+    }
+
+    info!(
+        "Clip {} : {} s réelles au lieu de {} s prévues.",
+        clip.index, arrondie, clip.duration_secs
+    );
+
+    clip.duration_secs = arrondie;
+
+    false
 }
 
 /// Extrait les images d'analyse d'un morceau.
@@ -506,6 +566,16 @@ pub async fn on_segment_ready(
 pub async fn extract_frames(
     state: tauri::State<'_, AppState>,
     app: tauri::AppHandle,
+    segment_index: u32,
+    interval_secs: f32,
+) -> Result<crate::frames::ExtractionResult, String> {
+    extraire_images_morceau(&state, &app, segment_index, interval_secs).await
+}
+
+/// Corps commun de l'extraction — même raison que pour l'assemblage.
+async fn extraire_images_morceau(
+    state: &AppState,
+    app: &tauri::AppHandle,
     segment_index: u32,
     interval_secs: f32,
 ) -> Result<crate::frames::ExtractionResult, String> {
@@ -532,7 +602,7 @@ pub async fn extract_frames(
     let config = crate::frames::FrameConfig { interval_secs };
 
     let resultat =
-        crate::frames::extraire_images(&app, &dossier, segment_index, debut_morceau, &config)
+        crate::frames::extraire_images(app, &dossier, segment_index, debut_morceau, &config)
             .await?;
 
     // Index en ajout seul : jamais relu, jamais réécrit.
@@ -904,10 +974,41 @@ pub async fn generate_proxy(
     Ok(proxy.to_string_lossy().to_string())
 }
 
+/// Ce que l'arrêt de la captation a pu rattraper.
+///
+/// Renvoyé à l'interface, qui met tout cela en file. Rien n'est envoyé
+/// depuis ici : la file, la priorité et l'autorisation HD restent les mêmes
+/// que pendant la course.
+#[derive(Debug, Clone, Serialize)]
+pub struct FinDeCaptation {
+    pub session_id: String,
+
+    /// Morceau que FFmpeg avait encore ouvert, s'il y en avait un.
+    pub morceau_final: Option<u32>,
+
+    /// Faux si ce morceau n'a pas pu être refermé — les dernières secondes
+    /// filmées sont alors perdues, et il faut le dire.
+    pub morceau_final_exploitable: bool,
+
+    /// Message à afficher au photographe le cas échéant.
+    pub avertissement: Option<String>,
+
+    pub frames: Vec<crate::frames::ExtractedFrame>,
+    pub clips: Vec<crate::assembler::AssembledClip>,
+}
+
 /// Arrête la captation en cours.
+///
+/// L'arrêt n'est pas qu'une coupure : c'est le seul moment où le morceau
+/// resté ouvert peut être récupéré. Son annonce ne viendra jamais de FFmpeg
+/// — elle est déclenchée par l'ouverture du morceau suivant, et il n'y en
+/// aura pas. On la fait donc ici, à la main.
 #[tauri::command]
-pub async fn stop_recording(state: tauri::State<'_, AppState>) -> Result<(), String> {
-    arreter(&state).await
+pub async fn stop_recording(
+    state: tauri::State<'_, AppState>,
+    app: tauri::AppHandle,
+) -> Result<FinDeCaptation, String> {
+    arreter(&state, &app, false).await
 }
 
 /// Arrête la captation depuis l'intérieur du programme.
@@ -919,36 +1020,164 @@ pub async fn stop_recording(state: tauri::State<'_, AppState>) -> Result<(), Str
 pub(crate) async fn arreter_captation(app: &tauri::AppHandle) -> Result<(), String> {
     use tauri::Manager;
 
-    arreter(&app.state::<AppState>()).await
+    // Personne n'attend de valeur de retour ici : le résultat part en
+    // événement, que l'interface traite comme si elle l'avait demandé.
+    let etat = app.state::<AppState>();
+
+    arreter(&etat, app, true).await?;
+
+    Ok(())
 }
 
 /// Corps commun aux deux points d'entrée.
-async fn arreter(state: &AppState) -> Result<(), String> {
-    let mut verrou = state.active_recording.lock().await;
+async fn arreter(
+    state: &AppState,
+    app: &tauri::AppHandle,
+    emettre: bool,
+) -> Result<FinDeCaptation, String> {
+    // ─── 1. FFmpeg s'arrête, l'état reste en place ───
+    //
+    // La captation n'est PAS retirée de l'état tout de suite : le rattrapage
+    // passe par les mêmes fonctions que pendant la course, et celles-ci
+    // refusent de travailler sans captation active. C'était le verrou qui
+    // faisait disparaître le dernier clip.
+    let (session, dernier, dossier_travail, interval) = {
+        let mut verrou = state.active_recording.lock().await;
 
-    match verrou.take() {
-        Some(mut poignee) => {
-            info!("Arrêt de la captation {}", poignee.session_id);
-            poignee.stop();
+        let Some(poignee) = verrou.as_mut() else {
+            return Err("Aucune captation en cours.".to_string());
+        };
 
-            drop(verrou);
+        info!("Arrêt de la captation {}", poignee.session_id);
 
-            // Clôture du manifeste : renseigne l'heure de fin, ce qui permet
-            // au serveur de distinguer une session terminée d'une session
-            // interrompue.
-            {
-                let mut verrou_manifeste = state.manifest_writer.lock().await;
+        let dernier = poignee.stop().await;
 
-                if let Some(writer) = verrou_manifeste.as_mut() {
-                    let fin = crate::frames::chrono_simple::Instant::maintenant();
-                    writer.cloturer(fin)?;
-                }
+        (
+            poignee.session_id.clone(),
+            dernier,
+            poignee.work_dir.clone(),
+            poignee.interval_secs,
+        )
+    };
+
+    let mut fin = FinDeCaptation {
+        session_id: session.clone(),
+        morceau_final: dernier,
+        morceau_final_exploitable: false,
+        avertissement: None,
+        frames: Vec::new(),
+        clips: Vec::new(),
+    };
+
+    // ─── 2. Le morceau resté ouvert ───
+    if let Some(index) = dernier {
+        let chemin = dossier_travail
+            .join("_morceaux")
+            .join(format!("m_{:06}.mp4", index));
+
+        // Un mp4 dont l'index n'a pas été écrit n'a pas de durée lisible.
+        // C'est ce test qui décide si ce morceau est récupérable.
+        if crate::assembler::duree_reelle(app, &chemin).await.is_some() {
+            fin.morceau_final_exploitable = true;
+
+            // Les images d'abord : elles portent les dossards, et elles se
+            // perdaient elles aussi avec ce morceau.
+            match extraire_images_morceau(state, app, index, interval).await {
+                Ok(resultat) => fin.frames = resultat.frames,
+                Err(e) => log::error!("Images du dernier morceau : {}", e),
             }
 
-            Ok(())
+            match assembler_si_pret(state, app, index, true).await {
+                Ok(Some(clip)) => fin.clips.push(clip),
+                Ok(None) => {}
+                Err(e) => log::error!("Assemblage du dernier morceau : {}", e),
+            }
+        } else {
+            let message = format!(
+                "Le morceau {} n'a pas pu être refermé : les dernières \
+                 secondes filmées sont perdues.",
+                index
+            );
+
+            log::error!("{}", message);
+            fin.avertissement = Some(message);
         }
-        None => Err("Aucune captation en cours.".to_string()),
     }
+
+    // ─── 3. Le clip final, plus court que les autres ───
+    match assembler_clip_final(state, app, &session).await {
+        Ok(Some(clip)) => fin.clips.push(clip),
+        Ok(None) => {}
+        Err(e) => log::error!("Clip final : {}", e),
+    }
+
+    // ─── 4. Clôture ───
+    //
+    // Maintenant seulement : plus rien n'a besoin de la captation.
+    state.active_recording.lock().await.take();
+    state.clip_tracker.lock().await.take();
+
+    // Le manifeste reçoit son heure de fin, ce qui permet au serveur de
+    // distinguer une session terminée d'une session interrompue.
+    {
+        let mut verrou_manifeste = state.manifest_writer.lock().await;
+
+        if let Some(writer) = verrou_manifeste.as_mut() {
+            let heure = crate::frames::chrono_simple::Instant::maintenant();
+            writer.cloturer(heure)?;
+        }
+    }
+
+    info!(
+        "Captation {} close : {} clip(s) et {} image(s) rattrapés.",
+        session,
+        fin.clips.len(),
+        fin.frames.len()
+    );
+
+    if emettre {
+        let _ = app.emit("recording-final", &fin);
+    }
+
+    Ok(fin)
+}
+
+/// Assemble un dernier clip avec les morceaux restants.
+///
+/// Toujours marqué incomplet dans le manifeste : par construction il lui
+/// manque des morceaux. Le serveur doit pouvoir le savoir.
+async fn assembler_clip_final(
+    state: &AppState,
+    app: &tauri::AppHandle,
+    session: &str,
+) -> Result<Option<crate::assembler::AssembledClip>, String> {
+    let mut suivi = state.clip_tracker.lock().await;
+
+    let Some(tracker) = suivi.as_mut() else {
+        return Ok(None);
+    };
+
+    let Some(morceaux) = tracker.clip_final() else {
+        return Ok(None);
+    };
+
+    let mut clip = crate::assembler::assembler_clip(app, tracker, &morceaux, session).await?;
+
+    tracker.clip_termine();
+
+    drop(suivi);
+
+    mesurer_duree(app, &mut clip).await;
+
+    {
+        let mut verrou = state.manifest_writer.lock().await;
+
+        if let Some(writer) = verrou.as_mut() {
+            writer.ajouter_clip(&clip, false)?;
+        }
+    }
+
+    Ok(Some(clip))
 }
 
 // ═══════════════════════════════════════════════════════════════════════
