@@ -66,15 +66,6 @@ impl QueueKind {
             _ => QueueKind::Frames,
         }
     }
-
-    /// Rang d'envoi. Plus le nombre est petit, plus c'est prioritaire.
-    fn priorite(&self) -> u8 {
-        match self {
-            QueueKind::Frames => 1,
-            QueueKind::ClipProxy => 2,
-            QueueKind::ClipHd => 3,
-        }
-    }
 }
 
 /// Un élément en attente d'envoi.
@@ -458,6 +449,12 @@ pub fn relancer_echecs(conn: &Connection) -> Result<usize, String> {
 /// interdit toute suppression automatique sur le poste du photographe — un
 /// fichier effacé tout seul, c'est potentiellement une vente perdue sans
 /// recours.
+///
+/// Conservée sans appelant : c'est le SEUL effacement de `video_queue` de
+/// tout le code. Sans elle, les lignes `sent` s'accumulent course après
+/// course. Elle attend son point d'appel — la brancher est un changement de
+/// comportement, décidé à part.
+#[allow(dead_code)]
 pub fn purger_envoyes(conn: &Connection, session_id: &str) -> Result<usize, String> {
     let nombre = conn
         .execute(

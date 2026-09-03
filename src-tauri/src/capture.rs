@@ -109,26 +109,6 @@ pub async fn list_devices(app: &AppHandle) -> Result<Vec<VideoDevice>, String> {
     Ok(parser_liste_peripheriques(&sortie))
 }
 
-/// Renvoie la sortie brute de FFmpeg, sans interprétation.
-///
-/// Provisoire, à des fins de diagnostic : permet de lire le texte exact des
-/// en-têtes de section, qui varient selon les versions de FFmpeg.
-pub async fn debug_raw_devices(app: &AppHandle) -> Result<String, String> {
-    executer_ffmpeg(
-        app,
-        vec![
-            "-hide_banner".into(),
-            "-list_devices".into(),
-            "true".into(),
-            "-f".into(),
-            "dshow".into(),
-            "-i".into(),
-            "dummy".into(),
-        ],
-    )
-    .await
-}
-
 /// Extrait les noms de périphériques de la sortie de FFmpeg.
 ///
 /// Le format ressemble à ceci :

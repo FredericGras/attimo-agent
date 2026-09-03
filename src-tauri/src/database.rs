@@ -95,20 +95,6 @@ pub fn init_db() -> Result<()> {
 // ─── Structures sérialisables pour le frontend ───
 
 #[derive(Debug, Serialize, Clone)]
-pub struct UploadSession {
-    pub id: i64,
-    pub event_id: i64,
-    pub event_name: String,
-    pub checkpoint_id: Option<i64>,
-    pub checkpoint_name: Option<String>,
-    pub watch_folder: String,
-    pub started_at: String,
-    pub stopped_at: Option<String>,
-    pub photos_sent: i64,
-    pub photos_failed: i64,
-}
-
-#[derive(Debug, Serialize, Clone)]
 pub struct UploadFile {
     pub id: i64,
     pub session_id: i64,
@@ -149,17 +135,6 @@ pub fn create_session(
         ],
     )?;
     Ok(conn.last_insert_rowid())
-}
-
-/// Vérifie si un fichier a déjà été uploadé avec succès dans cette session
-pub fn is_file_already_uploaded(session_id: i64, filename: &str) -> Result<bool> {
-    let conn = open_db()?;
-    let count: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM upload_files WHERE session_id = ?1 AND filename = ?2 AND status = 'success'",
-        params![session_id, filename],
-        |row| row.get(0),
-    )?;
-    Ok(count > 0)
 }
 
 /// Insère un nouveau fichier dans la file d'attente.
@@ -217,32 +192,6 @@ pub fn update_file_status(
     }
 
     Ok(())
-}
-
-/// Récupère les fichiers en attente (pending) pour une session
-pub fn get_pending_files(session_id: i64) -> Result<Vec<UploadFile>> {
-    let conn = open_db()?;
-    let mut stmt = conn.prepare(
-        "SELECT id, session_id, filename, file_path, file_size, status, attempts, last_error, uploaded_at, server_photo_id
-         FROM upload_files WHERE session_id = ?1 AND status IN ('pending', 'failed') ORDER BY id ASC"
-    )?;
-
-    let files = stmt.query_map(params![session_id], |row| {
-        Ok(UploadFile {
-            id: row.get(0)?,
-            session_id: row.get(1)?,
-            filename: row.get(2)?,
-            file_path: row.get(3)?,
-            file_size: row.get(4)?,
-            status: row.get(5)?,
-            attempts: row.get(6)?,
-            last_error: row.get(7)?,
-            uploaded_at: row.get(8)?,
-            server_photo_id: row.get(9)?,
-        })
-    })?.collect::<Result<Vec<_>>>()?;
-
-    Ok(files)
 }
 
 /// Récupère les statistiques d'une session
