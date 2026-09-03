@@ -111,21 +111,28 @@ pub async fn list_devices(app: &AppHandle) -> Result<Vec<VideoDevice>, String> {
 
 /// Extrait les noms de périphériques de la sortie de FFmpeg.
 ///
-/// Le format ressemble à ceci :
+/// Le format, tel que le produit le FFmpeg embarqué :
 ///
-///   [dshow @ ...] DirectShow video devices
-///   [dshow @ ...]  "Iriun Webcam"
-///   [dshow @ ...]     Alternative name "@device_pnp_\\?\usb#vid_..."
-///   [dshow @ ...] DirectShow audio devices
-///   [dshow @ ...]  "Microphone (Iriun Webcam)"
+///   [in#0 @ ...] "Iriun Webcam" (video)
+///   [in#0 @ ...]   Alternative name "@device_pnp_\\?\root#camera#..."
+///   [in#0 @ ...] "Microphone (Iriun Webcam)" (audio)
+///   [in#0 @ ...]   Alternative name "@device_cm_{33D9A762-...}"
+///
+/// Chaque ligne porte son propre type, en fin de ligne. Les versions plus
+/// anciennes de FFmpeg annonçaient à la place des en-têtes de section
+/// (« DirectShow video devices ») qui faisaient basculer la lecture du mode
+/// vidéo au mode audio. Ce n'est plus le cas : une lecture fondée sur ces
+/// en-têtes ne reconnaîtrait aujourd'hui plus aucun périphérique.
 ///
 /// Deux pièges traités ici :
 ///
 ///   1. Les lignes « Alternative name » contiennent aussi des guillemets,
 ///      mais ce sont des identifiants système illisibles. On les écarte.
 ///
-///   2. La bascule vidéo → audio se fait sur une ligne d'en-tête. Sans la
-///      détecter, tous les micros seraient pris pour des caméras.
+///   2. Le nom d'un micro contient lui-même une parenthèse — « Microphone
+///      (Iriun Webcam) ». C'est donc la parenthèse FINALE qui porte le type,
+///      d'où le test sur la fin de ligne plutôt que sur le contenu. Une
+///      ligne sans marqueur de type est ignorée.
 fn parser_liste_peripheriques(sortie: &str) -> Vec<VideoDevice> {
     let mut peripheriques = Vec::new();
 
@@ -415,13 +422,13 @@ mod tests {
 
     #[test]
     fn separe_bien_video_et_audio() {
+        // Sortie relevee sur le FFmpeg embarque (9.0.1) :
+        //   ffmpeg -hide_banner -list_devices true -f dshow -i dummy
         let sortie = r#"
-[dshow @ 000] DirectShow video devices (some may be both video and audio devices)
-[dshow @ 000]  "Iriun Webcam"
-[dshow @ 000]     Alternative name "@device_pnp_\\?\usb#vid_046d"
-[dshow @ 000] DirectShow audio devices
-[dshow @ 000]  "Microphone (Iriun Webcam)"
-[dshow @ 000]     Alternative name "@device_cm_{33D9A762}"
+[in#0 @ 000001d0] "Iriun Webcam" (video)
+[in#0 @ 000001d0]   Alternative name "@device_pnp_\\?\root#camera#0000#{65e8773d}\8da4e6f4"
+[in#0 @ 000001d0] "Microphone (Iriun Webcam)" (audio)
+[in#0 @ 000001d0]   Alternative name "@device_cm_{33D9A762-90C8-11D0-BD43-00A0C911CE86}\wave_{BCDBCB48}"
 "#;
 
         let peripheriques = parser_liste_peripheriques(sortie);
@@ -435,9 +442,8 @@ mod tests {
     #[test]
     fn ignore_les_noms_techniques() {
         let sortie = r#"
-[dshow @ 000] DirectShow video devices
-[dshow @ 000]  "Canon EOS Webcam Utility"
-[dshow @ 000]     Alternative name "@device_pnp_\\?\usb#vid_04a9#pid_32c1"
+[in#0 @ 000001d0] "Canon EOS Webcam Utility" (video)
+[in#0 @ 000001d0]   Alternative name "@device_pnp_\\?\usb#vid_04a9#pid_32c1"
 "#;
 
         let peripheriques = parser_liste_peripheriques(sortie);

@@ -494,7 +494,9 @@ mod tests {
     #[test]
     fn le_decoupage_en_morceaux_couvre_tout_le_fichier() {
         // Un fichier de 12 Mo doit se découper en 3 morceaux de 5 Mo.
-        let taille = 12 * 1024 * 1024;
+        // Le type suit celui de la production : CHUNK_SIZE est un usize,
+        // et le decoupage porte sur octets.len().
+        let taille: usize = 12 * 1024 * 1024;
         let morceaux = taille.div_ceil(CHUNK_SIZE);
 
         assert_eq!(morceaux, 3);
@@ -502,7 +504,7 @@ mod tests {
 
     #[test]
     fn un_fichier_plus_petit_quun_morceau_tient_en_un_seul() {
-        let taille = 2 * 1024 * 1024;
+        let taille: usize = 2 * 1024 * 1024;
         let morceaux = taille.div_ceil(CHUNK_SIZE);
 
         assert_eq!(morceaux, 1);

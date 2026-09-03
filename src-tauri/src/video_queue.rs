@@ -561,6 +561,13 @@ fn ecarter(
 mod tests {
     use super::*;
 
+    /// L'evenement de reference des tests.
+    ///
+    /// La valeur n'a pas d'importance : ce qui compte est que la mise en
+    /// file et la relecture parlent du meme evenement. Les tests du filtre
+    /// en introduisent un second pour verifier qu'ils ne se melangent pas.
+    const EVT: i64 = 42;
+
     fn base_de_test() -> Connection {
         let conn = Connection::open_in_memory().unwrap();
         init_schema(&conn).unwrap();
@@ -568,7 +575,7 @@ mod tests {
     }
 
     fn enfiler_simple(conn: &Connection, kind: QueueKind, chemin: &str) -> i64 {
-        enfiler(conn, "session_1", kind, chemin, Some(1), None, None, None).unwrap()
+        enfiler(conn, "session_1", EVT, kind, chemin, Some(1), None, None, None).unwrap()
     }
 
     #[test]
@@ -580,7 +587,7 @@ mod tests {
         enfiler_simple(&conn, QueueKind::ClipProxy, "proxy.mp4");
         enfiler_simple(&conn, QueueKind::Frames, "img.jpg");
 
-        let file = prochains(&conn, true, 10).unwrap();
+        let file = prochains(&conn, EVT, true, 10).unwrap();
 
         assert_eq!(file[0].kind, QueueKind::Frames);
         assert_eq!(file[1].kind, QueueKind::ClipProxy);
@@ -595,13 +602,13 @@ mod tests {
         enfiler_simple(&conn, QueueKind::ClipProxy, "proxy.mp4");
         enfiler_simple(&conn, QueueKind::ClipHd, "hd.mp4");
 
-        let file = prochains(&conn, false, 10).unwrap();
+        let file = prochains(&conn, EVT, false, 10).unwrap();
 
         assert_eq!(file.len(), 2);
         assert!(file.iter().all(|e| e.kind != QueueKind::ClipHd));
 
         // Elle n'est pas perdue pour autant : elle reste en attente.
-        let stats = statistiques(&conn).unwrap();
+        let stats = statistiques(&conn, EVT).unwrap();
         assert_eq!(stats.hd_pending, 1);
     }
 
@@ -612,7 +619,7 @@ mod tests {
         enfiler_simple(&conn, QueueKind::ClipHd, "clip.mp4");
         enfiler_simple(&conn, QueueKind::ClipHd, "clip.mp4");
 
-        let file = prochains(&conn, true, 10).unwrap();
+        let file = prochains(&conn, EVT, true, 10).unwrap();
 
         assert_eq!(file.len(), 1);
     }
@@ -624,7 +631,7 @@ mod tests {
         let id = enfiler_simple(&conn, QueueKind::Frames, "img.jpg");
         marquer_envoye(&conn, id).unwrap();
 
-        assert_eq!(prochains(&conn, true, 10).unwrap().len(), 0);
+        assert_eq!(prochains(&conn, EVT, true, 10).unwrap().len(), 0);
     }
 
     #[test]
@@ -640,8 +647,8 @@ mod tests {
         // qu'une file bloquée sur un cas insoluble.
         assert!(marquer_echec(&conn, id, "réseau").unwrap());
 
-        assert_eq!(prochains(&conn, true, 10).unwrap().len(), 0);
-        assert_eq!(statistiques(&conn).unwrap().failed, 1);
+        assert_eq!(prochains(&conn, EVT, true, 10).unwrap().len(), 0);
+        assert_eq!(statistiques(&conn, EVT).unwrap().failed, 1);
     }
 
     #[test]
@@ -655,7 +662,7 @@ mod tests {
         }
 
         assert_eq!(relancer_echecs(&conn).unwrap(), 1);
-        assert_eq!(prochains(&conn, true, 10).unwrap().len(), 1);
+        assert_eq!(prochains(&conn, EVT, true, 10).unwrap().len(), 1);
     }
 
     #[test]
@@ -668,7 +675,7 @@ mod tests {
         enfiler_simple(&conn, QueueKind::ClipHd, "h1.mp4");
         enfiler_simple(&conn, QueueKind::ClipHd, "h2.mp4");
 
-        let stats = statistiques(&conn).unwrap();
+        let stats = statistiques(&conn, EVT).unwrap();
 
         assert_eq!(stats.frames_pending, 2);
         assert_eq!(stats.proxy_pending, 1);
@@ -685,7 +692,7 @@ mod tests {
         marquer_envoye(&conn, envoye).unwrap();
 
         assert_eq!(purger_envoyes(&conn, "session_1").unwrap(), 1);
-        assert_eq!(prochains(&conn, true, 10).unwrap().len(), 1);
+        assert_eq!(prochains(&conn, EVT, true, 10).unwrap().len(), 1);
     }
 
     #[test]
@@ -767,5 +774,53 @@ mod tests {
 
         assert_eq!(bilan.skipped, 0);
         assert_eq!(prochains(&conn, EVT, true, 10).unwrap().len(), 1);
+    }
+
+    #[test]
+    fn un_clip_dhier_ne_part_pas_vers_la_course_du_jour() {
+        let conn = base_de_test();
+
+        const HIER: i64 = 7;
+
+        // Deux courses, deux sessions, la meme file.
+        enfiler(&conn, "session_hier", HIER, QueueKind::ClipHd, "hier.mp4",
+                Some(1), None, None, None).unwrap();
+        enfiler(&conn, "session_jour", EVT, QueueKind::ClipHd, "jour.mp4",
+                Some(1), None, None, None).unwrap();
+
+        // Le clip reste en attente : il n'est pas perdu, il n'est simplement
+        // pas propose a la course ouverte aujourd'hui.
+        let file = prochains(&conn, EVT, true, 10).unwrap();
+
+        assert_eq!(file.len(), 1);
+        assert_eq!(file[0].session_id, "session_jour");
+
+        // Et les compteurs affiches suivent le meme decoupage : sans cela, le
+        // photographe verrait un reste a envoyer qui ne le concerne pas.
+        assert_eq!(statistiques(&conn, EVT).unwrap().hd_pending, 1);
+        assert_eq!(statistiques(&conn, HIER).unwrap().hd_pending, 1);
+    }
+
+    #[test]
+    fn les_lignes_dune_base_anterieure_restent_envoyables() {
+        let conn = base_de_test();
+
+        // Avant le filtre, la colonne event_id n'existait pas : les lignes
+        // rattrapees par l'ALTER TABLE la portent a NULL. Elles doivent
+        // rester visibles, sinon une mise a jour de l'agent condamnerait
+        // silencieusement les clips deja en attente sur le disque.
+        conn.execute(
+            "INSERT INTO video_queue (session_id, event_id, kind, file_path, clip_index)
+             VALUES ('session_ancienne', NULL, 'clip_hd', 'ancien.mp4', 1)",
+            [],
+        )
+        .unwrap();
+
+        let file = prochains(&conn, EVT, true, 10).unwrap();
+
+        assert_eq!(file.len(), 1);
+        assert_eq!(file[0].session_id, "session_ancienne");
+
+        assert_eq!(statistiques(&conn, EVT).unwrap().hd_pending, 1);
     }
 }
