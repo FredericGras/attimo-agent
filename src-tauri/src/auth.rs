@@ -102,16 +102,9 @@ struct CheckpointsApiResponse {
 // ─── Stockage du token (fichier JSON dans AppData) ───
 
 fn token_file_path() -> PathBuf {
-    let mut path = if let Some(data_dir) = std::env::var_os("APPDATA") {
-        let mut p = PathBuf::from(data_dir);
-        p.push("com.attimo-gallery.agent");
-        p
-    } else {
-        let mut p = std::env::current_dir().unwrap_or_default();
-        p.push("data");
-        p
-    };
-    fs::create_dir_all(&path).ok();
+    // Même dossier que la base locale : propre à chaque édition (0.3.1), pour
+    // que l'agent de DEV ne lise jamais le mot de passe de la production.
+    let mut path = crate::database::dirs();
     path.push("auth.json");
     path
 }

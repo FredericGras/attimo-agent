@@ -36,7 +36,7 @@
         "existing_include": "Uaslódáil na comhaid atá ann cheana san fhillteán",
         "existing_exclude": "Uaslódáil comhaid nua amháin",
         "parallel": "Uaslódálacha comhthráthach",
-        "parallel_hint": "Le 4G lag, úsáid 1. Le 5G cobhsaí, luathann 3.",
+        "parallel_hint": "Oireann 3 don chuid is mó de na líonraí. Téigh suas go 6 má cheadaíonn an bandaleithead é; fill ar 1 amháin má theipeann ar na huaslódálacha. Ar 5G, is minic a bhíonn an t-uaslódáil i bhfad níos moille ná ar 4G: is fearr 4G amháin a úsáid.",
         "start": "Tosaigh an seisiún",
         "photos_title": "Grianghraif",
         "video_title": "Físeán",
@@ -64,12 +64,14 @@
         "video_split_warning": "Roinnt mhíchaothúil: píosaí {segment} s, {count} sa chlip. Bain triail as luachanna níos cruinne.",
         "video_split_invalid": "Caithfidh an forluí a bheith níos giorra ná fad an chlip.",
         "video_send_hd": "Seol lánchaighdeán le linn an rása",
-        "video_send_hd_hint": "Seachas sin carnann na clipeanna agus imeoidh siad ar fhilleadh. Ar líonra plódaithe coinníonn sé seo seoladh na ngrianghraf tapa.",
+        "video_send_hd_hint": "Seachas sin fanann na clipeanna HD ar an diosca: seol iad nuair is mian leat leis an gcnaipe \"Seol HD anois\" ar an scáileán faire. Ar líonra plódaithe coinníonn sé seo seoladh na ngrianghraf tapa.",
         "disk_pending": "Roghnaigh ceamara agus fillteán chun an spás riachtanach a mheas.",
         "disk_rate": "{rate} GB san uair",
         "disk_hours": "thart ar {hours} u taifeadta",
         "disk_detail": "{free} GB saor, {reserved} GB curtha i leataobh don chóras",
-        "nothing_enabled": "Cuir na grianghraif nó an físeán ar siúl, ar a laghad."
+        "nothing_enabled": "Cuir na grianghraif nó an físeán ar siúl, ar a laghad.",
+        "hd_pending_title": "Clipeanna HD ag fanacht",
+        "hd_pending_text": "Clipeanna HD ón imeacht seo atá ag fanacht le seoladh: {count} ({size} GB)."
     },
     "dashboard": {
         "status_active": "Gníomhach",
@@ -108,7 +110,28 @@
         "msg_resumed": "Uaslódálacha atosaithe",
         "msg_stopped": "Seisiún stoptha",
         "msg_retry_queued": "{count} comhad(-aid) curtha ar ais sa scuaine",
-        "msg_error": "Earráid: {error}"
+        "msg_error": "Earráid: {error}",
+        "home_title": "Baile (leanann an seisiún ar aghaidh)",
+        "msg_parallel": "Uaslódálacha comhthráthacha: {count} (leanann an seisiún ar aghaidh)",
+        "throughput": "Mb/s seolta (1 nóim)",
+        "video_filmed": "clipeanna scannánaithe",
+        "video_assembled": "clipeanna cóimeáilte",
+        "video_sent": "clipeanna seolta",
+        "video_waiting": "clipeanna ag fanacht le seoladh",
+        "video_frames_detail": "frámaí anailíse — {sent} seolta",
+        "video_clip_hd_sent": "Clip {index} HD seolta",
+        "video_pause": "Cuir an físeán ar sos",
+        "video_resume": "Atosaigh an físeán",
+        "video_pausing": "Á chur ar sos…",
+        "video_resuming": "Á atosú…",
+        "video_stopping": "Á stopadh…",
+        "video_paused": "Taifeadadh ar sos",
+        "video_stopped_title": "Taifeadadh stoptha",
+        "video_sending_only": "Seoladh físeáin",
+        "video_paused_log": "Taifeadadh ar sos — dúnadh an clip a bhí ar siúl agus seolfar é leis na cinn eile",
+        "video_resumed_log": "Taifeadadh atosaithe",
+        "video_send_failed": "Tréigeadh seoladh an fhíseáin tar éis 3 iarracht: {error}",
+        "video_throttled": "Freastalaí ró-ualaithe: seoladh físeáin ar sos ar feadh {delay} s"
     },
     "watcher": {
         "detected": "Aimsíodh ({size} MB)",
@@ -120,7 +143,10 @@
         "attempt": "Uaslódáil (iarracht {attempt}/3)",
         "success": "OK i {duration}s ({speed} KB/s)",
         "failed": "Theip {attempt}/{max}: {error}",
-        "retry_scheduled": "Iarracht nua i {delay}s (iarracht {attempt}/3)"
+        "retry_scheduled": "Iarracht nua i {delay}s (iarracht {attempt}/3)",
+        "success_timing": "OK i {duration} s — líonra {network} s + freastalaí {server} s",
+        "success_total": "OK i {duration} s",
+        "throttled": "Freastalaí ró-ualaithe ({code}): sos {delay} s, uaslódálacha comhthráthacha: {parallel}"
     },
     "connection": {
         "restored": "Ceangal athbhunaithe",
@@ -130,5 +156,31 @@
     "complete": {
         "with_errors": "Críochnaithe: {sent} seolta, {failed} theip",
         "success": "Críochnaithe: {count} grianghraf uaslódáilte go rathúil!"
+    },
+    "hd": {
+        "title": "Físeán HD",
+        "none": "Níl aon chlipeanna HD fós.",
+        "remaining": "Clipeanna HD le seoladh: {count} — {size} GB",
+        "progress": "{sent} / {total} clipeanna HD seolta",
+        "all_sent": "Seoladh na clipeanna HD go léir.",
+        "failed": "Clipeanna HD a theip: {count}",
+        "sending": "á seoladh",
+        "send_now": "Seol HD anois",
+        "suspend": "Cuir seoladh HD ar sos",
+        "retry": "Bain triail eile as na cinn a theip",
+        "started_log": "Tosaíodh ar sheoladh na gclipeanna HD",
+        "suspended_log": "Cuireadh seoladh na gclipeanna HD ar sos",
+        "hint": "Seoltar HD ón ngníomhaire, riamh ón ngailearaí: má sheoltar ón ngailearaí é, cruthaítear dúblach. Tá tosaíocht fós ag na grianghraif."
+    },
+    "nav": {
+        "banner_title": "Seisiún ar siúl: {event}",
+        "banner_photos": "grianghraif seolta: {sent}, ag fanacht: {pending}",
+        "banner_video_recording": "taifeadadh físeáin ar siúl",
+        "banner_video_paused": "físeán ar sos",
+        "banner_video_sending": "comhaid físeáin le seoladh: {count}",
+        "banner_back": "Ar ais chuig an bhfaire",
+        "event_running": "● Seisiún ar siúl",
+        "confirm_replace": "Tá seisiún ar siúl do \"{event}\". É a chríochnú chun an ceann seo a thosú?",
+        "confirm_logout": "Tá seisiún ar siúl. É a chríochnú agus logáil amach?"
     }
 }

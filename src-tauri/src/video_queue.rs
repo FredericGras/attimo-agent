@@ -93,6 +93,23 @@ pub struct QueueStats {
     pub hd_pending: i64,
     pub total_bytes: i64,
     pub failed: i64,
+
+    // ─── 0.3.1 : avancement, pour les compteurs du tableau de bord ───
+    /// En cours d'envoi à cet instant (réservés, pas encore confirmés).
+    pub frames_sending: i64,
+    pub proxy_sending: i64,
+    pub hd_sending: i64,
+
+    /// Déjà reçus par le serveur.
+    pub frames_sent: i64,
+    pub proxy_sent: i64,
+    pub hd_sent: i64,
+
+    /// Clips HD abandonnés après trois échecs (compris dans `failed`).
+    pub hd_failed: i64,
+
+    /// Poids des clips HD restant à envoyer (en attente ou en cours).
+    pub hd_bytes_pending: i64,
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -276,49 +293,97 @@ pub fn prochains(
 ///
 /// Sert à l'affichage : le photographe doit voir ce qui reste avant de
 /// décider d'activer l'envoi vidéo. Sans ce chiffre, il bascule à l'aveugle.
-pub fn statistiques(conn: &Connection, event_id: i64) -> Result<QueueStats, String> {
+///
+/// `sessions` (0.3.1) restreint le décompte à certaines sessions de
+/// captation : le tableau de bord compte les clips de la session en cours —
+/// filmés, assemblés, envoyés, en attente — sans y mêler ceux d'une sortie
+/// précédente sur la même épreuve. Une pause suivie d'une reprise crée une
+/// nouvelle session de captation : l'interface les passe toutes.
+///
+/// Liste vide : toute l'épreuve.
+pub fn statistiques_filtrees(
+    conn: &Connection,
+    event_id: i64,
+    sessions: &[String],
+) -> Result<QueueStats, String> {
+    use rusqlite::types::Value;
+
+    let mut filtre = String::from("(event_id = ?1 OR event_id IS NULL)");
+    let mut valeurs: Vec<Value> = vec![Value::Integer(event_id)];
+
+    if !sessions.is_empty() {
+        let marques: Vec<String> = (0..sessions.len()).map(|i| format!("?{}", i + 2)).collect();
+
+        filtre.push_str(&format!(" AND session_id IN ({})", marques.join(", ")));
+        valeurs.extend(sessions.iter().map(|s| Value::Text(s.clone())));
+    }
+
     let mut stats = QueueStats::default();
 
     let mut requete = conn
-        .prepare(
-            "SELECT kind, COUNT(*), COALESCE(SUM(size_bytes), 0)
+        .prepare(&format!(
+            "SELECT kind, status, COUNT(*), COALESCE(SUM(size_bytes), 0)
              FROM video_queue
-             WHERE status = 'pending' AND (event_id = ?1 OR event_id IS NULL)
-             GROUP BY kind",
-        )
+             WHERE {}
+             GROUP BY kind, status",
+            filtre
+        ))
         .map_err(|e| format!("Statistiques impossibles : {}", e))?;
 
     let lignes = requete
-        .query_map(params![event_id], |ligne| {
+        .query_map(rusqlite::params_from_iter(valeurs.iter()), |ligne| {
             Ok((
                 ligne.get::<_, String>(0)?,
-                ligne.get::<_, i64>(1)?,
+                ligne.get::<_, String>(1)?,
                 ligne.get::<_, i64>(2)?,
+                ligne.get::<_, i64>(3)?,
             ))
         })
         .map_err(|e| format!("Statistiques impossibles : {}", e))?;
 
     for ligne in lignes {
-        let (nature, nombre, octets) =
+        let (nature, statut, nombre, octets) =
             ligne.map_err(|e| format!("Lecture impossible : {}", e))?;
 
-        match QueueKind::from_str(&nature) {
-            QueueKind::Frames => stats.frames_pending = nombre,
-            QueueKind::ClipProxy => stats.proxy_pending = nombre,
-            QueueKind::ClipHd => stats.hd_pending = nombre,
+        let nature = QueueKind::from_str(&nature);
+
+        match statut.as_str() {
+            "pending" => {
+                match nature {
+                    QueueKind::Frames => stats.frames_pending = nombre,
+                    QueueKind::ClipProxy => stats.proxy_pending = nombre,
+                    QueueKind::ClipHd => stats.hd_pending = nombre,
+                }
+
+                stats.total_bytes += octets;
+
+                if nature == QueueKind::ClipHd {
+                    stats.hd_bytes_pending += octets;
+                }
+            }
+            "sending" => match nature {
+                QueueKind::Frames => stats.frames_sending = nombre,
+                QueueKind::ClipProxy => stats.proxy_sending = nombre,
+                QueueKind::ClipHd => {
+                    stats.hd_sending = nombre;
+                    stats.hd_bytes_pending += octets;
+                }
+            },
+            "sent" => match nature {
+                QueueKind::Frames => stats.frames_sent = nombre,
+                QueueKind::ClipProxy => stats.proxy_sent = nombre,
+                QueueKind::ClipHd => stats.hd_sent = nombre,
+            },
+            "failed" => {
+                stats.failed += nombre;
+
+                if nature == QueueKind::ClipHd {
+                    stats.hd_failed = nombre;
+                }
+            }
+            _ => {}
         }
-
-        stats.total_bytes += octets;
     }
-
-    stats.failed = conn
-        .query_row(
-            "SELECT COUNT(*) FROM video_queue
-             WHERE status = 'failed' AND (event_id = ?1 OR event_id IS NULL)",
-            params![event_id],
-            |l| l.get(0),
-        )
-        .unwrap_or(0);
 
     Ok(stats)
 }
@@ -347,6 +412,64 @@ pub fn reserver(conn: &Connection, id: i64) -> Result<bool, String> {
         .map_err(|e| format!("Réservation impossible : {}", e))?;
 
     Ok(modifiees == 1)
+}
+
+/// Choisit et réserve le prochain envoi (0.3.1).
+///
+/// Soit un lot d'au plus `lot_images` images d'analyse d'une même session —
+/// elles partent en une seule requête —, soit un seul clip. L'ordre de
+/// priorité de `prochains` est respecté : tant qu'il reste des images, aucun
+/// clip n'est choisi.
+///
+/// Chaque réservation est atomique : deux envois simultanés ne prennent
+/// jamais le même élément, et le second complète son lot plus loin dans la
+/// file au lieu de repartir bredouille.
+pub fn reserver_prochain_envoi(
+    conn: &Connection,
+    event_id: i64,
+    inclure_hd: bool,
+    lot_images: usize,
+) -> Result<Vec<QueueItem>, String> {
+    let lot_images = lot_images.max(1);
+
+    // Assez de candidats pour compléter un lot même si un autre envoi vient
+    // d'en réserver une partie.
+    let candidats = prochains(conn, event_id, inclure_hd, lot_images * 4 + 4)?;
+
+    let mut images: Vec<QueueItem> = Vec::new();
+
+    for candidat in &candidats {
+        match candidat.kind {
+            QueueKind::Frames => {
+                // Un lot = une requête = une session.
+                if let Some(premiere) = images.first() {
+                    if premiere.session_id != candidat.session_id {
+                        continue;
+                    }
+                }
+
+                if reserver(conn, candidat.id)? {
+                    images.push(candidat.clone());
+
+                    if images.len() >= lot_images {
+                        break;
+                    }
+                }
+            }
+            QueueKind::ClipProxy | QueueKind::ClipHd => {
+                // Les images passent avant : on envoie ce qu'on a déjà.
+                if !images.is_empty() {
+                    break;
+                }
+
+                if reserver(conn, candidat.id)? {
+                    return Ok(vec![candidat.clone()]);
+                }
+            }
+        }
+    }
+
+    Ok(images)
 }
 
 /// Remet en file un élément réservé dont l'envoi a échoué.
@@ -561,6 +684,11 @@ fn ecarter(
 mod tests {
     use super::*;
 
+    /// Décompte sur toute l'épreuve.
+    fn statistiques(conn: &Connection, event_id: i64) -> Result<QueueStats, String> {
+        statistiques_filtrees(conn, event_id, &[])
+    }
+
     /// L'evenement de reference des tests.
     ///
     /// La valeur n'a pas d'importance : ce qui compte est que la mise en
@@ -663,6 +791,101 @@ mod tests {
 
         assert_eq!(relancer_echecs(&conn).unwrap(), 1);
         assert_eq!(prochains(&conn, EVT, true, 10).unwrap().len(), 1);
+    }
+
+    #[test]
+    fn les_images_partent_par_lots_dune_meme_session() {
+        let conn = base_de_test();
+
+        for i in 0..12 {
+            enfiler(&conn, "session_1", EVT, QueueKind::Frames, &format!("a{}.jpg", i),
+                    None, None, None, None).unwrap();
+        }
+        enfiler(&conn, "session_2", EVT, QueueKind::Frames, "b.jpg", None, None, None, None).unwrap();
+        enfiler_simple(&conn, QueueKind::ClipProxy, "p.mp4");
+
+        let lot = reserver_prochain_envoi(&conn, EVT, true, 10).unwrap();
+
+        assert_eq!(lot.len(), 10);
+        assert!(lot.iter().all(|e| e.kind == QueueKind::Frames && e.session_id == "session_1"));
+
+        // Le second envoi complète avec ce qui reste de la même session,
+        // sans mélanger les sessions ni passer au clip.
+        let suite = reserver_prochain_envoi(&conn, EVT, true, 10).unwrap();
+        assert_eq!(suite.len(), 2);
+        assert!(suite.iter().all(|e| e.session_id == "session_1"));
+
+        let autre = reserver_prochain_envoi(&conn, EVT, true, 10).unwrap();
+        assert_eq!(autre.len(), 1);
+        assert_eq!(autre[0].session_id, "session_2");
+
+        // Plus d'images : un clip, seul.
+        let clip = reserver_prochain_envoi(&conn, EVT, true, 10).unwrap();
+        assert_eq!(clip.len(), 1);
+        assert_eq!(clip[0].kind, QueueKind::ClipProxy);
+
+        assert!(reserver_prochain_envoi(&conn, EVT, true, 10).unwrap().is_empty());
+    }
+
+    #[test]
+    fn un_element_reserve_nest_pas_repris() {
+        let conn = base_de_test();
+
+        enfiler_simple(&conn, QueueKind::ClipProxy, "p1.mp4");
+        enfiler(&conn, "session_1", EVT, QueueKind::ClipProxy, "p2.mp4", Some(2), None, None, None).unwrap();
+
+        let premier = reserver_prochain_envoi(&conn, EVT, true, 10).unwrap();
+        let second = reserver_prochain_envoi(&conn, EVT, true, 10).unwrap();
+
+        assert_eq!(premier.len(), 1);
+        assert_eq!(second.len(), 1);
+        assert_ne!(premier[0].id, second[0].id);
+    }
+
+    #[test]
+    fn la_hd_retenue_nest_pas_reservee() {
+        let conn = base_de_test();
+
+        enfiler_simple(&conn, QueueKind::ClipHd, "hd.mp4");
+
+        assert!(reserver_prochain_envoi(&conn, EVT, false, 10).unwrap().is_empty());
+        assert_eq!(reserver_prochain_envoi(&conn, EVT, true, 10).unwrap().len(), 1);
+    }
+
+    #[test]
+    fn les_statistiques_suivent_lavancement() {
+        let conn = base_de_test();
+
+        let envoye = enfiler_simple(&conn, QueueKind::ClipHd, "h1.mp4");
+        let en_cours = enfiler(&conn, "session_1", EVT, QueueKind::ClipHd, "h2.mp4",
+                               Some(2), None, None, None).unwrap();
+        enfiler(&conn, "session_1", EVT, QueueKind::ClipHd, "h3.mp4", Some(3), None, None, None).unwrap();
+        enfiler_simple(&conn, QueueKind::ClipProxy, "p1.mp4");
+
+        marquer_envoye(&conn, envoye).unwrap();
+        assert!(reserver(&conn, en_cours).unwrap());
+
+        let stats = statistiques(&conn, EVT).unwrap();
+
+        assert_eq!(stats.hd_sent, 1);
+        assert_eq!(stats.hd_sending, 1);
+        assert_eq!(stats.hd_pending, 1);
+        assert_eq!(stats.proxy_pending, 1);
+        assert_eq!(stats.proxy_sent, 0);
+    }
+
+    #[test]
+    fn les_statistiques_peuvent_se_limiter_aux_sessions_en_cours() {
+        let conn = base_de_test();
+
+        enfiler(&conn, "hier", EVT, QueueKind::ClipProxy, "a.mp4", Some(1), None, None, None).unwrap();
+        enfiler(&conn, "matin", EVT, QueueKind::ClipProxy, "b.mp4", Some(1), None, None, None).unwrap();
+        enfiler(&conn, "reprise", EVT, QueueKind::ClipProxy, "c.mp4", Some(1), None, None, None).unwrap();
+
+        let session = vec!["matin".to_string(), "reprise".to_string()];
+
+        assert_eq!(statistiques_filtrees(&conn, EVT, &session).unwrap().proxy_pending, 2);
+        assert_eq!(statistiques_filtrees(&conn, EVT, &[]).unwrap().proxy_pending, 3);
     }
 
     #[test]

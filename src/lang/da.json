@@ -36,7 +36,7 @@
         "existing_include": "Upload eksisterende filer i mappen",
         "existing_exclude": "Upload kun nye filer",
         "parallel": "Parallelle uploads",
-        "parallel_hint": "Ved svagt 4G, brug 1. Ved stabilt 5G fremskynder 3.",
+        "parallel_hint": "3 passer til de fleste netværk. Gå op til 6, hvis båndbredden tillader det; gå kun tilbage til 1, hvis afsendelserne mislykkes. På 5G er upload ofte meget langsommere end på 4G: brug helst kun 4G.",
         "start": "Start sessionen",
         "photos_title": "Fotos",
         "video_title": "Video",
@@ -64,12 +64,14 @@
         "video_split_warning": "Upraktisk opdeling: stykker på {segment} s, {count} pr. klip. Prøv rundere værdier.",
         "video_split_invalid": "Overlappet skal være kortere end klippets varighed.",
         "video_send_hd": "Send fuld kvalitet under løbet",
-        "video_send_hd_hint": "Ellers hober klippene sig op og sendes bagefter. På et travlt netværk holder det fotoafsendelsen hurtig.",
+        "video_send_hd_hint": "Ellers venter HD-klippene på disken: send dem, når du vil, med knappen »Send HD nu« på overvågningsskærmen. På et travlt netværk holder det fotoafsendelsen hurtig.",
         "disk_pending": "Vælg et kamera og en mappe for at anslå den nødvendige plads.",
         "disk_rate": "{rate} GB i timen",
         "disk_hours": "cirka {hours} t optagelse",
         "disk_detail": "{free} GB ledige, {reserved} GB reserveret til systemet",
-        "nothing_enabled": "Slå mindst fotos eller video til."
+        "nothing_enabled": "Slå mindst fotos eller video til.",
+        "hd_pending_title": "Ventende HD-klip",
+        "hd_pending_text": "{count} HD-klip fra dette event venter på at blive sendt ({size} GB)."
     },
     "dashboard": {
         "status_active": "Aktiv",
@@ -108,7 +110,28 @@
         "msg_resumed": "Uploads genoptaget",
         "msg_stopped": "Session stoppet",
         "msg_retry_queued": "{count} fil(er) sat i kø igen",
-        "msg_error": "Fejl: {error}"
+        "msg_error": "Fejl: {error}",
+        "home_title": "Start (sessionen fortsætter)",
+        "msg_parallel": "Parallelle uploads: {count} (sessionen fortsætter)",
+        "throughput": "Mb/s sendt (1 min)",
+        "video_filmed": "filmede klip",
+        "video_assembled": "samlede klip",
+        "video_sent": "sendte klip",
+        "video_waiting": "klip venter på afsendelse",
+        "video_frames_detail": "analysebilleder — {sent} sendt",
+        "video_clip_hd_sent": "Klip {index} i HD sendt",
+        "video_pause": "Sæt video på pause",
+        "video_resume": "Genoptag video",
+        "video_pausing": "Sætter på pause…",
+        "video_resuming": "Genoptager…",
+        "video_stopping": "Stopper…",
+        "video_paused": "Optagelse på pause",
+        "video_stopped_title": "Optagelse stoppet",
+        "video_sending_only": "Videoafsendelse",
+        "video_paused_log": "Optagelse på pause — det igangværende klip er lukket og sendes med de andre",
+        "video_resumed_log": "Optagelse genoptaget",
+        "video_send_failed": "Videoafsendelse opgivet efter 3 forsøg: {error}",
+        "video_throttled": "Serveren er overbelastet: videoafsendelse på pause i {delay} s"
     },
     "watcher": {
         "detected": "Opdaget ({size} MB)",
@@ -120,7 +143,10 @@
         "attempt": "Upload (forsøg {attempt}/3)",
         "success": "OK på {duration}s ({speed} KB/s)",
         "failed": "Fejl {attempt}/{max}: {error}",
-        "retry_scheduled": "Nyt forsøg om {delay}s (forsøg {attempt}/3)"
+        "retry_scheduled": "Nyt forsøg om {delay}s (forsøg {attempt}/3)",
+        "success_timing": "OK på {duration} s — netværk {network} s + server {server} s",
+        "success_total": "OK på {duration} s",
+        "throttled": "Serveren er overbelastet ({code}): pause i {delay} s, {parallel} parallelle upload(s)"
     },
     "connection": {
         "restored": "Forbindelse genoprettet",
@@ -130,5 +156,31 @@
     "complete": {
         "with_errors": "Færdig: {sent} sendt, {failed} fejlet",
         "success": "Færdig: {count} fotos uploadet med succes!"
+    },
+    "hd": {
+        "title": "HD-video",
+        "none": "Endnu ingen HD-klip.",
+        "remaining": "{count} HD-klip at sende — {size} GB",
+        "progress": "{sent} / {total} HD-klip sendt",
+        "all_sent": "Alle HD-klip er sendt.",
+        "failed": "{count} HD-klip mislykkedes",
+        "sending": "sender",
+        "send_now": "Send HD nu",
+        "suspend": "Sæt HD-afsendelse på pause",
+        "retry": "Prøv de mislykkede igen",
+        "started_log": "Afsendelse af HD-klip startet",
+        "suspended_log": "Afsendelse af HD-klip sat på pause",
+        "hint": "HD sendes fra agenten, aldrig fra galleriet: sendt fra galleriet opstår der en dublet. Fotos har fortsat forrang."
+    },
+    "nav": {
+        "banner_title": "Session i gang: {event}",
+        "banner_photos": "{sent} foto(s) sendt, {pending} venter",
+        "banner_video_recording": "videooptagelse i gang",
+        "banner_video_paused": "video på pause",
+        "banner_video_sending": "{count} videofil(er) at sende",
+        "banner_back": "Tilbage til overvågningen",
+        "event_running": "● Session i gang",
+        "confirm_replace": "Der kører en session for »{event}«. Afslut den for at starte denne?",
+        "confirm_logout": "En session er i gang. Afslut den og log ud?"
     }
 }

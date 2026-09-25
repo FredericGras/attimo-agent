@@ -33,7 +33,9 @@
 
 use serde::{Deserialize, Serialize};
 use std::path::Path;
-use std::time::Duration;
+use std::sync::OnceLock;
+use std::time::{Duration, Instant};
+use tokio::io::AsyncReadExt;
 
 // ═══════════════════════════════════════════════════════════════════════
 // CONSTANTES
@@ -55,11 +57,37 @@ const TIMEOUT_CLIP_SECS: u64 = 300;
 /// Les images sont légères, une minute suffit largement.
 const TIMEOUT_FRAMES_SECS: u64 = 60;
 
+/// Un lot de dix images (0.3.1) : 3,3 Mo à monter, et le serveur analyse
+/// chaque image avant de répondre — dossards, visages. Dix analyses dans une
+/// même requête ne tiennent pas toujours dans la minute d'une image seule ;
+/// un délai dépassé ferait tout réanalyser au nouvel essai.
+const TIMEOUT_LOT_IMAGES_SECS: u64 = 180;
+
 /// Nombre d'images envoyées par requête.
 ///
 /// Dix images font environ 3,3 Mo. Au-delà, on s'approche des limites de
 /// taille de requête, et une coupure ferait reperdre un lot trop gros.
-const FRAMES_PAR_LOT: usize = 10;
+///
+/// C'est aussi le maximum accepté par le serveur
+/// (`SportClipFrameController::MAX_FRAMES_PER_REQUEST`).
+pub const FRAMES_PAR_LOT: usize = 10;
+
+/// Temps maximal qu'une requête vidéo cède aux photos (0.3.1).
+///
+/// Les photos passent d'abord : tant qu'il en reste à envoyer, chaque
+/// morceau de clip et chaque lot d'images attend. Mais pas indéfiniment —
+/// sous un flot continu de photos, la vidéo avance quand même, au rythme
+/// d'une requête toutes les vingt secondes par envoi vidéo.
+const CEDER_AUX_PHOTOS_MAX_SECS: u64 = 20;
+
+/// Attente par défaut après un 429 ou un 503 sans Retry-After.
+const ATTENTE_SATURATION_DEFAUT_SECS: u64 = 10;
+
+/// Préfixe des erreurs de saturation : `SATURE:<secondes>`.
+///
+/// La file le reconnaît : l'élément repart en attente sans consommer de
+/// tentative, et l'envoi vidéo patiente le délai demandé.
+pub const PREFIXE_SATURE: &str = "SATURE:";
 
 // ═══════════════════════════════════════════════════════════════════════
 // CONFIGURATION
@@ -126,8 +154,18 @@ struct FramesResponse {
     success: bool,
     #[serde(default)]
     totals: Option<FrameTotals>,
+    /// Résultat image par image : une image en échec ne fait pas perdre le
+    /// lot, seule elle est à renvoyer.
+    #[serde(default)]
+    frames: Vec<FrameResult>,
     #[serde(default)]
     message: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct FrameResult {
+    index: usize,
+    success: bool,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -146,11 +184,73 @@ pub struct FrameTotals {
 // CLIENT
 // ═══════════════════════════════════════════════════════════════════════
 
-fn creer_client(timeout_secs: u64) -> Result<reqwest::Client, String> {
-    reqwest::Client::builder()
-        .timeout(Duration::from_secs(timeout_secs))
+/// Client réseau partagé par tous les envois vidéo (0.3.1).
+///
+/// Il en naissait un par clip, par lot d'images et par interrogation d'état :
+/// autant de connexions TCP et de poignées de main TLS. Partagé, il garde ses
+/// connexions ouvertes d'une requête à l'autre (keep-alive). Le délai est
+/// posé requête par requête, puisqu'il diffère entre clips et images.
+fn client() -> Result<&'static reqwest::Client, String> {
+    static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
+
+    if let Some(c) = CLIENT.get() {
+        return Ok(c);
+    }
+
+    let nouveau = reqwest::Client::builder()
+        .connect_timeout(Duration::from_secs(20))
+        .pool_idle_timeout(Duration::from_secs(90))
         .build()
-        .map_err(|e| format!("Impossible de créer le client réseau : {}", e))
+        .map_err(|e| format!("Impossible de créer le client réseau : {}", e))?;
+
+    Ok(CLIENT.get_or_init(|| nouveau))
+}
+
+/// Laisse passer les photos d'abord.
+///
+/// Appelé avant chaque requête vidéo. Borné : voir `CEDER_AUX_PHOTOS_MAX_SECS`.
+async fn ceder_aux_photos() {
+    let debut = Instant::now();
+
+    while crate::uploader::photos_prioritaires()
+        && debut.elapsed() < Duration::from_secs(CEDER_AUX_PHOTOS_MAX_SECS)
+    {
+        tokio::time::sleep(Duration::from_millis(500)).await;
+    }
+}
+
+/// Traduit les statuts qui ne concernent pas le fichier lui-même.
+///
+/// 401 : reconnexion nécessaire. 429 et 503 : le serveur demande de
+/// ralentir — l'élément repartira sans consommer de tentative.
+fn statut_bloquant(reponse: &reqwest::Response) -> Option<String> {
+    let statut = reponse.status();
+
+    if statut == reqwest::StatusCode::UNAUTHORIZED {
+        return Some("SESSION_EXPIRED".to_string());
+    }
+
+    if statut == reqwest::StatusCode::TOO_MANY_REQUESTS
+        || statut == reqwest::StatusCode::SERVICE_UNAVAILABLE
+    {
+        let attente = crate::uploader::lire_retry_after(
+            reponse
+                .headers()
+                .get(reqwest::header::RETRY_AFTER)
+                .and_then(|v| v.to_str().ok()),
+        )
+        .unwrap_or(ATTENTE_SATURATION_DEFAUT_SECS)
+        .clamp(1, 300);
+
+        return Some(format!("{}{}", PREFIXE_SATURE, attente));
+    }
+
+    None
+}
+
+/// Délai demandé par une erreur de saturation, s'il s'agit de cela.
+pub fn attente_si_sature(erreur: &str) -> Option<u64> {
+    erreur.strip_prefix(PREFIXE_SATURE)?.parse().ok()
 }
 
 /// Pose les en-têtes d'authentification.
@@ -198,13 +298,22 @@ pub async fn envoyer_clip(
     debut: &str,
     fin: &str,
 ) -> Result<ClipInfo, String> {
-    let client = creer_client(TIMEOUT_CLIP_SECS)?;
+    let client = client()?;
 
-    let octets = tokio::fs::read(chemin)
+    // Lu morceau par morceau (0.3.1) : un clip HD de plusieurs centaines de
+    // mégaoctets n'est plus chargé en entier en mémoire, et deux envois
+    // simultanés ne doublent plus cette charge.
+    let mut fichier = tokio::fs::File::open(chemin)
         .await
         .map_err(|e| format!("Lecture du clip impossible : {}", e))?;
 
-    if octets.is_empty() {
+    let taille = fichier
+        .metadata()
+        .await
+        .map_err(|e| format!("Lecture du clip impossible : {}", e))?
+        .len() as usize;
+
+    if taille == 0 {
         return Err("Le clip est vide.".to_string());
     }
 
@@ -221,12 +330,24 @@ pub async fn envoyer_clip(
         clip_index
     );
 
-    let total_morceaux = octets.len().div_ceil(CHUNK_SIZE);
+    let total_morceaux = taille.div_ceil(CHUNK_SIZE);
 
     // ─── Envoi des morceaux ───
 
-    for (index, tranche) in octets.chunks(CHUNK_SIZE).enumerate() {
-        let part = reqwest::multipart::Part::bytes(tranche.to_vec())
+    for index in 0..total_morceaux {
+        let longueur = CHUNK_SIZE.min(taille - index * CHUNK_SIZE);
+        let mut tranche = vec![0u8; longueur];
+
+        fichier
+            .read_exact(&mut tranche)
+            .await
+            .map_err(|e| format!("Lecture du clip impossible : {}", e))?;
+
+        // Les photos d'abord, à chaque morceau : un clip de 500 Mo ne doit
+        // pas monopoliser la liaison pendant qu'une rafale attend.
+        ceder_aux_photos().await;
+
+        let part = reqwest::multipart::Part::bytes(tranche)
             .file_name(nom_fichier.clone())
             .mime_str("application/octet-stream")
             .map_err(|e| format!("Type de contenu invalide : {}", e))?;
@@ -244,13 +365,14 @@ pub async fn envoyer_clip(
         );
 
         let reponse = authentifier(client.post(&url), &config.token)
+            .timeout(Duration::from_secs(TIMEOUT_CLIP_SECS))
             .multipart(formulaire)
             .send()
             .await
             .map_err(|e| message_erreur(&e))?;
 
-        if reponse.status() == reqwest::StatusCode::UNAUTHORIZED {
-            return Err("SESSION_EXPIRED".to_string());
+        if let Some(erreur) = statut_bloquant(&reponse) {
+            return Err(erreur);
         }
 
         let corps: ChunkResponse = reponse
@@ -289,13 +411,14 @@ pub async fn envoyer_clip(
     );
 
     let reponse = authentifier(client.post(&url), &config.token)
+        .timeout(Duration::from_secs(TIMEOUT_CLIP_SECS))
         .json(&charge)
         .send()
         .await
         .map_err(|e| message_erreur(&e))?;
 
-    if reponse.status() == reqwest::StatusCode::UNAUTHORIZED {
-        return Err("SESSION_EXPIRED".to_string());
+    if let Some(erreur) = statut_bloquant(&reponse) {
+        return Err(erreur);
     }
 
     let corps: FinalizeResponse = reponse
@@ -325,7 +448,17 @@ pub struct FrameToUpload {
     pub instant_at: String,
 }
 
-/// Envoie un lot d'images d'analyse.
+/// Résultat d'un lot d'images.
+#[derive(Debug, Clone)]
+pub struct LotImages {
+    pub totaux: FrameTotals,
+
+    /// Rangs, dans le lot, des images que le serveur n'a pas pu analyser.
+    /// Elles seules sont à renvoyer.
+    pub echecs: Vec<usize>,
+}
+
+/// Envoie des images d'analyse, par lots de dix.
 ///
 /// Les images sont groupées par dix pour limiter les allers-retours réseau,
 /// mais chaque lot reste assez petit pour qu'une coupure ne fasse pas
@@ -338,17 +471,6 @@ pub async fn envoyer_images(
     config: &VideoUploadConfig,
     images: &[FrameToUpload],
 ) -> Result<FrameTotals, String> {
-    if images.is_empty() {
-        return Ok(FrameTotals {
-            bibs: 0,
-            faces: 0,
-            kept: 0,
-            discarded: 0,
-        });
-    }
-
-    let client = creer_client(TIMEOUT_FRAMES_SECS)?;
-
     let mut cumul = FrameTotals {
         bibs: 0,
         faces: 0,
@@ -357,77 +479,131 @@ pub async fn envoyer_images(
     };
 
     for lot in images.chunks(FRAMES_PAR_LOT) {
-        let mut formulaire = reqwest::multipart::Form::new()
-            .text("session_id", config.session_id.clone());
+        let resultat = envoyer_lot_images(config, lot).await?;
 
-        if let Some(checkpoint) = config.checkpoint_id {
-            formulaire = formulaire.text("checkpoint_id", checkpoint.to_string());
-        }
-
-        for (rang, image) in lot.iter().enumerate() {
-            let octets = tokio::fs::read(&image.path)
-                .await
-                .map_err(|e| format!("Lecture de l'image impossible : {}", e))?;
-
-            let nom = Path::new(&image.path)
-                .file_name()
-                .map(|n| n.to_string_lossy().to_string())
-                .unwrap_or_else(|| format!("img_{}.jpg", rang));
-
-            let part = reqwest::multipart::Part::bytes(octets)
-                .file_name(nom)
-                .mime_str("image/jpeg")
-                .map_err(|e| format!("Type de contenu invalide : {}", e))?;
-
-            formulaire = formulaire
-                .part(format!("frames[{}][image]", rang), part)
-                .text(
-                    format!("frames[{}][instant_at]", rang),
-                    image.instant_at.clone(),
-                );
-        }
-
-        let url = format!(
-            "{}/api/sport/events/{}/frames",
-            API_BASE_URL, config.event_id
-        );
-
-        let reponse = authentifier(client.post(&url), &config.token)
-            .multipart(formulaire)
-            .send()
-            .await
-            .map_err(|e| message_erreur(&e))?;
-
-        if reponse.status() == reqwest::StatusCode::UNAUTHORIZED {
-            return Err("SESSION_EXPIRED".to_string());
-        }
-
-        // Le serveur refuse les images si l'épreuve tourne sans
-        // reconnaissance : inutile de continuer à en envoyer.
-        if reponse.status() == reqwest::StatusCode::UNPROCESSABLE_ENTITY {
-            return Err("ANALYSE_DESACTIVEE".to_string());
-        }
-
-        let corps: FramesResponse = reponse
-            .json()
-            .await
-            .map_err(|e| format!("Réponse inattendue du serveur : {}", e))?;
-
-        if !corps.success {
-            return Err(corps
-                .message
-                .unwrap_or_else(|| "Le serveur a refusé les images.".to_string()));
-        }
-
-        if let Some(totaux) = corps.totals {
-            cumul.bibs += totaux.bibs;
-            cumul.faces += totaux.faces;
-            cumul.kept += totaux.kept;
-            cumul.discarded += totaux.discarded;
-        }
+        cumul.bibs += resultat.totaux.bibs;
+        cumul.faces += resultat.totaux.faces;
+        cumul.kept += resultat.totaux.kept;
+        cumul.discarded += resultat.totaux.discarded;
     }
 
     Ok(cumul)
+}
+
+/// Envoie un lot d'au plus dix images en une seule requête.
+///
+/// Utilisé par la file d'envoi (0.3.1) : une requête pour dix images au lieu
+/// de dix requêtes, donc dix fois moins d'allers-retours et de vérifications
+/// du jeton côté serveur.
+pub async fn envoyer_lot_images(
+    config: &VideoUploadConfig,
+    lot: &[FrameToUpload],
+) -> Result<LotImages, String> {
+    let vide = FrameTotals {
+        bibs: 0,
+        faces: 0,
+        kept: 0,
+        discarded: 0,
+    };
+
+    if lot.is_empty() {
+        return Ok(LotImages {
+            totaux: vide,
+            echecs: Vec::new(),
+        });
+    }
+
+    if lot.len() > FRAMES_PAR_LOT {
+        return Err(format!("Lot trop gros : {} images, {} au plus.", lot.len(), FRAMES_PAR_LOT));
+    }
+
+    let client = client()?;
+
+    let mut formulaire = reqwest::multipart::Form::new()
+        .text("session_id", config.session_id.clone());
+
+    if let Some(checkpoint) = config.checkpoint_id {
+        formulaire = formulaire.text("checkpoint_id", checkpoint.to_string());
+    }
+
+    for (rang, image) in lot.iter().enumerate() {
+        let octets = tokio::fs::read(&image.path)
+            .await
+            .map_err(|e| format!("Lecture de l'image impossible : {}", e))?;
+
+        let nom = Path::new(&image.path)
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_else(|| format!("img_{}.jpg", rang));
+
+        let part = reqwest::multipart::Part::bytes(octets)
+            .file_name(nom)
+            .mime_str("image/jpeg")
+            .map_err(|e| format!("Type de contenu invalide : {}", e))?;
+
+        formulaire = formulaire
+            .part(format!("frames[{}][image]", rang), part)
+            .text(
+                format!("frames[{}][instant_at]", rang),
+                image.instant_at.clone(),
+            );
+    }
+
+    ceder_aux_photos().await;
+
+    let url = format!(
+        "{}/api/sport/events/{}/frames",
+        API_BASE_URL, config.event_id
+    );
+
+    let reponse = authentifier(client.post(&url), &config.token)
+        .timeout(Duration::from_secs(TIMEOUT_LOT_IMAGES_SECS))
+        .multipart(formulaire)
+        .send()
+        .await
+        .map_err(|e| message_erreur(&e))?;
+
+    if let Some(erreur) = statut_bloquant(&reponse) {
+        return Err(erreur);
+    }
+
+    // Le serveur refuse les images si l'épreuve tourne sans
+    // reconnaissance : inutile de continuer à en envoyer.
+    if reponse.status() == reqwest::StatusCode::UNPROCESSABLE_ENTITY {
+        return Err("ANALYSE_DESACTIVEE".to_string());
+    }
+
+    let corps: FramesResponse = reponse
+        .json()
+        .await
+        .map_err(|e| format!("Réponse inattendue du serveur : {}", e))?;
+
+    if !corps.success {
+        return Err(corps
+            .message
+            .unwrap_or_else(|| "Le serveur a refusé les images.".to_string()));
+    }
+
+    Ok(LotImages {
+        totaux: corps.totals.unwrap_or(vide),
+        echecs: rangs_en_echec(&corps.frames, lot.len()),
+    })
+}
+
+/// Rangs des images refusées, d'après le détail renvoyé par le serveur.
+///
+/// Un serveur qui ne détaille pas (réponse ancienne) vaut réussite pour tout
+/// le lot, comme avant.
+fn rangs_en_echec(resultats: &[FrameResult], taille_lot: usize) -> Vec<usize> {
+    let mut echecs: Vec<usize> = resultats
+        .iter()
+        .filter(|r| !r.success && r.index < taille_lot)
+        .map(|r| r.index)
+        .collect();
+
+    echecs.sort_unstable();
+    echecs.dedup();
+    echecs
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -455,7 +631,7 @@ pub struct ClipStatus {
 
 /// Demande au serveur ce qu'il a déjà reçu.
 pub async fn etat_session(config: &VideoUploadConfig) -> Result<SessionStatus, String> {
-    let client = creer_client(TIMEOUT_FRAMES_SECS)?;
+    let client = client()?;
 
     let url = format!(
         "{}/api/sport/events/{}/clips/status?session_id={}",
@@ -463,12 +639,13 @@ pub async fn etat_session(config: &VideoUploadConfig) -> Result<SessionStatus, S
     );
 
     let reponse = authentifier(client.get(&url), &config.token)
+        .timeout(Duration::from_secs(TIMEOUT_FRAMES_SECS))
         .send()
         .await
         .map_err(|e| message_erreur(&e))?;
 
-    if reponse.status() == reqwest::StatusCode::UNAUTHORIZED {
-        return Err("SESSION_EXPIRED".to_string());
+    if let Some(erreur) = statut_bloquant(&reponse) {
+        return Err(erreur);
     }
 
     reponse
@@ -524,6 +701,40 @@ mod tests {
         assert_eq!(lots.len(), 3);
         assert_eq!(lots[0].len(), 10);
         assert_eq!(lots[2].len(), 5);
+    }
+
+    #[test]
+    fn reconnait_une_erreur_de_saturation() {
+        assert_eq!(attente_si_sature("SATURE:30"), Some(30));
+        assert_eq!(attente_si_sature("SESSION_EXPIRED"), None);
+        assert_eq!(attente_si_sature("Délai dépassé"), None);
+    }
+
+    #[test]
+    fn seules_les_images_refusees_sont_a_renvoyer() {
+        let resultats = vec![
+            FrameResult { index: 0, success: true },
+            FrameResult { index: 3, success: false },
+            FrameResult { index: 1, success: false },
+            // Rang hors du lot : ignoré plutôt que de marquer une autre image.
+            FrameResult { index: 12, success: false },
+        ];
+
+        assert_eq!(rangs_en_echec(&resultats, 10), vec![1, 3]);
+
+        // Un serveur qui ne détaille pas : tout le lot est réputé passé.
+        assert!(rangs_en_echec(&[], 10).is_empty());
+    }
+
+    #[test]
+    fn le_detail_des_images_est_lu_dans_la_reponse() {
+        let json = r#"{"success":true,"totals":{"bibs":2,"faces":1,"kept":1,"discarded":1},
+                       "frames":[{"index":0,"success":true,"bibs":2},{"index":1,"success":false,"message":"x"}]}"#;
+
+        let corps: FramesResponse = serde_json::from_str(json).unwrap();
+
+        assert_eq!(corps.totals.unwrap().bibs, 2);
+        assert_eq!(rangs_en_echec(&corps.frames, 2), vec![1]);
     }
 
     #[test]

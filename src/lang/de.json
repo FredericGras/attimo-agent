@@ -36,7 +36,7 @@
         "existing_include": "Vorhandene Dateien im Ordner hochladen",
         "existing_exclude": "Nur neue Dateien hochladen",
         "parallel": "Parallele Uploads",
-        "parallel_hint": "Bei schwachem 4G verwenden Sie 1. Bei stabilem 5G beschleunigt 3.",
+        "parallel_hint": "3 passt für die meisten Netze. Gehen Sie auf 6, wenn die Bandbreite es zulässt; zurück auf 1 nur, wenn Uploads fehlschlagen. Über 5G ist der Upload oft deutlich langsamer als über 4G: nutzen Sie möglichst nur 4G.",
         "start": "Sitzung starten",
         "photos_title": "Fotos",
         "video_title": "Video",
@@ -64,12 +64,14 @@
         "video_split_warning": "Ungünstige Aufteilung: Abschnitte von {segment} s, {count} pro Clip. Versuchen Sie rundere Werte.",
         "video_split_invalid": "Die Überlappung muss kürzer sein als die Clipdauer.",
         "video_send_hd": "Volle Qualität während des Rennens senden",
-        "video_send_hd_hint": "Andernfalls sammeln sich die Clips an und werden nach der Rückkehr gesendet. In einem ausgelasteten Netz bleibt so der Fotoversand schnell.",
+        "video_send_hd_hint": "Andernfalls warten die HD-Clips auf der Festplatte: Senden Sie sie jederzeit mit der Schaltfläche „HD jetzt senden“ auf dem Überwachungsbildschirm. In einem überlasteten Netz bremst das den Foto-Upload nicht aus.",
         "disk_pending": "Wählen Sie eine Kamera und einen Ordner, um den Speicherbedarf zu schätzen.",
         "disk_rate": "{rate} GB pro Stunde",
         "disk_hours": "etwa {hours} h Aufnahme",
         "disk_detail": "{free} GB frei, {reserved} GB für das System reserviert",
-        "nothing_enabled": "Schalten Sie mindestens Fotos oder Video ein."
+        "nothing_enabled": "Schalten Sie mindestens Fotos oder Video ein.",
+        "hd_pending_title": "Wartende HD-Clips",
+        "hd_pending_text": "{count} HD-Clip(s) dieses Events warten auf den Versand ({size} GB)."
     },
     "dashboard": {
         "status_active": "Aktiv",
@@ -108,7 +110,28 @@
         "msg_resumed": "Uploads fortgesetzt",
         "msg_stopped": "Sitzung beendet",
         "msg_retry_queued": "{count} Datei(en) erneut in die Warteschlange gestellt",
-        "msg_error": "Fehler: {error}"
+        "msg_error": "Fehler: {error}",
+        "home_title": "Startseite (die Sitzung läuft weiter)",
+        "msg_parallel": "Parallele Uploads: {count} (die Sitzung läuft weiter)",
+        "throughput": "Mb/s gesendet (1 Min.)",
+        "video_filmed": "gefilmte Clips",
+        "video_assembled": "zusammengesetzte Clips",
+        "video_sent": "gesendete Clips",
+        "video_waiting": "Clips warten auf Versand",
+        "video_frames_detail": "Analysebilder — {sent} gesendet",
+        "video_clip_hd_sent": "Clip {index} in HD gesendet",
+        "video_pause": "Video pausieren",
+        "video_resume": "Video fortsetzen",
+        "video_pausing": "Wird pausiert…",
+        "video_resuming": "Wird fortgesetzt…",
+        "video_stopping": "Wird gestoppt…",
+        "video_paused": "Aufnahme pausiert",
+        "video_stopped_title": "Aufnahme gestoppt",
+        "video_sending_only": "Video-Upload",
+        "video_paused_log": "Aufnahme pausiert — der laufende Clip wurde abgeschlossen und wird mit den anderen gesendet",
+        "video_resumed_log": "Aufnahme fortgesetzt",
+        "video_send_failed": "Video-Upload nach 3 Versuchen abgebrochen: {error}",
+        "video_throttled": "Server überlastet: Video-Upload für {delay} s pausiert"
     },
     "watcher": {
         "detected": "Erkannt ({size} MB)",
@@ -120,7 +143,10 @@
         "attempt": "Upload (Versuch {attempt}/3)",
         "success": "OK in {duration}s ({speed} KB/s)",
         "failed": "Fehler {attempt}/{max}: {error}",
-        "retry_scheduled": "Wiederholung in {delay}s (Versuch {attempt}/3)"
+        "retry_scheduled": "Wiederholung in {delay}s (Versuch {attempt}/3)",
+        "success_timing": "OK in {duration} s — Netz {network} s + Server {server} s",
+        "success_total": "OK in {duration} s",
+        "throttled": "Server überlastet ({code}): {delay} s Pause, {parallel} parallele(r) Upload(s)"
     },
     "connection": {
         "restored": "Verbindung wiederhergestellt",
@@ -130,5 +156,31 @@
     "complete": {
         "with_errors": "Fertig: {sent} gesendet, {failed} fehlgeschlagen",
         "success": "Fertig: {count} Fotos erfolgreich hochgeladen!"
+    },
+    "hd": {
+        "title": "HD-Video",
+        "none": "Noch keine HD-Clips.",
+        "remaining": "{count} HD-Clip(s) zu senden — {size} GB",
+        "progress": "{sent} / {total} HD-Clips gesendet",
+        "all_sent": "Alle HD-Clips wurden gesendet.",
+        "failed": "{count} HD-Clip(s) fehlgeschlagen",
+        "sending": "Versand läuft",
+        "send_now": "HD jetzt senden",
+        "suspend": "HD-Versand anhalten",
+        "retry": "Fehlgeschlagene erneut senden",
+        "started_log": "Versand der HD-Clips gestartet",
+        "suspended_log": "Versand der HD-Clips angehalten",
+        "hint": "HD wird aus dem Agenten gesendet, nie aus der Galerie: Aus der Galerie gesendet, entsteht ein Duplikat. Fotos haben weiterhin Vorrang."
+    },
+    "nav": {
+        "banner_title": "Laufende Sitzung: {event}",
+        "banner_photos": "{sent} Foto(s) gesendet, {pending} wartend",
+        "banner_video_recording": "Videoaufnahme läuft",
+        "banner_video_paused": "Video pausiert",
+        "banner_video_sending": "{count} Videodatei(en) zu senden",
+        "banner_back": "Zurück zur Überwachung",
+        "event_running": "● Sitzung läuft",
+        "confirm_replace": "Für „{event}“ läuft eine Sitzung. Beenden, um diese hier zu starten?",
+        "confirm_logout": "Eine Sitzung läuft. Beenden und abmelden?"
     }
 }

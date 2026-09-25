@@ -36,7 +36,7 @@
         "existing_include": "Încarcă fișierele existente din dosar",
         "existing_exclude": "Încarcă doar fișierele noi",
         "parallel": "Încărcări paralele",
-        "parallel_hint": "Pe 4G slab, folosiți 1. Pe 5G stabil, 3 accelerează.",
+        "parallel_hint": "3 se potrivește majorității rețelelor. Urcați la 6 dacă lățimea de bandă permite; reveniți la 1 doar dacă trimiterile eșuează. Pe 5G, trimiterea este adesea mult mai lentă decât pe 4G: preferați doar 4G.",
         "start": "Începe sesiunea",
         "photos_title": "Fotografii",
         "video_title": "Video",
@@ -64,12 +64,14 @@
         "video_split_warning": "Împărțire incomodă: bucăți de {segment} s, {count} pe clip. Încercați valori mai rotunde.",
         "video_split_invalid": "Suprapunerea trebuie să fie mai scurtă decât durata clipului.",
         "video_send_hd": "Trimite calitatea maximă în timpul cursei",
-        "video_send_hd_hint": "Altfel clipurile se adună și pleacă la întoarcere. Pe o rețea încărcată, astfel trimiterea fotografiilor rămâne rapidă.",
+        "video_send_hd_hint": "Altfel, clipurile HD așteaptă pe disc: le trimiteți când doriți cu butonul „Trimite HD acum” din ecranul de monitorizare. Pe o rețea încărcată, astfel trimiterea fotografiilor rămâne rapidă.",
         "disk_pending": "Alegeți o cameră și un dosar pentru a estima spațiul necesar.",
         "disk_rate": "{rate} GB pe oră",
         "disk_hours": "aproximativ {hours} h de filmare",
         "disk_detail": "{free} GB liberi, {reserved} GB rezervați sistemului",
-        "nothing_enabled": "Activați cel puțin fotografiile sau videoul."
+        "nothing_enabled": "Activați cel puțin fotografiile sau videoul.",
+        "hd_pending_title": "Clipuri HD în așteptare",
+        "hd_pending_text": "{count} clip(uri) HD din acest eveniment așteaptă să fie trimise ({size} GB)."
     },
     "dashboard": {
         "status_active": "Activ",
@@ -108,7 +110,28 @@
         "msg_resumed": "Încărcări reluate",
         "msg_stopped": "Sesiune oprită",
         "msg_retry_queued": "{count} fișier(e) readăugate în coadă",
-        "msg_error": "Eroare: {error}"
+        "msg_error": "Eroare: {error}",
+        "home_title": "Acasă (sesiunea continuă)",
+        "msg_parallel": "Încărcări în paralel: {count} (sesiunea continuă)",
+        "throughput": "Mb/s trimiși (1 min)",
+        "video_filmed": "clipuri filmate",
+        "video_assembled": "clipuri asamblate",
+        "video_sent": "clipuri trimise",
+        "video_waiting": "clipuri în așteptarea trimiterii",
+        "video_frames_detail": "imagini de analiză — {sent} trimise",
+        "video_clip_hd_sent": "Clipul {index} HD trimis",
+        "video_pause": "Pauză video",
+        "video_resume": "Reia video",
+        "video_pausing": "Se pune pe pauză…",
+        "video_resuming": "Se reia…",
+        "video_stopping": "Se oprește…",
+        "video_paused": "Înregistrare în pauză",
+        "video_stopped_title": "Înregistrare oprită",
+        "video_sending_only": "Trimitere video",
+        "video_paused_log": "Înregistrare în pauză — clipul în curs a fost închis și pleacă împreună cu celelalte",
+        "video_resumed_log": "Înregistrare reluată",
+        "video_send_failed": "Trimitere video abandonată după 3 încercări: {error}",
+        "video_throttled": "Server supraîncărcat: trimitere video în pauză {delay} s"
     },
     "watcher": {
         "detected": "Detectat ({size} MB)",
@@ -120,7 +143,10 @@
         "attempt": "Încărcare (încercare {attempt}/3)",
         "success": "OK în {duration}s ({speed} KB/s)",
         "failed": "Eșec {attempt}/{max}: {error}",
-        "retry_scheduled": "Reîncercare în {delay}s (încercare {attempt}/3)"
+        "retry_scheduled": "Reîncercare în {delay}s (încercare {attempt}/3)",
+        "success_timing": "OK în {duration} s — rețea {network} s + server {server} s",
+        "success_total": "OK în {duration} s",
+        "throttled": "Server supraîncărcat ({code}): pauză {delay} s, {parallel} încărcare(ări) în paralel"
     },
     "connection": {
         "restored": "Conexiune restabilită",
@@ -130,5 +156,31 @@
     "complete": {
         "with_errors": "Terminat: {sent} trimise, {failed} eșuate",
         "success": "Terminat: {count} fotografii încărcate cu succes!"
+    },
+    "hd": {
+        "title": "Video HD",
+        "none": "Încă niciun clip HD.",
+        "remaining": "{count} clip(uri) HD de trimis — {size} GB",
+        "progress": "{sent} / {total} clipuri HD trimise",
+        "all_sent": "Toate clipurile HD au fost trimise.",
+        "failed": "{count} clip(uri) HD eșuate",
+        "sending": "trimitere în curs",
+        "send_now": "Trimite HD acum",
+        "suspend": "Suspendă trimiterea HD",
+        "retry": "Reîncearcă eșuatele",
+        "started_log": "Trimiterea clipurilor HD a început",
+        "suspended_log": "Trimiterea clipurilor HD a fost suspendată",
+        "hint": "HD se trimite din agent, niciodată din galerie: trimis din galerie, creează un duplicat. Fotografiile au în continuare prioritate."
+    },
+    "nav": {
+        "banner_title": "Sesiune în curs: {event}",
+        "banner_photos": "{sent} fotografi(i) trimise, {pending} în așteptare",
+        "banner_video_recording": "înregistrare video în curs",
+        "banner_video_paused": "video în pauză",
+        "banner_video_sending": "{count} fișier(e) video de trimis",
+        "banner_back": "Înapoi la monitorizare",
+        "event_running": "● Sesiune în curs",
+        "confirm_replace": "O sesiune rulează pentru „{event}”. O încheiați pentru a o porni pe aceasta?",
+        "confirm_logout": "O sesiune este în curs. O încheiați și vă deconectați?"
     }
 }

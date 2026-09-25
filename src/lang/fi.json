@@ -36,7 +36,7 @@
         "existing_include": "Lataa kansion olemassa olevat tiedostot",
         "existing_exclude": "Lataa vain uudet tiedostot",
         "parallel": "Rinnakkaiset lataukset",
-        "parallel_hint": "Heikolla 4G-yhteydellä käytä 1. Vakaalla 5G-yhteydellä 3 nopeuttaa.",
+        "parallel_hint": "3 sopii useimpiin verkkoihin. Nosta 6:een, jos kaistaa riittää; palaa 1:een vain, jos lähetykset epäonnistuvat. 5G-verkossa lähetys on usein paljon hitaampaa kuin 4G-verkossa: käytä mieluiten pelkkää 4G:tä.",
         "start": "Aloita istunto",
         "photos_title": "Kuvat",
         "video_title": "Video",
@@ -64,12 +64,14 @@
         "video_split_warning": "Hankala jako: {segment} sekunnin paloja, {count} klippiä kohti. Kokeile tasaisempia arvoja.",
         "video_split_invalid": "Limityksen on oltava lyhyempi kuin klipin kesto.",
         "video_send_hd": "Lähetä täysi laatu kilpailun aikana",
-        "video_send_hd_hint": "Muuten klipit kertyvät ja lähtevät jälkeenpäin. Ruuhkaisessa verkossa tämä pitää kuvien lähetyksen nopeana.",
+        "video_send_hd_hint": "Muuten HD-klipit odottavat levyllä: lähetä ne milloin haluat valvontanäkymän painikkeella ”Lähetä HD nyt”. Ruuhkaisessa verkossa tämä pitää kuvien lähetyksen nopeana.",
         "disk_pending": "Valitse kamera ja kansio, niin tilantarve arvioidaan.",
         "disk_rate": "{rate} Gt tunnissa",
         "disk_hours": "noin {hours} h kuvausta",
         "disk_detail": "{free} Gt vapaana, {reserved} Gt varattu järjestelmälle",
-        "nothing_enabled": "Kytke päälle vähintään kuvat tai video."
+        "nothing_enabled": "Kytke päälle vähintään kuvat tai video.",
+        "hd_pending_title": "Odottavat HD-klipit",
+        "hd_pending_text": "{count} tämän tapahtuman HD-klippiä odottaa lähetystä ({size} Gt)."
     },
     "dashboard": {
         "status_active": "Aktiivinen",
@@ -108,7 +110,28 @@
         "msg_resumed": "Lataukset jatkettu",
         "msg_stopped": "Istunto pysäytetty",
         "msg_retry_queued": "{count} tiedosto(a) lisätty uudelleen jonoon",
-        "msg_error": "Virhe: {error}"
+        "msg_error": "Virhe: {error}",
+        "home_title": "Alkuun (istunto jatkuu)",
+        "msg_parallel": "Rinnakkaiset lataukset: {count} (istunto jatkuu)",
+        "throughput": "Mb/s lähetetty (1 min)",
+        "video_filmed": "kuvattua klippiä",
+        "video_assembled": "koottua klippiä",
+        "video_sent": "lähetettyä klippiä",
+        "video_waiting": "klippiä odottaa lähetystä",
+        "video_frames_detail": "analyysikuvaa — {sent} lähetetty",
+        "video_clip_hd_sent": "Klippi {index} lähetetty HD-laatuisena",
+        "video_pause": "Keskeytä video",
+        "video_resume": "Jatka videota",
+        "video_pausing": "Keskeytetään…",
+        "video_resuming": "Jatketaan…",
+        "video_stopping": "Pysäytetään…",
+        "video_paused": "Kuvaus tauolla",
+        "video_stopped_title": "Kuvaus pysäytetty",
+        "video_sending_only": "Videon lähetys",
+        "video_paused_log": "Kuvaus tauolla — käynnissä ollut klippi suljettiin ja lähtee muiden mukana",
+        "video_resumed_log": "Kuvaus jatkuu",
+        "video_send_failed": "Videon lähetys keskeytetty 3 yrityksen jälkeen: {error}",
+        "video_throttled": "Palvelin ylikuormittunut: videon lähetys tauolla {delay} s"
     },
     "watcher": {
         "detected": "Havaittu ({size} Mt)",
@@ -120,7 +143,10 @@
         "attempt": "Lataus (yritys {attempt}/3)",
         "success": "OK {duration}s:ssa ({speed} KB/s)",
         "failed": "Epäonnistui {attempt}/{max}: {error}",
-        "retry_scheduled": "Uusi yritys {delay}s:n kuluttua (yritys {attempt}/3)"
+        "retry_scheduled": "Uusi yritys {delay}s:n kuluttua (yritys {attempt}/3)",
+        "success_timing": "OK {duration} s:ssa — verkko {network} s + palvelin {server} s",
+        "success_total": "OK {duration} s:ssa",
+        "throttled": "Palvelin ylikuormittunut ({code}): tauko {delay} s, {parallel} rinnakkaista latausta"
     },
     "connection": {
         "restored": "Yhteys palautettu",
@@ -130,5 +156,31 @@
     "complete": {
         "with_errors": "Valmis: {sent} lähetetty, {failed} epäonnistunut",
         "success": "Valmis: {count} kuvaa ladattu onnistuneesti!"
+    },
+    "hd": {
+        "title": "HD-video",
+        "none": "Ei vielä HD-klippejä.",
+        "remaining": "{count} HD-klippiä lähettämättä — {size} Gt",
+        "progress": "{sent} / {total} HD-klippiä lähetetty",
+        "all_sent": "Kaikki HD-klipit on lähetetty.",
+        "failed": "{count} HD-klipin lähetys epäonnistui",
+        "sending": "lähetys käynnissä",
+        "send_now": "Lähetä HD nyt",
+        "suspend": "Keskeytä HD-lähetys",
+        "retry": "Yritä epäonnistuneita uudelleen",
+        "started_log": "HD-klippien lähetys aloitettu",
+        "suspended_log": "HD-klippien lähetys keskeytetty",
+        "hint": "HD lähetetään agentista, ei koskaan galleriasta: galleriasta lähetettynä syntyy kaksoiskappale. Kuvat ovat edelleen etusijalla."
+    },
+    "nav": {
+        "banner_title": "Istunto käynnissä: {event}",
+        "banner_photos": "{sent} kuvaa lähetetty, {pending} odottaa",
+        "banner_video_recording": "videokuvaus käynnissä",
+        "banner_video_paused": "video tauolla",
+        "banner_video_sending": "{count} videotiedostoa lähettämättä",
+        "banner_back": "Takaisin valvontaan",
+        "event_running": "● Istunto käynnissä",
+        "confirm_replace": "Tapahtumalla ”{event}” on käynnissä istunto. Päätetäänkö se, jotta tämä voidaan aloittaa?",
+        "confirm_logout": "Istunto on käynnissä. Päätetäänkö se ja kirjaudutaan ulos?"
     }
 }

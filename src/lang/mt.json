@@ -36,7 +36,7 @@
         "existing_include": "Ittella' l-fajls eżistenti fil-folder",
         "existing_exclude": "Ittella' biss il-fajls ġodda",
         "parallel": "Uploads paralleli",
-        "parallel_hint": "B'4G dgħajjef, uża 1. B'5G stabbli, 3 iżid il-veloċità.",
+        "parallel_hint": "3 jaqbel għall-biċċa l-kbira tan-netwerks. Itla' għal 6 jekk il-bandwidth jippermetti; erġa' lura għal 1 biss jekk il-bgħit ifalli. Fuq 5G, l-upload spiss ikun ħafna iktar bil-mod milli fuq 4G: ippreferi tuża 4G biss.",
         "start": "Ibda s-sessjoni",
         "photos_title": "Ritratti",
         "video_title": "Vidjo",
@@ -64,12 +64,14 @@
         "video_split_warning": "Qsim skomdu: biċċiet ta' {segment} s, {count} kull clip. Ipprova valuri aktar tondi.",
         "video_split_invalid": "It-trikkib irid jibqa' iqsar mit-tul tal-clip.",
         "video_send_hd": "Ibgħat il-kwalità sħiħa waqt it-tellieqa",
-        "video_send_hd_hint": "Inkella l-clips jinġabru u jitilqu wara. Fuq netwerk mgħobbi dan iżomm il-bgħit tar-ritratti mgħaġġel.",
+        "video_send_hd_hint": "Inkella l-clips HD jistennew fuq id-diska: ibgħathom meta trid bil-buttuna \"Ibgħat l-HD issa\" fuq l-iskrin tas-sorveljanza. Fuq netwerk mgħobbi dan iżomm il-bgħit tar-ritratti mgħaġġel.",
         "disk_pending": "Agħżel kamera u folder biex jiġi stmat l-ispazju meħtieġ.",
         "disk_rate": "{rate} GB fis-siegħa",
         "disk_hours": "madwar {hours} sigħat ta' filmar",
         "disk_detail": "{free} GB liberi, {reserved} GB riżervati għas-sistema",
-        "nothing_enabled": "Ixgħel mill-inqas ir-ritratti jew il-vidjo."
+        "nothing_enabled": "Ixgħel mill-inqas ir-ritratti jew il-vidjo.",
+        "hd_pending_title": "Clips HD jistennew",
+        "hd_pending_text": "Clips HD ta' dan l-avveniment li qed jistennew jintbagħtu: {count} ({size} GB)."
     },
     "dashboard": {
         "status_active": "Attiv",
@@ -108,7 +110,28 @@
         "msg_resumed": "Uploads komplew",
         "msg_stopped": "Sessjoni mwaqqfa",
         "msg_retry_queued": "{count} fajl(s) impoġġija lura fil-kju",
-        "msg_error": "Żball: {error}"
+        "msg_error": "Żball: {error}",
+        "home_title": "Paġna ewlenija (is-sessjoni tkompli)",
+        "msg_parallel": "Uploads paralleli: {count} (is-sessjoni tkompli)",
+        "throughput": "Mb/s mibgħuta (1 min)",
+        "video_filmed": "clips iffilmjati",
+        "video_assembled": "clips immuntati",
+        "video_sent": "clips mibgħuta",
+        "video_waiting": "clips jistennew jintbagħtu",
+        "video_frames_detail": "frejms tal-analiżi — {sent} mibgħuta",
+        "video_clip_hd_sent": "Clip {index} HD mibgħut",
+        "video_pause": "Pawża tal-vidjo",
+        "video_resume": "Kompli l-vidjo",
+        "video_pausing": "Qed jieqaf għal pawża…",
+        "video_resuming": "Qed jerġa' jibda…",
+        "video_stopping": "Qed jieqaf…",
+        "video_paused": "Reġistrazzjoni f'pawża",
+        "video_stopped_title": "Reġistrazzjoni waqfet",
+        "video_sending_only": "Bgħit tal-vidjo",
+        "video_paused_log": "Reġistrazzjoni f'pawża — il-clip li kien għaddej ingħalaq u jintbagħat mal-oħrajn",
+        "video_resumed_log": "Ir-reġistrazzjoni kompliet",
+        "video_send_failed": "Il-bgħit tal-vidjo ġie abbandunat wara 3 tentattivi: {error}",
+        "video_throttled": "Server mgħobbi żżejjed: bgħit tal-vidjo f'pawża għal {delay} s"
     },
     "watcher": {
         "detected": "Misjub ({size} MB)",
@@ -120,7 +143,10 @@
         "attempt": "Upload (tentattiv {attempt}/3)",
         "success": "OK fi {duration}s ({speed} KB/s)",
         "failed": "Falla {attempt}/{max}: {error}",
-        "retry_scheduled": "Tentattiv ġdid fi {delay}s (tentattiv {attempt}/3)"
+        "retry_scheduled": "Tentattiv ġdid fi {delay}s (tentattiv {attempt}/3)",
+        "success_timing": "OK fi {duration} s — netwerk {network} s + server {server} s",
+        "success_total": "OK fi {duration} s",
+        "throttled": "Server mgħobbi żżejjed ({code}): pawża ta' {delay} s, uploads paralleli: {parallel}"
     },
     "connection": {
         "restored": "Konnessjoni reġgħet lura",
@@ -130,5 +156,31 @@
     "complete": {
         "with_errors": "Lest: {sent} mibgħuta, {failed} fallew",
         "success": "Lest: {count} ritratti ttellgħu b'suċċess!"
+    },
+    "hd": {
+        "title": "Vidjo HD",
+        "none": "Għad m'hemm l-ebda clip HD.",
+        "remaining": "Clips HD li jridu jintbagħtu: {count} — {size} GB",
+        "progress": "{sent} / {total} clips HD mibgħuta",
+        "all_sent": "Il-clips HD kollha ntbagħtu.",
+        "failed": "Clips HD li fallew: {count}",
+        "sending": "bgħit għaddej",
+        "send_now": "Ibgħat l-HD issa",
+        "suspend": "Waqqaf il-bgħit tal-HD",
+        "retry": "Erġa' pprova dawk li fallew",
+        "started_log": "Il-bgħit tal-clips HD beda",
+        "suspended_log": "Il-bgħit tal-clips HD twaqqaf",
+        "hint": "L-HD tintbagħat mill-aġent, qatt mill-gallerija: jekk tintbagħat mill-gallerija, toħloq duplikat. Ir-ritratti jibqgħu għandhom il-prijorità."
+    },
+    "nav": {
+        "banner_title": "Sessjoni għaddejja: {event}",
+        "banner_photos": "ritratti mibgħuta: {sent}, jistennew: {pending}",
+        "banner_video_recording": "reġistrazzjoni tal-vidjo għaddejja",
+        "banner_video_paused": "vidjo f'pawża",
+        "banner_video_sending": "fajls tal-vidjo li jridu jintbagħtu: {count}",
+        "banner_back": "Lura għas-sorveljanza",
+        "event_running": "● Sessjoni għaddejja",
+        "confirm_replace": "Hemm sessjoni għaddejja għal \"{event}\". Ttemmha biex tibda din?",
+        "confirm_logout": "Hemm sessjoni għaddejja. Ttemmha u toħroġ?"
     }
 }

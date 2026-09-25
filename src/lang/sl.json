@@ -36,7 +36,7 @@
         "existing_include": "Naloži obstoječe datoteke v mapi",
         "existing_exclude": "Naloži samo nove datoteke",
         "parallel": "Vzporedni prenosi",
-        "parallel_hint": "Pri šibkem 4G uporabite 1. Pri stabilnem 5G 3 pospeši.",
+        "parallel_hint": "3 ustreza večini omrežij. Povečajte na 6, če pasovna širina to dopušča; na 1 se vrnite samo, če pošiljanje ne uspe. Na 5G je nalaganje pogosto precej počasnejše kot na 4G: po možnosti uporabljajte samo 4G.",
         "start": "Začni sejo",
         "photos_title": "Fotografije",
         "video_title": "Video",
@@ -64,12 +64,14 @@
         "video_split_warning": "Nepraktična razdelitev: deli po {segment} s, {count} na klip. Poskusite z bolj okroglimi vrednostmi.",
         "video_split_invalid": "Prekrivanje mora biti krajše od trajanja klipa.",
         "video_send_hd": "Pošiljaj polno kakovost med tekmo",
-        "video_send_hd_hint": "Sicer se klipi kopičijo in odidejo po vrnitvi. Na obremenjenem omrežju to ohrani hitro pošiljanje fotografij.",
+        "video_send_hd_hint": "Sicer klipi HD čakajo na disku: pošljite jih, kadar želite, z gumbom »Pošlji HD zdaj« na zaslonu nadzora. Na obremenjenem omrežju to ohrani hitro pošiljanje fotografij.",
         "disk_pending": "Izberite kamero in mapo za oceno potrebnega prostora.",
         "disk_rate": "{rate} GB na uro",
         "disk_hours": "približno {hours} h snemanja",
         "disk_detail": "{free} GB prostih, {reserved} GB rezerviranih za sistem",
-        "nothing_enabled": "Vklopite vsaj fotografije ali video."
+        "nothing_enabled": "Vklopite vsaj fotografije ali video.",
+        "hd_pending_title": "Klipi HD na čakanju",
+        "hd_pending_text": "Klipi HD tega dogodka, ki čakajo na pošiljanje: {count} ({size} GB)."
     },
     "dashboard": {
         "status_active": "Aktivno",
@@ -108,7 +110,28 @@
         "msg_resumed": "Prenosi nadaljujejo",
         "msg_stopped": "Seja ustavljena",
         "msg_retry_queued": "{count} datotek(e) vrnjenih v vrsto",
-        "msg_error": "Napaka: {error}"
+        "msg_error": "Napaka: {error}",
+        "home_title": "Začetek (seja se nadaljuje)",
+        "msg_parallel": "Vzporedni prenosi: {count} (seja se nadaljuje)",
+        "throughput": "Mb/s poslano (1 min)",
+        "video_filmed": "posnetih klipov",
+        "video_assembled": "sestavljenih klipov",
+        "video_sent": "poslanih klipov",
+        "video_waiting": "klipov čaka na pošiljanje",
+        "video_frames_detail": "slik za analizo — poslanih {sent}",
+        "video_clip_hd_sent": "Klip {index} v HD poslan",
+        "video_pause": "Začasno ustavi video",
+        "video_resume": "Nadaljuj video",
+        "video_pausing": "Začasno ustavljanje…",
+        "video_resuming": "Nadaljevanje…",
+        "video_stopping": "Ustavljanje…",
+        "video_paused": "Snemanje začasno ustavljeno",
+        "video_stopped_title": "Snemanje ustavljeno",
+        "video_sending_only": "Pošiljanje videa",
+        "video_paused_log": "Snemanje začasno ustavljeno — začeti klip je zaprt in odide z ostalimi",
+        "video_resumed_log": "Snemanje se nadaljuje",
+        "video_send_failed": "Pošiljanje videa opuščeno po 3 poskusih: {error}",
+        "video_throttled": "Strežnik je preobremenjen: pošiljanje videa začasno ustavljeno za {delay} s"
     },
     "watcher": {
         "detected": "Zaznano ({size} MB)",
@@ -120,7 +143,10 @@
         "attempt": "Nalaganje (poskus {attempt}/3)",
         "success": "OK v {duration}s ({speed} KB/s)",
         "failed": "Neuspeh {attempt}/{max}: {error}",
-        "retry_scheduled": "Ponovni poskus čez {delay}s (poskus {attempt}/3)"
+        "retry_scheduled": "Ponovni poskus čez {delay}s (poskus {attempt}/3)",
+        "success_timing": "OK v {duration} s — omrežje {network} s + strežnik {server} s",
+        "success_total": "OK v {duration} s",
+        "throttled": "Strežnik je preobremenjen ({code}): premor {delay} s, vzporedni prenosi: {parallel}"
     },
     "connection": {
         "restored": "Povezava obnovljena",
@@ -130,5 +156,31 @@
     "complete": {
         "with_errors": "Končano: {sent} poslanih, {failed} neuspešnih",
         "success": "Končano: {count} fotografij uspešno naloženih!"
+    },
+    "hd": {
+        "title": "Video HD",
+        "none": "Še ni klipov HD.",
+        "remaining": "Klipi HD za pošiljanje: {count} — {size} GB",
+        "progress": "Poslanih {sent} / {total} klipov HD",
+        "all_sent": "Vsi klipi HD so poslani.",
+        "failed": "Neuspešni klipi HD: {count}",
+        "sending": "pošiljanje poteka",
+        "send_now": "Pošlji HD zdaj",
+        "suspend": "Začasno ustavi pošiljanje HD",
+        "retry": "Ponovi neuspešne",
+        "started_log": "Pošiljanje klipov HD se je začelo",
+        "suspended_log": "Pošiljanje klipov HD je začasno ustavljeno",
+        "hint": "HD se pošilja iz agenta, nikoli iz galerije: poslan iz galerije ustvari dvojnik. Fotografije imajo še naprej prednost."
+    },
+    "nav": {
+        "banner_title": "Seja poteka: {event}",
+        "banner_photos": "poslane fotografije: {sent}, na čakanju: {pending}",
+        "banner_video_recording": "snemanje videa poteka",
+        "banner_video_paused": "video začasno ustavljen",
+        "banner_video_sending": "video datoteke za pošiljanje: {count}",
+        "banner_back": "Nazaj na nadzor",
+        "event_running": "● Seja poteka",
+        "confirm_replace": "Za »{event}« poteka seja. Jo končam, da začnem to?",
+        "confirm_logout": "Seja poteka. Jo končam in se odjavim?"
     }
 }

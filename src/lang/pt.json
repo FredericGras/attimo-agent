@@ -36,7 +36,7 @@
         "existing_include": "Carregar os ficheiros existentes na pasta",
         "existing_exclude": "Carregar apenas os novos ficheiros",
         "parallel": "Uploads paralelos",
-        "parallel_hint": "Com 4G fraco, use 1. Com 5G estável, 3 acelera.",
+        "parallel_hint": "3 serve para a maioria das redes. Suba para 6 se a largura de banda o permitir; volte a 1 apenas se os envios falharem. Em 5G, o envio é muitas vezes bem mais lento do que em 4G: prefira usar apenas 4G.",
         "start": "Iniciar a sessão",
         "photos_title": "Fotos",
         "video_title": "Vídeo",
@@ -64,12 +64,14 @@
         "video_split_warning": "Divisão pouco prática: partes de {segment} s, {count} por clip. Experimente valores mais redondos.",
         "video_split_invalid": "A sobreposição deve ser inferior à duração do clip.",
         "video_send_hd": "Enviar a qualidade máxima durante a prova",
-        "video_send_hd_hint": "Caso contrário, os clips acumulam-se e seguem no regresso. Numa rede saturada, isto evita atrasar o envio das fotos.",
+        "video_send_hd_hint": "Caso contrário, os clips HD ficam à espera no disco: envie-os quando quiser com o botão «Enviar HD agora» do ecrã de monitorização. Numa rede saturada, isto evita atrasar o envio das fotos.",
         "disk_pending": "Escolha uma câmara e uma pasta para estimar o espaço necessário.",
         "disk_rate": "{rate} GB por hora",
         "disk_hours": "cerca de {hours} h de gravação",
         "disk_detail": "{free} GB livres, {reserved} GB reservados para o sistema",
-        "nothing_enabled": "Ative pelo menos as fotos ou o vídeo."
+        "nothing_enabled": "Ative pelo menos as fotos ou o vídeo.",
+        "hd_pending_title": "Clips HD em espera",
+        "hd_pending_text": "{count} clip(s) HD deste evento aguardam envio ({size} GB)."
     },
     "dashboard": {
         "status_active": "Ativo",
@@ -108,7 +110,28 @@
         "msg_resumed": "Uploads retomados",
         "msg_stopped": "Sessão terminada",
         "msg_retry_queued": "{count} ficheiro(s) reenviados para a fila",
-        "msg_error": "Erro: {error}"
+        "msg_error": "Erro: {error}",
+        "home_title": "Início (a sessão continua)",
+        "msg_parallel": "Envios em paralelo: {count} (a sessão continua)",
+        "throughput": "Mb/s enviados (1 min)",
+        "video_filmed": "clips filmados",
+        "video_assembled": "clips montados",
+        "video_sent": "clips enviados",
+        "video_waiting": "clips à espera de envio",
+        "video_frames_detail": "imagens de análise — {sent} enviadas",
+        "video_clip_hd_sent": "Clip {index} HD enviado",
+        "video_pause": "Pausar o vídeo",
+        "video_resume": "Retomar o vídeo",
+        "video_pausing": "A pausar…",
+        "video_resuming": "A retomar…",
+        "video_stopping": "A parar…",
+        "video_paused": "Gravação em pausa",
+        "video_stopped_title": "Gravação parada",
+        "video_sending_only": "Envio de vídeo",
+        "video_paused_log": "Gravação em pausa — o clip em curso foi fechado e segue com os outros",
+        "video_resumed_log": "Gravação retomada",
+        "video_send_failed": "Envio de vídeo abandonado após 3 tentativas: {error}",
+        "video_throttled": "Servidor saturado: envio de vídeo em pausa durante {delay} s"
     },
     "watcher": {
         "detected": "Detetado ({size} MB)",
@@ -120,7 +143,10 @@
         "attempt": "Upload (tentativa {attempt}/3)",
         "success": "OK em {duration}s ({speed} KB/s)",
         "failed": "Falha {attempt}/{max}: {error}",
-        "retry_scheduled": "Nova tentativa em {delay}s (tentativa {attempt}/3)"
+        "retry_scheduled": "Nova tentativa em {delay}s (tentativa {attempt}/3)",
+        "success_timing": "OK em {duration} s — rede {network} s + servidor {server} s",
+        "success_total": "OK em {duration} s",
+        "throttled": "Servidor saturado ({code}): pausa de {delay} s, {parallel} envio(s) em paralelo"
     },
     "connection": {
         "restored": "Ligação restabelecida",
@@ -130,5 +156,31 @@
     "complete": {
         "with_errors": "Concluído: {sent} enviadas, {failed} falhadas",
         "success": "Concluído: {count} fotos carregadas com sucesso!"
+    },
+    "hd": {
+        "title": "Vídeo HD",
+        "none": "Ainda não há clips HD.",
+        "remaining": "{count} clip(s) HD por enviar — {size} GB",
+        "progress": "{sent} / {total} clips HD enviados",
+        "all_sent": "Todos os clips HD foram enviados.",
+        "failed": "{count} clip(s) HD com falha",
+        "sending": "envio em curso",
+        "send_now": "Enviar HD agora",
+        "suspend": "Suspender o envio HD",
+        "retry": "Tentar de novo os que falharam",
+        "started_log": "Envio dos clips HD iniciado",
+        "suspended_log": "Envio dos clips HD suspenso",
+        "hint": "A HD envia-se a partir do agente, nunca a partir da galeria: enviada a partir da galeria, cria um duplicado. As fotos mantêm a prioridade."
+    },
+    "nav": {
+        "banner_title": "Sessão em curso: {event}",
+        "banner_photos": "{sent} foto(s) enviada(s), {pending} em espera",
+        "banner_video_recording": "gravação de vídeo em curso",
+        "banner_video_paused": "vídeo em pausa",
+        "banner_video_sending": "{count} ficheiro(s) de vídeo por enviar",
+        "banner_back": "Voltar à monitorização",
+        "event_running": "● Sessão em curso",
+        "confirm_replace": "Há uma sessão em curso para «{event}». Terminá-la para iniciar esta?",
+        "confirm_logout": "Há uma sessão em curso. Terminá-la e terminar sessão?"
     }
 }

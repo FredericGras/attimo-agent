@@ -948,3 +948,188 @@ body {
     color: #555;
     margin-bottom: -6px;
 }
+
+/* ═══════════════════════════════════════════════
+   0.3.1 — BANDEAU DE SESSION
+   ═══════════════════════════════════════════════ */
+
+/* Le bandeau s'intercale au-dessus de l'écran actif : le corps devient une
+   colonne, et l'écran prend la hauteur restante au lieu de 100vh — sans
+   quoi le bas de chaque écran (bouton Démarrer, actions) passerait sous le
+   bord de la fenêtre. */
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+.screen.active {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
+}
+
+.session-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 20px;
+    background: #eef5fb;
+    border-bottom: 1px solid #d5e4f2;
+    flex-shrink: 0;
+}
+
+.session-banner-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    font-size: 13px;
+    color: #444;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.session-banner-text span {
+    color: #777;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.btn-sm {
+    padding: 6px 14px;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+/* Point gris : vidéo arrêtée, ou envoi seul. */
+.status-idle {
+    background: #c8ccd2;
+}
+
+/* --- Version et édition --- */
+.app-version {
+    font-size: 11px;
+    color: #aaa;
+    letter-spacing: 0.5px;
+}
+
+.login-logo .app-version {
+    margin-top: 6px;
+}
+
+/* L'agent de DEV s'installe à côté de celui de production : sa version
+   s'affiche en badge orange, impossible à confondre. */
+body.is-dev .app-version {
+    color: #fff;
+    background: #e0913a;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+/* --- Épreuve dont la session tourne --- */
+.event-card.is-running {
+    border-color: #7EC8A3;
+}
+
+.event-running {
+    margin-left: auto;
+    color: #4f9e78;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════
+   0.3.1 — VIDÉO : PAUSE, COMPTEURS, HD
+   ═══════════════════════════════════════════════ */
+
+.video-panel-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.video-hd {
+    border-top: 1px solid #f0f0f0;
+    padding: 13px 0;
+    margin-bottom: 0;
+}
+
+.video-hd-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 7px;
+}
+
+.video-hd-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+}
+
+.video-hd-status {
+    font-size: 13px;
+    color: #555;
+    text-align: right;
+}
+
+.video-hd .progress-fill {
+    background: #9B8EC5;
+}
+
+.video-hd-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.video-hd-progress {
+    font-size: 12px;
+    color: #888;
+}
+
+.video-hd-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.video-hd .form-hint {
+    display: block;
+    margin-top: 8px;
+}
+
+/* --- Clips HD en attente, écran de réglages --- */
+.config-hd-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    max-width: 1100px;
+    margin: 0 auto 20px;
+    padding: 16px 20px;
+    background: #f5f2fb;
+    border: 1px solid #ddd5ef;
+    border-radius: 12px;
+}
+
+.config-hd-card-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13px;
+    color: #444;
+}
+
+.config-hd-card .btn {
+    flex-shrink: 0;
+}
+
+.parallel-picker {
+    flex-wrap: wrap;
+}

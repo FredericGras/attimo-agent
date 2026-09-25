@@ -9,6 +9,25 @@
 <body>
 
     <!-- ═══════════════════════════════════════════ -->
+    <!-- BANDEAU DE SESSION (0.3.1)                  -->
+    <!-- Sur tous les écrans sauf la surveillance :  -->
+    <!-- une session tourne, retour en un clic.      -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div id="session-banner" class="session-banner" style="display:none;">
+        <span id="session-banner-dot" class="status-dot status-active"></span>
+        <div class="session-banner-text">
+            <strong id="session-banner-title"></strong>
+            <span id="session-banner-detail"></span>
+        </div>
+        <button type="button" id="session-banner-btn" class="btn btn-primary btn-sm">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"/>
+            </svg>
+            <span data-i18n="nav.banner_back">Retour à la surveillance</span>
+        </button>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
     <!-- ÉCRAN 1 : CONNEXION (App Password)         -->
     <!-- SAAS 240 — Phase 6 : un seul champ token   -->
     <!-- ═══════════════════════════════════════════ -->
@@ -23,6 +42,7 @@
                 </div>
                 <h1>ATTIMO</h1>
                 <p class="login-subtitle" data-i18n="app.subtitle">Agent Terrain</p>
+                <p class="app-version"></p>
             </div>
 
             <form id="login-form" onsubmit="return false;">
@@ -74,6 +94,7 @@
             <div class="header-left">
                 <div class="header-logo">ATTIMO</div>
                 <span class="header-label" data-i18n="app.subtitle">Agent Terrain</span>
+                <span class="app-version"></span>
             </div>
             <div class="header-right">
                 <span id="user-name" class="user-name"></span>
@@ -123,6 +144,16 @@
         </header>
 
         <main class="main-content">
+            <!-- Clips HD d'une sortie précédente (0.3.1) -->
+            <div class="config-hd-card" id="config-hd-card" style="display:none;">
+                <div class="config-hd-card-text">
+                    <strong data-i18n="config.hd_pending_title">Clips HD en attente</strong>
+                    <span id="config-hd-text"></span>
+                    <small class="form-hint" data-i18n="hd.hint">La HD s'envoie depuis l'agent, jamais depuis la galerie : envoyée depuis la galerie, elle crée un doublon. Les photos restent prioritaires.</small>
+                </div>
+                <button type="button" id="config-hd-send-btn" class="btn btn-primary" data-i18n="hd.send_now">Envoyer les HD maintenant</button>
+            </div>
+
             <div class="config-layout">
 
                 <!-- ─── BLOC PHOTOS ─── -->
@@ -174,11 +205,14 @@
                         <div class="form-group">
                             <label for="config-parallel" data-i18n="config.parallel">Uploads parallèles</label>
                             <div class="parallel-picker">
-                                <button type="button" class="parallel-btn active" data-value="1">1</button>
+                                <button type="button" class="parallel-btn" data-value="1">1</button>
                                 <button type="button" class="parallel-btn" data-value="2">2</button>
-                                <button type="button" class="parallel-btn" data-value="3">3</button>
+                                <button type="button" class="parallel-btn active" data-value="3">3</button>
+                                <button type="button" class="parallel-btn" data-value="4">4</button>
+                                <button type="button" class="parallel-btn" data-value="5">5</button>
+                                <button type="button" class="parallel-btn" data-value="6">6</button>
                             </div>
-                            <small class="form-hint" data-i18n="config.parallel_hint">Sur connexion 4G faible, utilisez 1. Sur 5G stable, 3 accélère.</small>
+                            <small class="form-hint" data-i18n="config.parallel_hint">3 convient à la plupart des réseaux. Montez à 6 si le débit le permet ; revenez à 1 seulement si les envois échouent. En 5G, l'envoi est souvent bien plus lent qu'en 4G : privilégiez la 4G seule.</small>
                         </div>
                     </div>
                 </div>
@@ -270,7 +304,7 @@
                                 </div>
                                 <span data-i18n="config.video_send_hd">Envoyer la pleine qualité pendant la course</span>
                             </label>
-                            <small class="form-hint" data-i18n="config.video_send_hd_hint">Sinon, les clips s'accumulent et partiront au retour. Sur un réseau saturé, cela évite de ralentir l'envoi des photos.</small>
+                            <small class="form-hint" data-i18n="config.video_send_hd_hint">Sinon, les clips HD attendent sur le disque : vous les enverrez quand vous voudrez avec le bouton « Envoyer les HD maintenant » de l'écran de surveillance. Sur un réseau saturé, cela évite de ralentir l'envoi des photos.</small>
                         </div>
                     </div>
                 </div>
@@ -304,6 +338,12 @@
                         <polyline points="15 18 9 12 15 6"/>
                     </svg>
                 </button>
+                <button id="dash-home-btn" class="btn btn-icon" data-i18n-title="dashboard.home_title" title="Accueil (la session continue)">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        <polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                </button>
                 <div id="dash-status" class="status-dot status-active" data-i18n-title="dashboard.status_active" title="En cours"></div>
                 <span id="dash-event-name" class="header-label"></span>
                 <span id="dash-checkpoint-name" class="header-checkpoint"></span>
@@ -331,7 +371,7 @@
                 </div>
                 <div class="stat-card stat-speed">
                     <div class="stat-value" id="stat-speed">—</div>
-                    <div class="stat-label" data-i18n="dashboard.speed_unit">Ko/s</div>
+                    <div class="stat-label" data-i18n="dashboard.throughput">Mb/s envoyés (1 min)</div>
                 </div>
             </div>
 
@@ -343,36 +383,79 @@
                 <div class="progress-text" id="progress-text">0 / 0</div>
             </div>
 
-            <!-- ─── CAPTATION VIDÉO (SAAS 431) ───
-                 N'apparaît que si une captation tourne. -->
+            <!-- ─── VIDÉO (SAAS 431, 0.3.1) ───
+                 Affiché dès que la session comporte de la vidéo : captation
+                 (en cours, en pause ou arrêtée) ou clips à envoyer. -->
             <div class="video-panel" id="dash-video-panel" style="display:none;">
                 <div class="video-panel-head">
                     <div class="video-panel-title">
-                        <span class="status-dot status-recording"></span>
-                        <span data-i18n="dashboard.video_recording">Captation en cours</span>
+                        <span id="dash-video-dot" class="status-dot status-recording"></span>
+                        <span id="dash-video-title" data-i18n="dashboard.video_recording">Captation en cours</span>
                         <span class="video-elapsed" id="dash-video-elapsed">00:00:00</span>
                     </div>
-                    <button type="button" id="dash-video-stop-btn" class="btn btn-secondary">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                        </svg>
-                        <span data-i18n="dashboard.video_stop">Arrêter la vidéo</span>
-                    </button>
+                    <div class="video-panel-actions">
+                        <button type="button" id="dash-video-pause-btn" class="btn btn-secondary">
+                            <svg class="icon-pause" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+                            </svg>
+                            <svg class="icon-play" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                                <polygon points="5 3 19 12 5 21 5 3"/>
+                            </svg>
+                            <span data-i18n="dashboard.video_pause">Pause vidéo</span>
+                        </button>
+                        <button type="button" id="dash-video-stop-btn" class="btn btn-secondary">
+                            <svg class="icon-stop" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            </svg>
+                            <svg class="spinner" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+                                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                            </svg>
+                            <span data-i18n="dashboard.video_stop">Arrêter la vidéo</span>
+                        </button>
+                    </div>
                 </div>
 
-                <div class="video-stats">
+                <!-- Compteurs de la session : filmés, assemblés, envoyés, en attente -->
+                <div class="video-stats" id="dash-video-stats">
                     <div class="video-stat">
-                        <div class="video-stat-value" id="dash-video-clips">0</div>
-                        <div class="video-stat-label" data-i18n="dashboard.video_clips">clips produits</div>
+                        <div class="video-stat-value" id="dash-video-filmed">0</div>
+                        <div class="video-stat-label" data-i18n="dashboard.video_filmed">clips filmés</div>
                     </div>
                     <div class="video-stat">
-                        <div class="video-stat-value" id="dash-video-frames">0</div>
-                        <div class="video-stat-label" data-i18n="dashboard.video_frames">images d'analyse</div>
+                        <div class="video-stat-value" id="dash-video-clips">0</div>
+                        <div class="video-stat-label" data-i18n="dashboard.video_assembled">clips assemblés</div>
+                    </div>
+                    <div class="video-stat">
+                        <div class="video-stat-value" id="dash-video-sent">0</div>
+                        <div class="video-stat-label" data-i18n="dashboard.video_sent">clips envoyés</div>
                     </div>
                     <div class="video-stat">
                         <div class="video-stat-value" id="dash-video-queue">0</div>
-                        <div class="video-stat-label" id="dash-video-queue-label" data-i18n="dashboard.video_queue">en file</div>
+                        <div class="video-stat-label" data-i18n="dashboard.video_waiting">clips en attente d'envoi</div>
                     </div>
+                    <div class="video-stat">
+                        <div class="video-stat-value" id="dash-video-frames">0</div>
+                        <div class="video-stat-label" id="dash-video-frames-label" data-i18n="dashboard.video_frames">images d'analyse</div>
+                    </div>
+                </div>
+
+                <!-- Vidéo HD : ce qui reste, et le bouton pour l'envoyer -->
+                <div class="video-hd" id="dash-video-hd">
+                    <div class="video-hd-head">
+                        <span class="video-hd-title" data-i18n="hd.title">Vidéo HD</span>
+                        <span class="video-hd-status" id="dash-hd-status"></span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="dash-hd-fill" style="width: 0%"></div>
+                    </div>
+                    <div class="video-hd-row">
+                        <span class="video-hd-progress" id="dash-hd-progress"></span>
+                        <div class="video-hd-actions">
+                            <button type="button" id="dash-hd-retry-btn" class="btn btn-link" style="display:none;" data-i18n="hd.retry">Relancer les échecs</button>
+                            <button type="button" id="dash-hd-btn" class="btn btn-primary" style="display:none;" data-i18n="hd.send_now">Envoyer les HD maintenant</button>
+                        </div>
+                    </div>
+                    <small class="form-hint" data-i18n="hd.hint">La HD s'envoie depuis l'agent, jamais depuis la galerie : envoyée depuis la galerie, elle crée un doublon. Les photos restent prioritaires.</small>
                 </div>
 
                 <div class="video-disk" id="dash-video-disk">

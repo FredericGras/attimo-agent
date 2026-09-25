@@ -36,7 +36,7 @@
         "existing_include": "Įkelti esamus failus iš aplanko",
         "existing_exclude": "Įkelti tik naujus failus",
         "parallel": "Lygiagretūs įkėlimai",
-        "parallel_hint": "Su silpnu 4G naudokite 1. Su stabiliu 5G, 3 pagreitina.",
+        "parallel_hint": "3 tinka daugumai tinklų. Padidinkite iki 6, jei leidžia pralaidumas; grįžkite į 1 tik tada, jei siuntimas nepavyksta. 5G tinkle įkėlimas dažnai būna daug lėtesnis nei 4G tinkle: geriau naudokite tik 4G.",
         "start": "Pradėti seansą",
         "photos_title": "Nuotraukos",
         "video_title": "Vaizdo įrašas",
@@ -64,12 +64,14 @@
         "video_split_warning": "Nepatogus skaidymas: {segment} s dalys, {count} klipui. Pabandykite apvalesnes reikšmes.",
         "video_split_invalid": "Persidengimas turi būti trumpesnis nei klipo trukmė.",
         "video_send_hd": "Siųsti visą kokybę lenktynių metu",
-        "video_send_hd_hint": "Kitaip klipai kaupiasi ir išeis grįžus. Apkrautame tinkle tai išlaiko greitą nuotraukų siuntimą.",
+        "video_send_hd_hint": "Kitaip HD klipai laukia diske: išsiųskite juos, kada norite, stebėjimo ekrano mygtuku „Siųsti HD dabar“. Apkrautame tinkle tai išlaiko greitą nuotraukų siuntimą.",
         "disk_pending": "Pasirinkite kamerą ir aplanką, kad būtų įvertinta reikiama vieta.",
         "disk_rate": "{rate} GB per valandą",
         "disk_hours": "maždaug {hours} val. filmavimo",
         "disk_detail": "{free} GB laisva, {reserved} GB rezervuota sistemai",
-        "nothing_enabled": "Įjunkite bent nuotraukas arba vaizdo įrašą."
+        "nothing_enabled": "Įjunkite bent nuotraukas arba vaizdo įrašą.",
+        "hd_pending_title": "Laukiantys HD klipai",
+        "hd_pending_text": "Šio renginio HD klipai, laukiantys siuntimo: {count} ({size} GB)."
     },
     "dashboard": {
         "status_active": "Aktyvus",
@@ -108,7 +110,28 @@
         "msg_resumed": "Įkėlimai atnaujinti",
         "msg_stopped": "Sesija sustabdyta",
         "msg_retry_queued": "{count} failas(-ai) grąžintas(-i) į eilę",
-        "msg_error": "Klaida: {error}"
+        "msg_error": "Klaida: {error}",
+        "home_title": "Pradžia (seansas tęsiamas)",
+        "msg_parallel": "Lygiagretūs įkėlimai: {count} (seansas tęsiamas)",
+        "throughput": "Mb/s išsiųsta (1 min.)",
+        "video_filmed": "nufilmuoti klipai",
+        "video_assembled": "sujungti klipai",
+        "video_sent": "išsiųsti klipai",
+        "video_waiting": "klipai laukia siuntimo",
+        "video_frames_detail": "analizės kadrai — išsiųsta {sent}",
+        "video_clip_hd_sent": "Klipas {index} išsiųstas HD kokybe",
+        "video_pause": "Pristabdyti vaizdą",
+        "video_resume": "Tęsti vaizdą",
+        "video_pausing": "Stabdoma…",
+        "video_resuming": "Tęsiama…",
+        "video_stopping": "Sustabdoma…",
+        "video_paused": "Įrašymas pristabdytas",
+        "video_stopped_title": "Įrašymas sustabdytas",
+        "video_sending_only": "Vaizdo siuntimas",
+        "video_paused_log": "Įrašymas pristabdytas — vykęs klipas uždarytas ir siunčiamas kartu su kitais",
+        "video_resumed_log": "Įrašymas tęsiamas",
+        "video_send_failed": "Vaizdo siuntimas nutrauktas po 3 bandymų: {error}",
+        "video_throttled": "Serveris perkrautas: vaizdo siuntimas pristabdytas {delay} s"
     },
     "watcher": {
         "detected": "Aptikta ({size} MB)",
@@ -120,7 +143,10 @@
         "attempt": "Įkėlimas (bandymas {attempt}/3)",
         "success": "OK per {duration}s ({speed} KB/s)",
         "failed": "Nepavyko {attempt}/{max}: {error}",
-        "retry_scheduled": "Naujas bandymas po {delay}s (bandymas {attempt}/3)"
+        "retry_scheduled": "Naujas bandymas po {delay}s (bandymas {attempt}/3)",
+        "success_timing": "OK per {duration} s — tinklas {network} s + serveris {server} s",
+        "success_total": "OK per {duration} s",
+        "throttled": "Serveris perkrautas ({code}): pauzė {delay} s, lygiagrečių įkėlimų: {parallel}"
     },
     "connection": {
         "restored": "Ryšys atkurtas",
@@ -130,5 +156,31 @@
     "complete": {
         "with_errors": "Baigta: {sent} išsiųsta, {failed} nepavyko",
         "success": "Baigta: {count} nuotraukų sėkmingai įkelta!"
+    },
+    "hd": {
+        "title": "HD vaizdas",
+        "none": "HD klipų dar nėra.",
+        "remaining": "HD klipai siuntimui: {count} — {size} GB",
+        "progress": "Išsiųsta {sent} / {total} HD klipų",
+        "all_sent": "Visi HD klipai išsiųsti.",
+        "failed": "Nepavykę HD klipai: {count}",
+        "sending": "vyksta siuntimas",
+        "send_now": "Siųsti HD dabar",
+        "suspend": "Pristabdyti HD siuntimą",
+        "retry": "Kartoti nepavykusius",
+        "started_log": "HD klipų siuntimas pradėtas",
+        "suspended_log": "HD klipų siuntimas pristabdytas",
+        "hint": "HD siunčiama iš agento, niekada iš galerijos: išsiųsta iš galerijos, sukuria dublikatą. Nuotraukos išlieka pirmenybinės."
+    },
+    "nav": {
+        "banner_title": "Vyksta seansas: {event}",
+        "banner_photos": "išsiųsta nuotraukų: {sent}, laukia: {pending}",
+        "banner_video_recording": "vyksta vaizdo įrašymas",
+        "banner_video_paused": "vaizdas pristabdytas",
+        "banner_video_sending": "vaizdo failai siuntimui: {count}",
+        "banner_back": "Atgal į stebėjimą",
+        "event_running": "● Vyksta seansas",
+        "confirm_replace": "Renginiui „{event}“ vyksta seansas. Baigti jį, kad pradėtumėte šį?",
+        "confirm_logout": "Vyksta seansas. Baigti jį ir atsijungti?"
     }
 }

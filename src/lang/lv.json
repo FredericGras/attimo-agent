@@ -36,7 +36,7 @@
         "existing_include": "Augšupielādēt esošos failus mapē",
         "existing_exclude": "Augšupielādēt tikai jaunus failus",
         "parallel": "Paralēlās augšupielādes",
-        "parallel_hint": "Ar vāju 4G izmantojiet 1. Ar stabilu 5G, 3 paātrina.",
+        "parallel_hint": "3 der lielākajai daļai tīklu. Palieliniet līdz 6, ja joslas platums to ļauj; atgriezieties pie 1 tikai tad, ja sūtīšana neizdodas. 5G tīklā augšupielāde bieži ir daudz lēnāka nekā 4G tīklā: vēlams izmantot tikai 4G.",
         "start": "Sākt sesiju",
         "photos_title": "Fotoattēli",
         "video_title": "Video",
@@ -64,12 +64,14 @@
         "video_split_warning": "Neērts sadalījums: {segment} s gabali, {count} uz klipu. Izmēģiniet apaļākas vērtības.",
         "video_split_invalid": "Pārklāšanās nedrīkst pārsniegt klipa ilgumu.",
         "video_send_hd": "Sūtīt pilnu kvalitāti sacensību laikā",
-        "video_send_hd_hint": "Citādi klipi uzkrājas un aizies pēc atgriešanās. Noslogotā tīklā tas saglabā ātru fotoattēlu sūtīšanu.",
+        "video_send_hd_hint": "Citādi HD klipi gaida diskā: nosūtiet tos, kad vēlaties, ar pogu “Sūtīt HD tagad” uzraudzības ekrānā. Noslogotā tīklā tas saglabā ātru fotoattēlu sūtīšanu.",
         "disk_pending": "Izvēlieties kameru un mapi, lai novērtētu nepieciešamo vietu.",
         "disk_rate": "{rate} GB stundā",
         "disk_hours": "aptuveni {hours} h filmēšanas",
         "disk_detail": "{free} GB brīvi, {reserved} GB rezervēti sistēmai",
-        "nothing_enabled": "Ieslēdziet vismaz fotoattēlus vai video."
+        "nothing_enabled": "Ieslēdziet vismaz fotoattēlus vai video.",
+        "hd_pending_title": "Gaidošie HD klipi",
+        "hd_pending_text": "Šī pasākuma HD klipi, kas gaida nosūtīšanu: {count} ({size} GB)."
     },
     "dashboard": {
         "status_active": "Aktīvs",
@@ -108,7 +110,28 @@
         "msg_resumed": "Augšupielādes atsāktas",
         "msg_stopped": "Sesija apturēta",
         "msg_retry_queued": "{count} fails(-i) atgriezts(-i) rindā",
-        "msg_error": "Kļūda: {error}"
+        "msg_error": "Kļūda: {error}",
+        "home_title": "Sākums (sesija turpinās)",
+        "msg_parallel": "Paralēlās augšupielādes: {count} (sesija turpinās)",
+        "throughput": "Mb/s nosūtīts (1 min)",
+        "video_filmed": "nofilmēti klipi",
+        "video_assembled": "salikti klipi",
+        "video_sent": "nosūtīti klipi",
+        "video_waiting": "klipi gaida nosūtīšanu",
+        "video_frames_detail": "analīzes kadri — nosūtīti {sent}",
+        "video_clip_hd_sent": "Klips {index} nosūtīts HD kvalitātē",
+        "video_pause": "Pauzēt video",
+        "video_resume": "Turpināt video",
+        "video_pausing": "Pauzē…",
+        "video_resuming": "Atsāk…",
+        "video_stopping": "Aptur…",
+        "video_paused": "Ierakstīšana pauzēta",
+        "video_stopped_title": "Ierakstīšana apturēta",
+        "video_sending_only": "Video sūtīšana",
+        "video_paused_log": "Ierakstīšana pauzēta — iesāktais klips ir aizvērts un tiks nosūtīts kopā ar pārējiem",
+        "video_resumed_log": "Ierakstīšana atsākta",
+        "video_send_failed": "Video sūtīšana pārtraukta pēc 3 mēģinājumiem: {error}",
+        "video_throttled": "Serveris ir pārslogots: video sūtīšana pauzēta uz {delay} s"
     },
     "watcher": {
         "detected": "Atklāts ({size} MB)",
@@ -120,7 +143,10 @@
         "attempt": "Augšupielāde (mēģinājums {attempt}/3)",
         "success": "OK {duration}s ({speed} KB/s)",
         "failed": "Neizdevās {attempt}/{max}: {error}",
-        "retry_scheduled": "Atkārtots mēģinājums pēc {delay}s (mēģinājums {attempt}/3)"
+        "retry_scheduled": "Atkārtots mēģinājums pēc {delay}s (mēģinājums {attempt}/3)",
+        "success_timing": "OK {duration} s — tīkls {network} s + serveris {server} s",
+        "success_total": "OK {duration} s",
+        "throttled": "Serveris ir pārslogots ({code}): pauze {delay} s, paralēlās augšupielādes: {parallel}"
     },
     "connection": {
         "restored": "Savienojums atjaunots",
@@ -130,5 +156,31 @@
     "complete": {
         "with_errors": "Gatavs: {sent} nosūtīti, {failed} neizdevušies",
         "success": "Gatavs: {count} fotoattēli veiksmīgi augšupielādēti!"
+    },
+    "hd": {
+        "title": "HD video",
+        "none": "Vēl nav HD klipu.",
+        "remaining": "HD klipi nosūtīšanai: {count} — {size} GB",
+        "progress": "Nosūtīti {sent} / {total} HD klipi",
+        "all_sent": "Visi HD klipi ir nosūtīti.",
+        "failed": "Neizdevušies HD klipi: {count}",
+        "sending": "notiek sūtīšana",
+        "send_now": "Sūtīt HD tagad",
+        "suspend": "Pauzēt HD sūtīšanu",
+        "retry": "Atkārtot neizdevušos",
+        "started_log": "HD klipu sūtīšana sākta",
+        "suspended_log": "HD klipu sūtīšana pauzēta",
+        "hint": "HD sūta no aģenta, nekad no galerijas: nosūtīts no galerijas, tas rada dublikātu. Fotoattēliem joprojām ir prioritāte."
+    },
+    "nav": {
+        "banner_title": "Notiek sesija: {event}",
+        "banner_photos": "nosūtīti fotoattēli: {sent}, gaida: {pending}",
+        "banner_video_recording": "notiek video ierakstīšana",
+        "banner_video_paused": "video pauzēts",
+        "banner_video_sending": "video faili nosūtīšanai: {count}",
+        "banner_back": "Atpakaļ uz uzraudzību",
+        "event_running": "● Notiek sesija",
+        "confirm_replace": "Pasākumam “{event}” notiek sesija. Vai beigt to, lai sāktu šo?",
+        "confirm_logout": "Notiek sesija. Vai beigt to un izrakstīties?"
     }
 }

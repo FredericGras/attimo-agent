@@ -21,6 +21,7 @@
 //
 
 use notify::{Config, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -69,6 +70,16 @@ const STABILITY_DELAY_MS: u64 = 500;
 /// Nombre de vérifications de stabilité avant d'accepter le fichier.
 /// 3 vérifications × 500ms = 1,5 secondes maximum d'attente.
 const STABILITY_CHECKS: u32 = 3;
+
+/// Vérifications de stabilité menées en même temps (0.3.1).
+///
+/// Chaque vérification dure au moins 500 ms, et elles se faisaient une par
+/// une : la détection plafonnait donc à 2 photos par seconde (1,9 mesuré),
+/// moins encore en direct où chaque photo produit plusieurs événements
+/// Windows (création puis modifications) traités chacun avec son attente.
+/// Menées par 16, elles laissent passer plus de 30 photos par seconde —
+/// bien au-delà de ce que 6 envois simultanés consomment.
+const VERIFICATIONS_SIMULTANEES: usize = 16;
 
 // ─── Structures ─────────────────────────────────────────────
 
@@ -190,16 +201,44 @@ async fn wait_for_stability(path: &Path) -> Option<u64> {
 
 // ─── Traitement d'un fichier détecté ────────────────────────
 
-/// Traite un fichier détecté par le watcher ou le scan initial.
+/// Traite un fichier détecté par le watcher.
 ///
 /// Étapes :
 /// 1. Attendre la stabilité (écriture terminée)
-/// 2. Vérifier la taille max (20 Mo)
-/// 3. Insérer dans SQLite (déduplication automatique via UNIQUE)
-/// 4. Notifier le frontend JS (événement `file_detected`)
-/// 5. Envoyer au canal vers l'uploader
+/// 2. Inscrire le fichier (voir `inscrire_fichier`)
+///
+/// Renvoie `false` si le fichier était encore instable ou trop petit : il
+/// faudra le revoir s'il bouge encore.
 async fn process_detected_file(
     path: PathBuf,
+    session_id: i64,
+    tx: &mpsc::UnboundedSender<FileJob>,
+    app_handle: &tauri::AppHandle,
+) -> bool {
+    // 1. Attendre la stabilité du fichier
+    let file_size = match wait_for_stability(&path).await {
+        Some(size) => size,
+        None => {
+            debug!("Fichier instable ou trop petit, ignoré: {}", path.display());
+            return false;
+        }
+    };
+
+    inscrire_fichier(path, file_size, session_id, tx, app_handle);
+
+    true
+}
+
+/// Inscrit un fichier stable et le confie à l'uploader.
+///
+/// Étapes :
+/// 1. Vérifier la taille max (20 Mo)
+/// 2. Insérer dans SQLite (déduplication automatique via UNIQUE)
+/// 3. Notifier le frontend JS (événement `file_detected`)
+/// 4. Envoyer au canal vers l'uploader
+fn inscrire_fichier(
+    path: PathBuf,
+    file_size: u64,
     session_id: i64,
     tx: &mpsc::UnboundedSender<FileJob>,
     app_handle: &tauri::AppHandle,
@@ -210,16 +249,7 @@ async fn process_detected_file(
         None => return,
     };
 
-    // 1. Attendre la stabilité du fichier
-    let file_size = match wait_for_stability(&path).await {
-        Some(size) => size,
-        None => {
-            debug!("Fichier instable ou trop petit, ignoré: {}", filename);
-            return;
-        }
-    };
-
-    // 2. Vérifier la taille maximale
+    // 1. Vérifier la taille maximale
     if file_size > MAX_FILE_SIZE {
         warn!(
             "Fichier trop volumineux ({:.1} Mo), ignoré: {}",
@@ -239,7 +269,7 @@ async fn process_detected_file(
         return;
     }
 
-    // 3. Date de modification du fichier (timestamp Unix comme chaîne)
+    // 2. Date de modification du fichier (timestamp Unix comme chaîne)
     let file_modified = std::fs::metadata(&path)
         .and_then(|m| m.modified())
         .map(|t| {
@@ -250,7 +280,7 @@ async fn process_detected_file(
         })
         .unwrap_or_default();
 
-    // 4. Insérer dans SQLite
+    // 3. Insérer dans SQLite
     //    INSERT OR IGNORE + vérification changes() → déduplication automatique.
     //    Si le fichier existe déjà (même session + même nom), insert_file retourne None.
     let db_file_id = match database::insert_file(
@@ -272,7 +302,7 @@ async fn process_detected_file(
         }
     };
 
-    // 5. Notifier le frontend (met à jour le compteur "En attente" et le journal)
+    // 4. Notifier le frontend (met à jour le compteur "En attente" et le journal)
     let _ = app_handle.emit(
         "file_detected",
         serde_json::json!({
@@ -287,7 +317,7 @@ async fn process_detected_file(
         file_size as f64 / 1_048_576.0
     );
 
-    // 6. Envoyer dans le canal vers l'uploader
+    // 5. Envoyer dans le canal vers l'uploader
     let job = FileJob {
         db_file_id,
         session_id,
@@ -296,8 +326,10 @@ async fn process_detected_file(
         file_size,
     };
 
-    if let Err(e) = tx.send(job) {
-        warn!("Erreur envoi vers uploader: {}", e);
+    match tx.send(job) {
+        // Compté pour la priorité des photos sur la vidéo.
+        Ok(()) => crate::uploader::photo_ajoutee(),
+        Err(e) => warn!("Erreur envoi vers uploader: {}", e),
     }
 }
 
@@ -325,7 +357,13 @@ pub async fn scan_existing_files(
         collect_files_flat(folder)
     };
 
-    let total = files.iter().filter(|p| is_valid_jpeg(p)).count();
+    let mut jpegs: Vec<PathBuf> = files.into_iter().filter(|p| is_valid_jpeg(p)).collect();
+
+    // Ordre du nom de fichier = ordre de prise de vue sur les boîtiers :
+    // les premières photos de la course partent les premières.
+    jpegs.sort();
+
+    let total = jpegs.len();
     info!("JPEG existants trouvés: {}", total);
 
     // Notifier le frontend du début du scan
@@ -334,14 +372,32 @@ pub async fn scan_existing_files(
         serde_json::json!({ "total": total }),
     );
 
-    for path in files {
+    // Les vérifications de stabilité d'un paquet tournent ensemble, puis les
+    // fichiers sont inscrits dans l'ordre : même garantie qu'avant (taille
+    // inchangée pendant 500 ms), sans payer ces 500 ms une photo après
+    // l'autre.
+    for paquet in jpegs.chunks(VERIFICATIONS_SIMULTANEES) {
         // Vérifier si l'arrêt a été demandé
         if !running.load(Ordering::Relaxed) {
             info!("Scan interrompu (arrêt demandé)");
             break;
         }
-        if is_valid_jpeg(&path) {
-            process_detected_file(path, session_id, tx, app_handle).await;
+
+        let verifications: Vec<_> = paquet
+            .iter()
+            .map(|path| {
+                let path = path.clone();
+                tokio::spawn(async move { wait_for_stability(&path).await })
+            })
+            .collect();
+
+        for (path, verification) in paquet.iter().zip(verifications) {
+            match verification.await.ok().flatten() {
+                Some(taille) => {
+                    inscrire_fichier(path.clone(), taille, session_id, tx, app_handle)
+                }
+                None => debug!("Fichier instable ou trop petit, ignoré: {}", path.display()),
+            }
         }
     }
 
@@ -486,20 +542,71 @@ pub fn start_watching(
     let running_processor = running.clone();
     let app_processor = app_handle.clone();
 
+    // Chaque fichier est vérifié dans sa propre tâche (0.3.1), au plus 16 à
+    // la fois : une photo n'attend plus la fin des 500 ms de la précédente.
+    let places = Arc::new(tokio::sync::Semaphore::new(VERIFICATIONS_SIMULTANEES));
+
+    // Fichiers en cours de vérification. Windows envoie une création puis
+    // plusieurs modifications pour une même photo : sans ce registre, chacune
+    // relançait une vérification complète. La valeur dit si un nouvel
+    // événement est arrivé pendant la vérification — auquel cas, si le
+    // fichier était encore instable, on le revoit.
+    let en_cours: Arc<std::sync::Mutex<HashMap<PathBuf, bool>>> =
+        Arc::new(std::sync::Mutex::new(HashMap::new()));
+
     tokio::spawn(async move {
         while let Some(path) = notify_rx.recv().await {
             // Si l'arrêt a été demandé, on sort de la boucle
             if !running_processor.load(Ordering::Relaxed) {
                 break;
             }
-            // Traiter le fichier (stabilité + dédup + envoi)
-            process_detected_file(
-                path,
-                session_id,
-                &tx_processor,
-                &app_processor,
-            )
-            .await;
+
+            {
+                let mut registre = en_cours.lock().unwrap_or_else(|e| e.into_inner());
+
+                if let Some(a_revoir) = registre.get_mut(&path) {
+                    *a_revoir = true;
+                    continue;
+                }
+
+                registre.insert(path.clone(), false);
+            }
+
+            let Ok(place) = places.clone().acquire_owned().await else {
+                break;
+            };
+
+            let tx_tache = tx_processor.clone();
+            let app_tache = app_processor.clone();
+            let en_cours_tache = en_cours.clone();
+            let running_tache = running_processor.clone();
+
+            tokio::spawn(async move {
+                let _place = place;
+
+                loop {
+                    if !running_tache.load(Ordering::Relaxed) {
+                        break;
+                    }
+
+                    // Traiter le fichier (stabilité + dédup + envoi)
+                    let traite =
+                        process_detected_file(path.clone(), session_id, &tx_tache, &app_tache)
+                            .await;
+
+                    let mut registre = en_cours_tache.lock().unwrap_or_else(|e| e.into_inner());
+
+                    let a_revoir = registre.get(&path).copied().unwrap_or(false);
+
+                    if !traite && a_revoir {
+                        registre.insert(path.clone(), false);
+                        continue;
+                    }
+
+                    registre.remove(&path);
+                    break;
+                }
+            });
         }
         debug!("Tâche de traitement des événements watcher terminée");
     });

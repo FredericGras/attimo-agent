@@ -36,7 +36,7 @@
         "existing_include": "Klasördeki mevcut dosyaları yükle",
         "existing_exclude": "Sadece yeni dosyaları yükle",
         "parallel": "Paralel yüklemeler",
-        "parallel_hint": "Zayıf 4G'de 1 kullanın. Kararlı 5G'de 3 hızlandırır.",
+        "parallel_hint": "3 çoğu ağ için uygundur. Bant genişliği elveriyorsa 6'ya çıkın; 1'e yalnızca gönderimler başarısız olursa dönün. 5G'de yükleme çoğu zaman 4G'dekinden çok daha yavaştır: mümkünse yalnızca 4G kullanın.",
         "start": "Oturumu başlat",
         "photos_title": "Fotoğraflar",
         "video_title": "Video",
@@ -64,12 +64,14 @@
         "video_split_warning": "Kullanışsız bölümleme: {segment} sn'lik parçalar, klip başına {count}. Daha yuvarlak değerler deneyin.",
         "video_split_invalid": "Örtüşme, klip süresinden kısa olmalıdır.",
         "video_send_hd": "Yarış sırasında tam kaliteyi gönder",
-        "video_send_hd_hint": "Aksi hâlde klipler birikir ve dönüşte gider. Yoğun bir ağda bu, fotoğraf gönderimini hızlı tutar.",
+        "video_send_hd_hint": "Aksi hâlde HD klipler diskte bekler: onları istediğiniz zaman izleme ekranındaki \"HD'yi şimdi gönder\" düğmesiyle gönderin. Yoğun bir ağda bu, fotoğraf gönderimini hızlı tutar.",
         "disk_pending": "Gereken alanı tahmin etmek için bir kamera ve klasör seçin.",
         "disk_rate": "saatte {rate} GB",
         "disk_hours": "yaklaşık {hours} saat çekim",
         "disk_detail": "{free} GB boş, {reserved} GB sistem için ayrıldı",
-        "nothing_enabled": "En az fotoğrafları ya da videoyu açın."
+        "nothing_enabled": "En az fotoğrafları ya da videoyu açın.",
+        "hd_pending_title": "Bekleyen HD klipler",
+        "hd_pending_text": "Bu etkinliğin gönderilmeyi bekleyen HD klipleri: {count} ({size} GB)."
     },
     "dashboard": {
         "status_active": "Aktif",
@@ -108,7 +110,28 @@
         "msg_resumed": "Yüklemeler devam ediyor",
         "msg_stopped": "Oturum durduruldu",
         "msg_retry_queued": "{count} dosya sıraya geri eklendi",
-        "msg_error": "Hata: {error}"
+        "msg_error": "Hata: {error}",
+        "home_title": "Ana sayfa (oturum devam ediyor)",
+        "msg_parallel": "Paralel yüklemeler: {count} (oturum devam ediyor)",
+        "throughput": "Mb/s gönderildi (1 dk)",
+        "video_filmed": "çekilen klip",
+        "video_assembled": "birleştirilen klip",
+        "video_sent": "gönderilen klip",
+        "video_waiting": "gönderilmeyi bekleyen klip",
+        "video_frames_detail": "analiz karesi — {sent} gönderildi",
+        "video_clip_hd_sent": "Klip {index} HD gönderildi",
+        "video_pause": "Videoyu duraklat",
+        "video_resume": "Videoya devam et",
+        "video_pausing": "Duraklatılıyor…",
+        "video_resuming": "Devam ediliyor…",
+        "video_stopping": "Durduruluyor…",
+        "video_paused": "Çekim duraklatıldı",
+        "video_stopped_title": "Çekim durduruldu",
+        "video_sending_only": "Video gönderimi",
+        "video_paused_log": "Çekim duraklatıldı — süren klip kapatıldı ve diğerleriyle birlikte gönderiliyor",
+        "video_resumed_log": "Çekime devam edildi",
+        "video_send_failed": "Video gönderimi 3 denemeden sonra bırakıldı: {error}",
+        "video_throttled": "Sunucu aşırı yüklü: video gönderimi {delay} sn duraklatıldı"
     },
     "watcher": {
         "detected": "Tespit edildi ({size} MB)",
@@ -120,7 +143,10 @@
         "attempt": "Yükleme (deneme {attempt}/3)",
         "success": "OK {duration}s'de ({speed} KB/s)",
         "failed": "Başarısız {attempt}/{max}: {error}",
-        "retry_scheduled": "{delay}s sonra tekrar deneme (deneme {attempt}/3)"
+        "retry_scheduled": "{delay}s sonra tekrar deneme (deneme {attempt}/3)",
+        "success_timing": "{duration} sn'de OK — ağ {network} sn + sunucu {server} sn",
+        "success_total": "{duration} sn'de OK",
+        "throttled": "Sunucu aşırı yüklü ({code}): {delay} sn duraklama, paralel yükleme: {parallel}"
     },
     "connection": {
         "restored": "Bağlantı yeniden kuruldu",
@@ -130,5 +156,31 @@
     "complete": {
         "with_errors": "Tamamlandı: {sent} gönderildi, {failed} başarısız",
         "success": "Tamamlandı: {count} fotoğraf başarıyla yüklendi!"
+    },
+    "hd": {
+        "title": "HD video",
+        "none": "Henüz HD klip yok.",
+        "remaining": "Gönderilecek HD klip: {count} — {size} GB",
+        "progress": "{sent} / {total} HD klip gönderildi",
+        "all_sent": "Tüm HD klipler gönderildi.",
+        "failed": "Başarısız HD klip: {count}",
+        "sending": "gönderiliyor",
+        "send_now": "HD'yi şimdi gönder",
+        "suspend": "HD gönderimini duraklat",
+        "retry": "Başarısız olanları yeniden dene",
+        "started_log": "HD kliplerin gönderimi başladı",
+        "suspended_log": "HD kliplerin gönderimi duraklatıldı",
+        "hint": "HD aracıdan gönderilir, asla galeriden değil: galeriden gönderilirse kopya oluşturur. Fotoğraflar önceliğini korur."
+    },
+    "nav": {
+        "banner_title": "Oturum sürüyor: {event}",
+        "banner_photos": "gönderilen fotoğraf: {sent}, bekleyen: {pending}",
+        "banner_video_recording": "video çekimi sürüyor",
+        "banner_video_paused": "video duraklatıldı",
+        "banner_video_sending": "gönderilecek video dosyası: {count}",
+        "banner_back": "İzlemeye dön",
+        "event_running": "● Oturum sürüyor",
+        "confirm_replace": "\"{event}\" için bir oturum sürüyor. Bunu başlatmak için o oturum bitirilsin mi?",
+        "confirm_logout": "Bir oturum sürüyor. Bitirilip çıkış yapılsın mı?"
     }
 }

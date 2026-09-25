@@ -1,0 +1,25 @@
+{
+  "productName": "Attimo Agent Terrain DEV",
+  "identifier": "com.attimo-gallery.agent.dev",
+  "app": {
+    "windows": [
+      {
+        "title": "Attimo Agent Terrain DEV",
+        "width": 1100,
+        "height": 800,
+        "minWidth": 900,
+        "minHeight": 600,
+        "center": true,
+        "resizable": true,
+        "maximized": true
+      }
+    ]
+  },
+  "bundle": {
+    "windows": {
+      "wix": {
+        "upgradeCode": "B895C3E7-CD3A-4DA5-887C-EB6D1AE4D1C8"
+      }
+    }
+  }
+}

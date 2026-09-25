@@ -9,7 +9,7 @@
         "remember": "Remember me",
         "submit": "Sign in",
         "email_placeholder": "photographer@example.com",
-		"app_password_label": "App password",
+        "app_password_label": "App password",
         "app_password_placeholder": "attimo_pat_...",
         "app_password_help": "Generate an app password from your Attimo security profile (scope Agent Studio), then paste it here."
     },
@@ -39,7 +39,7 @@
         "existing_include": "Upload existing files in the folder",
         "existing_exclude": "Upload new files only",
         "parallel": "Parallel uploads",
-        "parallel_hint": "On weak 4G, use 1. On stable 5G, 3 speeds things up.",
+        "parallel_hint": "3 suits most networks. Go up to 6 if your bandwidth allows; drop back to 1 only if uploads fail. On 5G, uploading is often much slower than on 4G: stick to 4G only when you can.",
         "start": "Start session",
         "photos_title": "Photos",
         "video_title": "Video",
@@ -67,12 +67,14 @@
         "video_split_warning": "Awkward split: {segment} s pieces, {count} per clip. Try rounder values.",
         "video_split_invalid": "Overlap must stay shorter than the clip duration.",
         "video_send_hd": "Send full quality during the race",
-        "video_send_hd_hint": "Otherwise clips pile up and go out afterwards. On a busy network this keeps photo uploads fast.",
+        "video_send_hd_hint": "Otherwise, HD clips wait on the disk: send them whenever you like with the \"Send HD now\" button on the monitoring screen. On a saturated network, this avoids slowing down photo uploads.",
         "disk_pending": "Choose a camera and a folder to estimate the space needed.",
         "disk_rate": "{rate} GB per hour",
         "disk_hours": "about {hours} h of recording",
         "disk_detail": "{free} GB free, {reserved} GB reserved for the system",
-        "nothing_enabled": "Turn on photos or video, at least one."
+        "nothing_enabled": "Turn on photos or video, at least one.",
+        "hd_pending_title": "HD clips waiting",
+        "hd_pending_text": "{count} HD clip(s) from this event are waiting to be sent ({size} GB)."
     },
 
     "dashboard": {
@@ -112,7 +114,28 @@
         "msg_resumed": "Uploads resumed",
         "msg_stopped": "Session stopped",
         "msg_retry_queued": "{count} file(s) re-queued",
-        "msg_error": "Error: {error}"
+        "msg_error": "Error: {error}",
+        "home_title": "Home (the session keeps running)",
+        "msg_parallel": "Parallel uploads: {count} (the session keeps running)",
+        "throughput": "Mb/s sent (1 min)",
+        "video_filmed": "clips filmed",
+        "video_assembled": "clips assembled",
+        "video_sent": "clips sent",
+        "video_waiting": "clips waiting to be sent",
+        "video_frames_detail": "analysis frames — {sent} sent",
+        "video_clip_hd_sent": "Clip {index} HD sent",
+        "video_pause": "Pause video",
+        "video_resume": "Resume video",
+        "video_pausing": "Pausing…",
+        "video_resuming": "Resuming…",
+        "video_stopping": "Stopping…",
+        "video_paused": "Recording paused",
+        "video_stopped_title": "Recording stopped",
+        "video_sending_only": "Video upload",
+        "video_paused_log": "Recording paused — the current clip was closed and is sent with the others",
+        "video_resumed_log": "Recording resumed",
+        "video_send_failed": "Video upload abandoned after 3 attempts: {error}",
+        "video_throttled": "Server overloaded: video upload paused for {delay} s"
     },
 
     "watcher": {
@@ -126,7 +149,10 @@
         "attempt": "Upload (attempt {attempt}/3)",
         "success": "OK in {duration}s ({speed} KB/s)",
         "failed": "Failed {attempt}/{max}: {error}",
-        "retry_scheduled": "Retry in {delay}s (attempt {attempt}/3)"
+        "retry_scheduled": "Retry in {delay}s (attempt {attempt}/3)",
+        "success_timing": "OK in {duration} s — network {network} s + server {server} s",
+        "success_total": "OK in {duration} s",
+        "throttled": "Server overloaded ({code}): pausing {delay} s, {parallel} parallel upload(s)"
     },
 
     "connection": {
@@ -138,5 +164,33 @@
     "complete": {
         "with_errors": "Done: {sent} sent, {failed} failed",
         "success": "Done: {count} photos uploaded successfully!"
+    },
+
+    "hd": {
+        "title": "HD video",
+        "none": "No HD clips yet.",
+        "remaining": "{count} HD clip(s) to send — {size} GB",
+        "progress": "{sent} / {total} HD clips sent",
+        "all_sent": "All HD clips have been sent.",
+        "failed": "{count} HD clip(s) failed",
+        "sending": "sending",
+        "send_now": "Send HD now",
+        "suspend": "Pause HD upload",
+        "retry": "Retry failed clips",
+        "started_log": "HD clip upload started",
+        "suspended_log": "HD clip upload paused",
+        "hint": "HD is sent from the agent, never from the gallery: sent from the gallery, it creates a duplicate. Photos keep priority."
+    },
+
+    "nav": {
+        "banner_title": "Session running: {event}",
+        "banner_photos": "{sent} photo(s) sent, {pending} waiting",
+        "banner_video_recording": "video recording",
+        "banner_video_paused": "video paused",
+        "banner_video_sending": "{count} video file(s) to send",
+        "banner_back": "Back to monitoring",
+        "event_running": "● Session running",
+        "confirm_replace": "A session is running for \"{event}\". End it to start this one?",
+        "confirm_logout": "A session is running. End it and log out?"
     }
 }

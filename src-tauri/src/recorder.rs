@@ -188,6 +188,14 @@ pub struct RecordingHandle {
     /// Signalé quand FFmpeg est parti ET que tout ce qu'il a écrit a été lu.
     fin_ffmpeg: Arc<Notify>,
 
+    /// Un arrêt est déjà en cours (0.3.1).
+    ///
+    /// Posé sous le verrou de la captation par le premier arrêt : un second
+    /// clic, ou l'arrêt de fin de session qui suit de près celui du bouton
+    /// vidéo, repart aussitôt au lieu d'attendre dix secondes un FFmpeg déjà
+    /// parti, puis de rattraper une deuxième fois le même morceau.
+    pub arret_demande: bool,
+
     child: Option<CommandChild>,
 }
 
@@ -210,6 +218,13 @@ impl RecordingHandle {
         // FFmpeg rend 255 quand il quitte sur « q » ; sans ce drapeau, son
         // départ normal serait journalisé comme une panne.
         self.running.store(false, Ordering::Relaxed);
+
+        // Déjà arrêté : FFmpeg est parti et le signal de fin a été consommé.
+        // L'attendre encore bloquerait dix secondes pour rien.
+        if self.child.is_none() {
+            let dernier = self.dernier_morceau.load(Ordering::Relaxed);
+            return u32::try_from(dernier).ok();
+        }
 
         if let Some(child) = self.child.as_mut() {
             let _ = child.write(b"q");
@@ -420,6 +435,7 @@ pub async fn start_recording(
         interval_secs,
         dernier_morceau,
         fin_ffmpeg,
+        arret_demande: false,
         child: Some(enfant),
     })
 }

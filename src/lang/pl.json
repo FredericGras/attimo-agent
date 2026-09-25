@@ -36,7 +36,7 @@
         "existing_include": "Prześlij istniejące pliki z folderu",
         "existing_exclude": "Prześlij tylko nowe pliki",
         "parallel": "Równoległe przesyłanie",
-        "parallel_hint": "Przy słabym 4G użyj 1. Przy stabilnym 5G, 3 przyspiesza.",
+        "parallel_hint": "3 sprawdza się w większości sieci. Zwiększ do 6, jeśli pozwala na to przepustowość; wróć do 1 tylko wtedy, gdy wysyłanie się nie udaje. W 5G wysyłanie jest często dużo wolniejsze niż w 4G: najlepiej używaj samego 4G.",
         "start": "Rozpocznij sesję",
         "photos_title": "Zdjęcia",
         "video_title": "Wideo",
@@ -64,12 +64,14 @@
         "video_split_warning": "Niewygodny podział: części po {segment} s, {count} na klip. Spróbuj okrągłych wartości.",
         "video_split_invalid": "Zakładka musi być krótsza niż długość klipu.",
         "video_send_hd": "Wysyłaj pełną jakość podczas biegu",
-        "video_send_hd_hint": "Inaczej klipy się gromadzą i pójdą po powrocie. W obciążonej sieci nie spowalnia to wysyłania zdjęć.",
+        "video_send_hd_hint": "Inaczej klipy HD czekają na dysku: wyślesz je, kiedy zechcesz, przyciskiem „Wyślij HD teraz” na ekranie obserwacji. W obciążonej sieci nie spowalnia to wysyłania zdjęć.",
         "disk_pending": "Wybierz kamerę i folder, aby oszacować potrzebne miejsce.",
         "disk_rate": "{rate} GB na godzinę",
         "disk_hours": "około {hours} godz. nagrywania",
         "disk_detail": "{free} GB wolnych, {reserved} GB zarezerwowanych dla systemu",
-        "nothing_enabled": "Włącz przynajmniej zdjęcia albo wideo."
+        "nothing_enabled": "Włącz przynajmniej zdjęcia albo wideo.",
+        "hd_pending_title": "Klipy HD w oczekiwaniu",
+        "hd_pending_text": "Klipy HD z tego wydarzenia czekające na wysłanie: {count} ({size} GB)."
     },
     "dashboard": {
         "status_active": "Aktywny",
@@ -108,7 +110,28 @@
         "msg_resumed": "Przesyłanie wznowione",
         "msg_stopped": "Sesja zatrzymana",
         "msg_retry_queued": "{count} plik(ów) ponownie w kolejce",
-        "msg_error": "Błąd: {error}"
+        "msg_error": "Błąd: {error}",
+        "home_title": "Strona główna (sesja trwa dalej)",
+        "msg_parallel": "Równoległe przesyłanie: {count} (sesja trwa dalej)",
+        "throughput": "Mb/s wysłane (1 min)",
+        "video_filmed": "nagranych klipów",
+        "video_assembled": "złożonych klipów",
+        "video_sent": "wysłanych klipów",
+        "video_waiting": "klipów czeka na wysłanie",
+        "video_frames_detail": "klatek do analizy — wysłano {sent}",
+        "video_clip_hd_sent": "Klip {index} HD wysłany",
+        "video_pause": "Wstrzymaj wideo",
+        "video_resume": "Wznów wideo",
+        "video_pausing": "Wstrzymywanie…",
+        "video_resuming": "Wznawianie…",
+        "video_stopping": "Zatrzymywanie…",
+        "video_paused": "Nagrywanie wstrzymane",
+        "video_stopped_title": "Nagrywanie zatrzymane",
+        "video_sending_only": "Wysyłanie wideo",
+        "video_paused_log": "Nagrywanie wstrzymane — bieżący klip został zamknięty i zostanie wysłany z pozostałymi",
+        "video_resumed_log": "Nagrywanie wznowione",
+        "video_send_failed": "Wysyłanie wideo przerwane po 3 próbach: {error}",
+        "video_throttled": "Serwer przeciążony: wysyłanie wideo wstrzymane na {delay} s"
     },
     "watcher": {
         "detected": "Wykryto ({size} MB)",
@@ -120,7 +143,10 @@
         "attempt": "Przesyłanie (próba {attempt}/3)",
         "success": "OK w {duration}s ({speed} KB/s)",
         "failed": "Błąd {attempt}/{max}: {error}",
-        "retry_scheduled": "Ponowna próba za {delay}s (próba {attempt}/3)"
+        "retry_scheduled": "Ponowna próba za {delay}s (próba {attempt}/3)",
+        "success_timing": "OK w {duration} s — sieć {network} s + serwer {server} s",
+        "success_total": "OK w {duration} s",
+        "throttled": "Serwer przeciążony ({code}): przerwa {delay} s, równoległe przesyłanie: {parallel}"
     },
     "connection": {
         "restored": "Połączenie przywrócone",
@@ -130,5 +156,31 @@
     "complete": {
         "with_errors": "Gotowe: {sent} wysłanych, {failed} nieudanych",
         "success": "Gotowe: {count} zdjęć przesłanych pomyślnie!"
+    },
+    "hd": {
+        "title": "Wideo HD",
+        "none": "Na razie brak klipów HD.",
+        "remaining": "Klipy HD do wysłania: {count} — {size} GB",
+        "progress": "Wysłano {sent} / {total} klipów HD",
+        "all_sent": "Wszystkie klipy HD zostały wysłane.",
+        "failed": "Klipy HD z błędem: {count}",
+        "sending": "trwa wysyłanie",
+        "send_now": "Wyślij HD teraz",
+        "suspend": "Wstrzymaj wysyłanie HD",
+        "retry": "Ponów nieudane",
+        "started_log": "Rozpoczęto wysyłanie klipów HD",
+        "suspended_log": "Wstrzymano wysyłanie klipów HD",
+        "hint": "HD wysyła się z agenta, nigdy z galerii: wysłane z galerii tworzy duplikat. Zdjęcia nadal mają pierwszeństwo."
+    },
+    "nav": {
+        "banner_title": "Trwa sesja: {event}",
+        "banner_photos": "wysłane zdjęcia: {sent}, oczekujące: {pending}",
+        "banner_video_recording": "trwa nagrywanie wideo",
+        "banner_video_paused": "wideo wstrzymane",
+        "banner_video_sending": "pliki wideo do wysłania: {count}",
+        "banner_back": "Wróć do obserwacji",
+        "event_running": "● Trwa sesja",
+        "confirm_replace": "Trwa sesja dla „{event}”. Zakończyć ją, aby rozpocząć tę?",
+        "confirm_logout": "Trwa sesja. Zakończyć ją i się wylogować?"
     }
 }

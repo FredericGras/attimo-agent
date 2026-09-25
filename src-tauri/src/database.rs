@@ -11,11 +11,32 @@ fn db_path() -> PathBuf {
     path
 }
 
+/// Édition de l'agent, fixée à la COMPILATION (0.3.1).
+///
+/// Absente pour la production, `dev` pour l'agent de préproduction
+/// (build-preprod.bat) : il s'installe à côté de celui de production et doit
+/// garder sa propre mémoire — sessions, file vidéo, mot de passe
+/// d'application. Sans cela, l'agent de DEV lirait la file de l'agent de
+/// production et enverrait ses clips au serveur de préproduction.
+pub const EDITION: Option<&str> = option_env!("ATTIMO_EDITION");
+
+/// Nom du dossier de données dans %APPDATA%, calculé par build.rs à partir
+/// de l'édition. Celui de la production ne change pas : une mise à jour
+/// retrouve ses données.
+///
+/// Le repli ne sert qu'à rustdoc, qui ne reçoit pas les variables posées par
+/// build.rs : toute vraie compilation passe par build.rs, et build-preprod.bat
+/// vérifie que le dossier de DEV figure bien dans le binaire.
+pub const DOSSIER_DONNEES: &str = match option_env!("ATTIMO_DATA_DIR") {
+    Some(dossier) => dossier,
+    None => "com.attimo-gallery.agent",
+};
+
 /// Résout le dossier de données de l'application
-fn dirs() -> PathBuf {
+pub fn dirs() -> PathBuf {
     if let Some(data_dir) = std::env::var_os("APPDATA") {
         let mut path = PathBuf::from(data_dir);
-        path.push("com.attimo-gallery.agent");
+        path.push(DOSSIER_DONNEES);
         fs::create_dir_all(&path).ok();
         path
     } else {
@@ -296,4 +317,22 @@ fn chrono_now() -> String {
         .as_secs();
     // Retourne le timestamp Unix comme fallback — suffisant pour le tri
     format!("{}", now)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn la_production_garde_son_dossier_de_donnees() {
+        // Compilé sans ATTIMO_EDITION (production, ou test.bat) : le dossier
+        // historique, pour qu'une mise à jour retrouve ses sessions.
+        match EDITION.map(str::trim).filter(|e| !e.is_empty()) {
+            None => assert_eq!(DOSSIER_DONNEES, "com.attimo-gallery.agent"),
+            Some(edition) => assert_eq!(
+                DOSSIER_DONNEES,
+                format!("com.attimo-gallery.agent.{}", edition.to_lowercase())
+            ),
+        }
+    }
 }

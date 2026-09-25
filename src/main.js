@@ -20,9 +20,26 @@ const AppState = {
     selectedCheckpoint: null,
     sessionId: null,
     watchFolder: null,
-    parallelUploads: 1,
+    // 3 par défaut (0.3.1) : le serveur répond dès la réception, et 3
+    // envois suffisent déjà à remplir une 4G.
+    parallelUploads: 3,
     includeExisting: true,
     isPaused: false,
+
+    // Épreuve de la session qui tourne (0.3.1). Distincte de selectedEvent,
+    // celle que l'on règle : on peut désormais parcourir les autres écrans
+    // — et même ouvrir une autre épreuve — sans couper la session.
+    activeEvent: null,
+
+    // Réglages de la surveillance photo en cours : les revalider à
+    // l'identique ne doit pas la relancer.
+    photoReglages: null,
+
+    // Session ouverte pour le seul envoi des clips HD (0.3.1).
+    envoiSeul: false,
+
+    // Derniers compteurs photo, pour le bandeau de session.
+    photoStats: { sent: 0, pending: 0, failed: 0 },
 
     // Photo et vidéo tournent ensemble ou séparément (SAAS 430).
     photoEnabled: true,
@@ -53,6 +70,19 @@ function navigateTo(screenId) {
         screen.classList.add('active');
         AppState.currentScreen = screenId;
     }
+
+    majBandeauSession();
+}
+
+/**
+ * Une session tourne-t-elle ? Photos, captation, ou envoi des clips HD.
+ */
+function sessionEnCours() {
+    return AppState.activeEvent !== null;
+}
+
+function dormir(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 // ─── Initialisation au lancement ───
@@ -60,6 +90,8 @@ function navigateTo(screenId) {
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. Charger les traductions AVANT tout le reste
     await initI18n();
+
+    afficherVersion();
 
     // 2. Vérifier si un token est stocké (auto-login)
     try {
@@ -83,11 +115,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     initEvents();
     initConfig();
     initDashboard();
+    initBandeauSession();
     initVideo();
 
     // 4. Écouter les événements du backend Rust
     initRustEventListeners();
 });
+
+/**
+ * Version et édition de l'agent (0.3.1).
+ *
+ * L'agent de DEV s'installe à côté de celui de production : le photographe
+ * doit voir d'un coup d'œil lequel il a ouvert.
+ */
+async function afficherVersion() {
+    try {
+        const info = await invoke('agent_info');
+        const edition = info.edition ? ` ${String(info.edition).toUpperCase()}` : '';
+
+        document.querySelectorAll('.app-version').forEach(el => {
+            el.textContent = `v${info.version}${edition}`;
+        });
+
+        if (info.edition) {
+            document.body.classList.add('is-dev');
+            document.title = `Attimo Agent Terrain${edition}`;
+        }
+    } catch (e) {
+        console.error('Agent info error:', e);
+    }
+}
 
 // ═══════════════════════════════════════════════════════
 // ÉCRAN LOGIN
@@ -123,6 +180,12 @@ function initLogin() {
             form.reset();
             document.getElementById('login-remember').checked = true;
 
+            // Reconnexion après expiration : la file vidéo s'était arrêtée
+            // faute de jeton valide, elle repart avec le nouveau.
+            if (sessionEnCours()) {
+                demarrerFileVideo();
+            }
+
             navigateTo('events');
             loadEvents();
         } catch (error) {
@@ -142,6 +205,15 @@ function initLogin() {
 
 function initEvents() {
     document.getElementById('logout-btn').addEventListener('click', async () => {
+        // Se déconnecter coupe les envois : on le dit, et on ferme proprement.
+        if (sessionEnCours()) {
+            if (!confirm(t('nav.confirm_logout'))) {
+                return;
+            }
+
+            await terminerSession();
+        }
+
         try {
             await invoke('logout');
         } catch (e) {
@@ -193,13 +265,22 @@ async function loadEvents() {
                 ? '<span class="event-live">● LIVE</span>'
                 : '';
 
+            // L'épreuve dont la session tourne : un clic ramène à la
+            // surveillance, sans rien relancer.
+            const enCours = sessionEnCours() && AppState.activeEvent.id === event.id;
+
+            const runningHtml = enCours
+                ? `<span class="event-running">${escapeHtml(t('nav.event_running'))}</span>`
+                : '';
+
             const card = document.createElement('div');
-            card.className = 'event-card';
+            card.className = 'event-card' + (enCours ? ' is-running' : '');
             card.innerHTML = `
                 <div class="event-card-header">
                     <span class="event-icon">${icon}</span>
                     <span class="event-name">${escapeHtml(event.name)}</span>
                     ${liveHtml}
+                    ${runningHtml}
                 </div>
                 <div class="event-meta">
                     ${event.event_date ? `<span>${escapeHtml(event.event_date)}</span>` : ''}
@@ -224,6 +305,59 @@ async function loadEvents() {
 }
 
 function selectEvent(event) {
+    // Épreuve de la session en cours : retour direct à la surveillance.
+    if (sessionEnCours() && AppState.activeEvent.id === event.id) {
+        navigateTo('dashboard');
+        return;
+    }
+
+    remplirConfig(event);
+
+    // Reset du dossier
+    document.getElementById('config-folder').value = '';
+    AppState.watchFolder = null;
+
+    majHdEnAttenteConfig(event);
+
+    navigateTo('config');
+}
+
+/**
+ * Réglages de la session en cours (0.3.1).
+ *
+ * Le photographe a pu ouvrir une autre épreuve entre-temps : l'écran de
+ * réglages est alors rempli pour elle. On le remet sur l'épreuve de la
+ * session, avec le dossier et les checkpoints qui tournent.
+ */
+function ouvrirReglagesSession() {
+    const evenement = AppState.activeEvent;
+
+    if (evenement && (!AppState.selectedEvent || AppState.selectedEvent.id !== evenement.id)) {
+        remplirConfig(evenement);
+
+        const reglages = AppState.photoReglages;
+
+        document.getElementById('config-folder').value = reglages ? reglages.folder : '';
+        AppState.watchFolder = reglages ? reglages.folder : null;
+
+        if (reglages && reglages.checkpointId) {
+            document.getElementById('config-checkpoint').value = String(reglages.checkpointId);
+        }
+
+        if (videoCheckpointId) {
+            document.getElementById('config-video-checkpoint').value = String(videoCheckpointId);
+        }
+
+        document.getElementById('config-hd-card').style.display = 'none';
+    }
+
+    navigateTo('config');
+}
+
+/**
+ * Remplit l'écran de réglages pour une épreuve.
+ */
+function remplirConfig(event) {
     AppState.selectedEvent = event;
 
     // Remplir l'écran de configuration
@@ -248,12 +382,6 @@ function selectEvent(event) {
             select.appendChild(option);
         });
     });
-
-    // Reset du dossier
-    document.getElementById('config-folder').value = '';
-    AppState.watchFolder = null;
-
-    navigateTo('config');
 }
 
 // ═══════════════════════════════════════════════════════
@@ -264,6 +392,7 @@ function initConfig() {
     // Bouton retour
     document.getElementById('config-back-btn').addEventListener('click', () => {
         navigateTo('events');
+        loadEvents();
     });
 
     // Bouton parcourir (dialogue natif)
@@ -308,6 +437,9 @@ function initConfig() {
     });
 
     initConfigVideo();
+
+    // Envoi des clips HD d'une sortie précédente (0.3.1)
+    document.getElementById('config-hd-send-btn').addEventListener('click', demarrerEnvoiHdSeul);
 
     // Bouton démarrer
     document.getElementById('config-start-btn').addEventListener('click', () => {
@@ -362,6 +494,37 @@ function validerConfig() {
     }
 
     return null;
+}
+
+/**
+ * Clips HD restés sur le disque pour cette épreuve (0.3.1).
+ *
+ * Le photographe qui rentre le soir ouvre l'épreuve et voit tout de suite
+ * ce qui reste à envoyer, avec un bouton pour le faire — sans avoir à
+ * relancer une captation ni à chercher les fichiers.
+ */
+async function majHdEnAttenteConfig(event) {
+    const carte = document.getElementById('config-hd-card');
+    carte.style.display = 'none';
+
+    try {
+        const stats = await invoke('video_queue_stats', { eventId: event.id, sessions: null });
+        const restant = stats.hd_pending + stats.hd_sending;
+
+        // L'épreuve a pu changer pendant l'appel.
+        if (!AppState.selectedEvent || AppState.selectedEvent.id !== event.id || restant === 0) {
+            return;
+        }
+
+        document.getElementById('config-hd-text').textContent = t('config.hd_pending_text', {
+            count: restant,
+            size: (stats.hd_bytes_pending / 1073741824).toFixed(1)
+        });
+
+        carte.style.display = 'block';
+    } catch (e) {
+        console.error('HD stats error:', e);
+    }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -450,8 +613,20 @@ function initConfigVideo() {
         });
     });
 
-    document.getElementById('config-video-hd').addEventListener('change', (e) => {
+    document.getElementById('config-video-hd').addEventListener('change', async (e) => {
         AppState.videoSendHd = e.target.checked;
+
+        // Pendant une session, le choix s'applique tout de suite : c'est le
+        // même réglage que le bouton « Envoyer les HD maintenant ».
+        if (sessionEnCours()) {
+            try {
+                await invoke('set_hd_upload', { allow: AppState.videoSendHd });
+            } catch (err) {
+                console.error('HD toggle error:', err);
+            }
+
+            majPanneauVideo();
+        }
     });
 
     majDecoupage();
@@ -769,39 +944,72 @@ function construireConfigVideo() {
     };
 }
 
-async function startSession() {
-    const event = AppState.selectedEvent;
-    const cpSelect = document.getElementById('config-checkpoint');
-    const checkpointId = cpSelect.value ? parseInt(cpSelect.value) : null;
-    const checkpointName = cpSelect.value ? cpSelect.options[cpSelect.selectedIndex].text : null;
-
-    AppState.selectedCheckpoint = checkpointId ? { id: checkpointId, name: checkpointName } : null;
-
-    // Remplir le dashboard
+/**
+ * Remet le tableau de bord à zéro pour une nouvelle session.
+ */
+function preparerTableauDeBord(event) {
     document.getElementById('dash-event-name').textContent = event.name;
-    document.getElementById('dash-checkpoint-name').textContent = checkpointName || '';
-    document.getElementById('dash-checkpoint-name').style.display = checkpointName ? 'inline-block' : 'none';
-    document.getElementById('dash-folder').textContent = AppState.watchFolder;
-    document.getElementById('dash-folder').title = AppState.watchFolder;
 
     // Reset des stats
+    AppState.photoStats = { sent: 0, pending: 0, failed: 0 };
     document.getElementById('stat-sent').textContent = '0';
     document.getElementById('stat-pending').textContent = '0';
     document.getElementById('stat-failed').textContent = '0';
     document.getElementById('stat-speed').textContent = '—';
     document.getElementById('progress-fill').style.width = '0%';
     document.getElementById('progress-text').textContent = '0 / 0';
+    document.getElementById('dash-retry-btn').style.display = 'none';
     document.getElementById('upload-log').innerHTML = `<div class="log-empty">${escapeHtml(t('dashboard.log_empty'))}</div>`;
+    debitFenetre.length = 0;
 
     // Reset de l'état pause
     AppState.isPaused = false;
-    const pauseBtn = document.getElementById('dash-pause-btn');
-    pauseBtn.innerHTML = `
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
-        </svg>
-        <span>${escapeHtml(t('dashboard.pause'))}</span>`;
+    majBoutonPausePhotos();
     document.getElementById('dash-status').className = 'status-dot status-active';
+
+    // Vidéo : compteurs de la nouvelle session
+    videoSessionsCourantes = [];
+    videoImages = 0;
+    videoActivite = false;
+    videoStatsEvenement = null;
+    videoStatsSession = null;
+    majPanneauVideo();
+}
+
+async function startSession() {
+    const event = AppState.selectedEvent;
+    const cpSelect = document.getElementById('config-checkpoint');
+    const checkpointId = cpSelect.value ? parseInt(cpSelect.value) : null;
+    const checkpointName = cpSelect.value ? cpSelect.options[cpSelect.selectedIndex].text : null;
+
+    // Une autre épreuve tourne : on ne la coupe que si le photographe le
+    // demande explicitement.
+    if (sessionEnCours() && AppState.activeEvent.id !== event.id) {
+        if (!confirm(t('nav.confirm_replace', { event: AppState.activeEvent.name }))) {
+            return;
+        }
+
+        await terminerSession();
+    }
+
+    // Même épreuve, session déjà ouverte : on la complète (ajouter la vidéo
+    // aux photos, changer le parallélisme…) sans rien recommencer.
+    const complement = sessionEnCours();
+
+    if (!complement) {
+        preparerTableauDeBord(event);
+    }
+
+    AppState.activeEvent = event;
+    AppState.envoiSeul = false;
+
+    if (AppState.photoEnabled) {
+        AppState.selectedCheckpoint = checkpointId ? { id: checkpointId, name: checkpointName } : null;
+        document.getElementById('dash-checkpoint-name').textContent = checkpointName || '';
+        document.getElementById('dash-checkpoint-name').style.display = checkpointName ? 'inline-block' : 'none';
+        document.getElementById('dash-folder').textContent = AppState.watchFolder;
+        document.getElementById('dash-folder').title = AppState.watchFolder;
+    }
 
     navigateTo('dashboard');
 
@@ -812,14 +1020,51 @@ async function startSession() {
 
     // ── Captation vidéo (SAAS 431) ──
     if (AppState.videoEnabled) {
-        await demarrerCaptation();
+        // Une captation déjà ouverte — en cours ou en pause — continue.
+        if (!captationOuverte()) {
+            await demarrerCaptation(false);
+        }
+    } else if (captationOuverte()) {
+        // Le photographe a éteint la vidéo dans les réglages.
+        await arreterCaptation();
     }
 
-    // ── Appeler le backend Rust pour démarrer la surveillance photo ──
+    majPanneauVideo();
+
+    // ── Surveillance photo ──
     if (!AppState.photoEnabled) {
+        if (AppState.sessionId) {
+            await arreterPhotos();
+        }
+
+        majBandeauSession();
         return;
     }
 
+    const reglages = {
+        folder: AppState.watchFolder,
+        checkpointId: checkpointId,
+    };
+
+    // Même dossier, même checkpoint : la surveillance continue. Seul le
+    // nombre d'envois simultanés change, à chaud — relancer la session
+    // renverrait toutes les photos du dossier.
+    if (AppState.sessionId && AppState.photoReglages
+        && AppState.photoReglages.folder === reglages.folder
+        && AppState.photoReglages.checkpointId === reglages.checkpointId) {
+        try {
+            await invoke('set_parallel', { parallel: AppState.parallelUploads });
+            addLogEntry(timeNow(), '—', 'success',
+                t('dashboard.msg_parallel', { count: AppState.parallelUploads }));
+        } catch (e) {
+            addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: e }));
+        }
+
+        majBandeauSession();
+        return;
+    }
+
+    // ── Appeler le backend Rust pour démarrer la surveillance photo ──
     try {
         const result = await invoke('start_session', {
             token: AppState.token,
@@ -833,11 +1078,87 @@ async function startSession() {
         });
 
         AppState.sessionId = result.session_id;
+        AppState.photoReglages = reglages;
         addLogEntry(timeNow(), '—', 'success', result.message);
 
     } catch (error) {
         addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error }));
     }
+
+    majBoutonPausePhotos();
+    majBandeauSession();
+}
+
+/**
+ * Arrête la seule surveillance photo.
+ */
+async function arreterPhotos() {
+    try {
+        await invoke('stop_session');
+        addLogEntry(timeNow(), '—', 'retry', t('dashboard.msg_stopped'));
+    } catch (e) {
+        console.error('Stop error:', e);
+    }
+
+    AppState.sessionId = null;
+    AppState.photoReglages = null;
+    AppState.isPaused = false;
+    majBoutonPausePhotos();
+}
+
+/**
+ * Ferme la session : captation, photos, puis vidage de la file vidéo.
+ *
+ * La captation d'abord : elle doit clore son manifeste pendant que la
+ * session est encore ouverte. La file n'est pas coupée : elle écoule ce
+ * qui reste de l'épreuve, puis s'arrête seule.
+ */
+async function terminerSession() {
+    await arreterCaptation();
+    demarrerVidageFinal();
+    await arreterPhotos();
+
+    AppState.activeEvent = null;
+    AppState.envoiSeul = false;
+    videoSessionsCourantes = [];
+    videoActivite = false;
+
+    majPanneauVideo();
+    majBandeauSession();
+}
+
+/**
+ * Envoi des clips HD sans captation ni photos (0.3.1).
+ *
+ * Le parcours du soir : ouvrir l'épreuve, « Envoyer les HD maintenant »,
+ * suivre l'avancement. Plus besoin de surveiller le dossier ni de cocher
+ * « envoyer la pleine qualité pendant la course ».
+ */
+async function demarrerEnvoiHdSeul() {
+    const event = AppState.selectedEvent;
+
+    if (sessionEnCours() && AppState.activeEvent.id !== event.id) {
+        if (!confirm(t('nav.confirm_replace', { event: AppState.activeEvent.name }))) {
+            return;
+        }
+
+        await terminerSession();
+    }
+
+    if (!sessionEnCours()) {
+        preparerTableauDeBord(event);
+        AppState.activeEvent = event;
+        AppState.envoiSeul = true;
+
+        document.getElementById('dash-checkpoint-name').style.display = 'none';
+        document.getElementById('dash-folder').textContent = '';
+    }
+
+    await activerEnvoiHd(true);
+
+    navigateTo('dashboard');
+    demarrerFileVideo();
+    majPanneauVideo();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -849,13 +1170,19 @@ function initDashboard() {
     //
     // Indispensable pour ajouter la vidéo alors que les photos tournent
     // déjà, ou l'inverse. La session continue derrière.
-    document.getElementById('dash-back-btn').addEventListener('click', () => {
-        navigateTo('config');
+    document.getElementById('dash-back-btn').addEventListener('click', ouvrirReglagesSession);
+
+    // ── Accueil, sans rien interrompre (0.3.1) ──
+    //
+    // La captation et les envois continuent ; le bandeau de session permet
+    // de revenir ici depuis n'importe quel écran.
+    document.getElementById('dash-home-btn').addEventListener('click', () => {
+        navigateTo('events');
+        loadEvents();
     });
 
     // ── Bouton Pause / Reprendre ──
     document.getElementById('dash-pause-btn').addEventListener('click', async () => {
-        const btn = document.getElementById('dash-pause-btn');
         const dot = document.getElementById('dash-status');
 
         try {
@@ -863,49 +1190,39 @@ function initDashboard() {
                 // Mettre en pause
                 await invoke('pause_session');
                 AppState.isPaused = true;
-                btn.innerHTML = `
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polygon points="5 3 19 12 5 21 5 3"/>
-                    </svg>
-                    <span>${escapeHtml(t('dashboard.resume'))}</span>`;
                 dot.className = 'status-dot status-paused';
                 addLogEntry(timeNow(), '—', 'retry', t('dashboard.msg_paused'));
             } else {
                 // Reprendre
                 await invoke('resume_session');
                 AppState.isPaused = false;
-                btn.innerHTML = `
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
-                    </svg>
-                    <span>${escapeHtml(t('dashboard.pause'))}</span>`;
                 dot.className = 'status-dot status-active';
                 addLogEntry(timeNow(), '—', 'success', t('dashboard.msg_resumed'));
             }
         } catch (error) {
             console.error('Pause/resume error:', error);
         }
+
+        majBoutonPausePhotos();
     });
 
     // ── Bouton Arrêter ──
     document.getElementById('dash-stop-btn').addEventListener('click', async () => {
-        if (confirm(t('dashboard.confirm_stop'))) {
-            // La captation d'abord : elle doit clore son manifeste pendant
-            // que la session est encore ouverte.
-            await arreterCaptation();
-            demarrerVidageFinal();
-
-            try {
-                await invoke('stop_session');
-                addLogEntry(timeNow(), '—', 'retry', t('dashboard.msg_stopped'));
-            } catch (e) {
-                console.error('Stop error:', e);
-            }
-            AppState.sessionId = null;
-            AppState.isPaused = false;
-            navigateTo('events');
-            loadEvents();
+        if (!confirm(t('dashboard.confirm_stop'))) {
+            return;
         }
+
+        const bouton = document.getElementById('dash-stop-btn');
+        bouton.disabled = true;
+
+        try {
+            await terminerSession();
+        } finally {
+            bouton.disabled = false;
+        }
+
+        navigateTo('events');
+        loadEvents();
     });
 
     // ── Bouton Relancer les échecs ──
@@ -919,6 +1236,96 @@ function initDashboard() {
             }
         }
     });
+
+    // Le débit moyen retombe quand plus rien ne part.
+    setInterval(majDebit, 5000);
+}
+
+/**
+ * Le bouton Pause ne concerne que les photos : sans surveillance photo, il
+ * n'aurait aucun effet — il disparaît.
+ */
+function majBoutonPausePhotos() {
+    const btn = document.getElementById('dash-pause-btn');
+
+    btn.style.display = AppState.sessionId ? 'inline-flex' : 'none';
+
+    if (!AppState.isPaused) {
+        btn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+            </svg>
+            <span>${escapeHtml(t('dashboard.pause'))}</span>`;
+    } else {
+        btn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            <span>${escapeHtml(t('dashboard.resume'))}</span>`;
+    }
+}
+
+// ═══════════════════════════════════════════════════════
+// BANDEAU DE SESSION (0.3.1)
+// ═══════════════════════════════════════════════════════
+//
+// Visible sur tous les écrans sauf la surveillance : il rappelle qu'une
+// session tourne, ce qu'elle fait, et ramène à la surveillance d'un clic.
+
+function initBandeauSession() {
+    document.getElementById('session-banner-btn').addEventListener('click', () => {
+        navigateTo('dashboard');
+    });
+}
+
+function majBandeauSession() {
+    const bandeau = document.getElementById('session-banner');
+
+    if (!bandeau) {
+        return;
+    }
+
+    const visible = sessionEnCours()
+        && AppState.currentScreen !== 'dashboard'
+        && AppState.currentScreen !== 'login';
+
+    bandeau.style.display = visible ? 'flex' : 'none';
+
+    if (!visible) {
+        return;
+    }
+
+    document.getElementById('session-banner-title').textContent =
+        t('nav.banner_title', { event: AppState.activeEvent.name });
+
+    const parties = [];
+
+    if (AppState.sessionId) {
+        parties.push(t('nav.banner_photos', {
+            sent: AppState.photoStats.sent,
+            pending: AppState.photoStats.pending
+        }));
+    }
+
+    if (videoSessionId) {
+        parties.push(t('nav.banner_video_recording'));
+    } else if (videoEnPause) {
+        parties.push(t('nav.banner_video_paused'));
+    }
+
+    const attente = videoEnAttenteEvenement();
+
+    if (attente > 0) {
+        parties.push(t('nav.banner_video_sending', { count: attente }));
+    }
+
+    document.getElementById('session-banner-detail').textContent = parties.join(' · ');
+
+    const point = document.getElementById('session-banner-dot');
+
+    point.className = 'status-dot ' + (videoSessionId
+        ? 'status-recording'
+        : (videoEnPause || AppState.isPaused ? 'status-paused' : 'status-active'));
 }
 
 // ═══════════════════════════════════════════════════════
@@ -955,10 +1362,26 @@ async function initRustEventListeners() {
     });
 
     // ── Upload réussi ──
+    //
+    // 0.3.1 : plus de « Ko/s » par fichier — c'était la taille divisée par
+    // le temps total, traitement serveur et attentes compris. On affiche la
+    // part du réseau et celle du serveur (en-tête Server-Timing), mesurées
+    // sur la seule tentative réussie.
     await listen('upload_success', (event) => {
-        const { filename, duration_ms, speed_kbps } = event.payload;
-        const durationSec = (duration_ms / 1000).toFixed(1);
-        addLogEntry(timeNow(), filename, 'success', t('upload.success', { duration: durationSec, speed: speed_kbps }));
+        const { filename, size, duration_ms, server_ms, network_ms } = event.payload;
+        const secondes = (ms) => (ms / 1000).toFixed(1);
+
+        const message = (server_ms !== null && server_ms !== undefined
+                         && network_ms !== null && network_ms !== undefined)
+            ? t('upload.success_timing', {
+                duration: secondes(duration_ms),
+                network: secondes(network_ms),
+                server: secondes(server_ms)
+            })
+            : t('upload.success_total', { duration: secondes(duration_ms) });
+
+        addLogEntry(timeNow(), filename, 'success', message);
+        noterEnvoi(size || 0, duration_ms || 0);
     });
 
     // ── Upload échoué ──
@@ -973,10 +1396,17 @@ async function initRustEventListeners() {
         addLogEntry(timeNow(), filename, 'retry', t('upload.retry_scheduled', { delay: delay_seconds, attempt }));
     });
 
+    // ── Serveur saturé (429 / 503) : l'agent ralentit de lui-même ──
+    await listen('upload_throttled', (event) => {
+        const { filename, code, delay_seconds, parallel } = event.payload;
+        addLogEntry(timeNow(), filename, 'retry',
+            t('upload.throttled', { code, delay: delay_seconds, parallel }));
+    });
+
     // ── Stats mises à jour (après chaque upload) ──
     await listen('stats_updated', (event) => {
-        const { sent, pending, failed, speed_kbps } = event.payload;
-        updateStats(sent, pending, failed, speed_kbps);
+        const { sent, pending, failed } = event.payload;
+        updateStats(sent, pending, failed);
     });
 
     // ── Tous les fichiers traités ──
@@ -1006,6 +1436,8 @@ async function initRustEventListeners() {
         addLogEntry(timeNow(), '—', 'failed', t('connection.expired'));
         AppState.token = null;
         AppState.sessionId = null;
+        AppState.photoReglages = null;
+        majBoutonPausePhotos();
         // Petit délai pour que l'utilisateur voie le message
         setTimeout(() => {
             navigateTo('login');
@@ -1090,11 +1522,12 @@ function addLogEntry(time, filename, status, message) {
 
 // ─── Stats du dashboard ───
 
-function updateStats(sent, pending, failed, speedKbps) {
+function updateStats(sent, pending, failed) {
+    AppState.photoStats = { sent, pending, failed };
+
     document.getElementById('stat-sent').textContent = sent;
     document.getElementById('stat-pending').textContent = pending;
     document.getElementById('stat-failed').textContent = failed;
-    document.getElementById('stat-speed').textContent = speedKbps > 0 ? `~${speedKbps}` : '—';
 
     const total = sent + pending + failed;
     const percent = total > 0 ? Math.round((sent / total) * 100) : 0;
@@ -1103,6 +1536,49 @@ function updateStats(sent, pending, failed, speedKbps) {
 
     // Afficher le bouton retry si des fichiers ont échoué
     document.getElementById('dash-retry-btn').style.display = failed > 0 ? 'inline-flex' : 'none';
+
+    majBandeauSession();
+}
+
+// ─── Débit réel des photos (0.3.1) ───
+//
+// Octets effectivement envoyés sur la dernière minute, tous envois
+// confondus : c'est le chiffre à comparer à un test de débit (fast.com),
+// en mégabits par seconde comme lui. Il remplace le « Ko/s » d'un seul
+// fichier, qui mêlait réseau, traitement serveur et attentes.
+
+const FENETRE_DEBIT_MS = 60000;
+const debitFenetre = [];
+
+function noterEnvoi(octets, dureeMs) {
+    const maintenant = Date.now();
+
+    debitFenetre.push({ fin: maintenant, debut: maintenant - dureeMs, octets });
+    majDebit();
+}
+
+function majDebit() {
+    const maintenant = Date.now();
+
+    while (debitFenetre.length > 0 && maintenant - debitFenetre[0].fin > FENETRE_DEBIT_MS) {
+        debitFenetre.shift();
+    }
+
+    const zone = document.getElementById('stat-speed');
+
+    if (debitFenetre.length === 0) {
+        zone.textContent = '—';
+        return;
+    }
+
+    // Durée observée : de l'envoi le plus ancien de la fenêtre à maintenant,
+    // plafonnée à une minute.
+    const debut = Math.max(maintenant - FENETRE_DEBIT_MS,
+        Math.min(...debitFenetre.map(e => e.debut)));
+    const secondes = Math.max(1, (maintenant - debut) / 1000);
+    const octets = debitFenetre.reduce((somme, e) => somme + e.octets, 0);
+
+    zone.textContent = ((octets * 8) / secondes / 1000000).toFixed(1);
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1115,13 +1591,40 @@ function updateStats(sent, pending, failed, speedKbps) {
 // dossards seront lus.
 //
 // Tout part de l'écran de réglages : aucune valeur n'est écrite en dur.
+//
+// 0.3.1 — PAUSE. Une pause referme la captation en cours exactement comme
+// un arrêt : le morceau ouvert est rattrapé, le clip en cours devient un
+// clip final plus court, et tout part avec les autres. « Reprendre » ouvre
+// une nouvelle captation avec les mêmes réglages, dans son propre
+// sous-dossier : chaque reprise est une session de captation à part pour le
+// serveur, numérotée depuis le clip 1. Rien n'est filmé pendant la pause.
 
-let videoSessionId = null;
-let videoDebutMs = 0;
-let videoClips = 0;
+let videoSessionId = null;       // captation qui tourne (FFmpeg actif)
+let videoEnPause = false;
+let videoDebutMs = 0;            // début de la captation courante
+let videoCumulMs = 0;            // temps filmé avant la dernière reprise
 let videoImages = 0;
 let videoChronoTimer = null;
-let videoFileTimer = null;
+
+// Toutes les captations de la session (une par reprise), et ce qu'on sait
+// de chacune : départ, épreuve, découpage, clips filmés et assemblés.
+let videoSessionsCourantes = [];
+const videoCaptations = {};
+
+// Réglages figés au premier démarrage : une reprise filme à l'identique,
+// même si l'écran de réglages a été modifié entre-temps.
+let videoConfigCaptation = null;
+let videoCheckpointId = null;
+
+// La session a comporté de la vidéo : le panneau reste affiché après
+// l'arrêt, le temps que les derniers clips partent.
+let videoActivite = false;
+
+// Pause, reprise ou arrêt en cours (0.3.1) : les boutons le montrent et
+// refusent un second clic.
+let videoTransition = null;      // 'pausing' | 'resuming' | 'stopping' | null
+let videoArretPromesse = null;
+let videoPausePromesse = null;
 
 // Vidage final : l'assemblage du dernier clip se termine APRÈS l'arrêt de
 // la captation. Couper la file à ce moment laisse ce clip en attente
@@ -1138,33 +1641,67 @@ let videoVidageEventId = null;
 let videoTraitementsEnCours = 0;
 
 /**
+ * Une captation est ouverte : elle tourne, ou elle est en pause.
+ */
+function captationOuverte() {
+    return videoSessionId !== null || videoEnPause;
+}
+
+/**
  * Branche les écoutes du backend.
  *
  * Une seule fois au lancement : ces abonnements survivent aux captations
  * successives, et en créer un par session les empilerait.
  */
 async function initVideo() {
-    await listen('segment-ready', surMorceauPretSuivi);
-    await listen('recording-final', surCaptationCoupee);
-    await listen('disk-status', surEtatDisque);
-
     document.getElementById('dash-video-stop-btn').addEventListener('click', () => {
         arreterCaptation();
     });
+
+    document.getElementById('dash-video-pause-btn').addEventListener('click', () => {
+        if (videoEnPause) {
+            reprendreCaptation();
+        } else {
+            pauserCaptation();
+        }
+    });
+
+    document.getElementById('dash-hd-btn').addEventListener('click', () => {
+        activerEnvoiHd(!AppState.videoSendHd);
+    });
+
+    document.getElementById('dash-hd-retry-btn').addEventListener('click', async () => {
+        try {
+            const count = await invoke('retry_video_queue');
+            addLogEntry(timeNow(), '—', 'retry', t('dashboard.msg_retry_queued', { count }));
+            demarrerFileVideo();
+        } catch (e) {
+            addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: e }));
+        }
+    });
+
+    await listen('segment-ready', surMorceauPretSuivi);
+    await listen('recording-final', surCaptationCoupee);
+    await listen('disk-status', surEtatDisque);
 }
 
 /**
- * Lance la captation avec les réglages de l'écran.
+ * Lance une captation avec les réglages de l'écran.
+ *
+ * `reprise` : après une pause, mêmes réglages que la première captation.
  */
-async function demarrerCaptation() {
-    const evenement = AppState.selectedEvent;
-    const selectCp = document.getElementById('config-video-checkpoint');
-    const checkpointId = selectCp.value ? parseInt(selectCp.value, 10) : null;
+async function demarrerCaptation(reprise) {
+    const evenement = AppState.activeEvent;
 
-    videoSessionId = 'video_' + Date.now();
-    videoDebutMs = Date.now();
-    videoClips = 0;
-    videoImages = 0;
+    if (!reprise) {
+        const selectCp = document.getElementById('config-video-checkpoint');
+        videoCheckpointId = selectCp.value ? parseInt(selectCp.value, 10) : null;
+        videoConfigCaptation = construireConfigVideo();
+        videoCumulMs = 0;
+    }
+
+    const sessionId = 'video_' + Date.now();
+    const debut = Date.now();
 
     try {
         // L'autorisation d'envoi HD est un état du backend : il faut la
@@ -1172,31 +1709,162 @@ async function demarrerCaptation() {
         await invoke('set_hd_upload', { allow: AppState.videoSendHd });
 
         const plan = await invoke('start_recording', {
-            sessionId: videoSessionId,
+            sessionId: sessionId,
             attimoTenantId: AppState.user ? AppState.user.id : 0,
             attimoEventId: evenement.id,
-            attimoCheckpointId: checkpointId,
+            attimoCheckpointId: videoCheckpointId,
             intervalSecs: VIDEO_FRAME_INTERVAL,
-            config: construireConfigVideo()
+            config: videoConfigCaptation
         });
 
-        document.getElementById('dash-video-panel').style.display = 'block';
-        majCompteursVideo();
+        videoSessionId = sessionId;
+        videoDebutMs = debut;
+        videoEnPause = false;
+        videoActivite = true;
+
+        videoCaptations[sessionId] = {
+            debutMs: debut,
+            eventId: evenement.id,
+            plan: plan,
+            filmes: 0,
+            assembles: 0,
+        };
+
+        videoSessionsCourantes.push(sessionId);
 
         if (!videoChronoTimer) {
             videoChronoTimer = setInterval(majChronoVideo, 1000);
         }
 
-        addLogEntry(timeNow(), '—', 'success',
-            t('dashboard.video_started', { step: plan.step_secs }));
+        addLogEntry(timeNow(), '—', 'success', reprise
+            ? t('dashboard.video_resumed_log')
+            : t('dashboard.video_started', { step: plan.step_secs }));
+
+        majPanneauVideo();
+        majBandeauSession();
 
         return true;
 
     } catch (e) {
-        videoSessionId = null;
         addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: e }));
+        majPanneauVideo();
         return false;
     }
+}
+
+/**
+ * Referme la captation qui tourne et rattrape son dernier morceau.
+ *
+ * Commun à la pause et à l'arrêt. Rend la main dès que FFmpeg a refermé
+ * son fichier et que le dernier clip est assemblé ; la version légère de
+ * ce clip — un réencodage, donc la partie la plus longue — se fait ensuite
+ * en arrière-plan. C'est elle qui donnait l'impression d'un bouton « Arrêter
+ * la vidéo » qui ne répondait pas : l'écran attendait sa fin sans rien
+ * montrer.
+ */
+async function refermerCaptationCourante() {
+    const sessionEnCours = videoSessionId;
+
+    if (!sessionEnCours) {
+        return;
+    }
+
+    let fin = null;
+
+    try {
+        // L'arrêt attend que FFmpeg ait refermé son fichier, et renvoie ce
+        // qu'il a pu rattraper : le morceau resté ouvert, ses images, et le
+        // ou les clips qu'il permet enfin d'assembler.
+        fin = await invoke('stop_recording');
+    } catch (e) {
+        // ARRET_EN_COURS : la surveillance disque arrête déjà cette
+        // captation, son résultat arrivera par l'événement recording-final.
+        // « Aucune captation » : elle est déjà close. Rien à signaler.
+        const texte = String(e);
+
+        if (texte !== 'ARRET_EN_COURS' && !texte.includes('Aucune captation')) {
+            addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: e }));
+        }
+    }
+
+    // La captation n'existe plus, quoi qu'il arrive ensuite : l'écran doit
+    // le refléter tout de suite.
+    if (videoSessionId === sessionEnCours) {
+        videoCumulMs += Date.now() - videoDebutMs;
+        videoSessionId = null;
+    }
+
+    if (fin) {
+        // Compté : le vidage final ne doit pas conclure pendant que le
+        // dernier clip se prépare.
+        videoTraitementsEnCours++;
+
+        traiterFinDeCaptation(fin, sessionEnCours).finally(() => {
+            videoTraitementsEnCours--;
+            majPanneauVideo();
+        });
+    }
+}
+
+/**
+ * Pause : la captation s'interrompt, la session reste ouverte (0.3.1).
+ *
+ * Les clips déjà faits continuent de partir. Le clip en cours est refermé
+ * comme à l'arrêt : il part, plus court, avec les autres.
+ */
+async function pauserCaptation() {
+    if (!videoSessionId || videoTransition) {
+        return;
+    }
+
+    videoTransition = 'pausing';
+    majBoutonsVideo();
+
+    videoPausePromesse = refermerCaptationCourante();
+
+    try {
+        await videoPausePromesse;
+    } finally {
+        videoPausePromesse = null;
+
+        // Un arrêt demandé entre-temps garde la main sur l'affichage.
+        if (videoTransition === 'pausing') {
+            videoTransition = null;
+        }
+    }
+
+    // Un arrêt a pu être demandé pendant la pause : il a la priorité.
+    if (!videoArretPromesse) {
+        videoEnPause = true;
+        addLogEntry(timeNow(), '—', 'retry', t('dashboard.video_paused_log'));
+    }
+
+    majChronoVideo();
+    majPanneauVideo();
+    majBandeauSession();
+}
+
+/**
+ * Reprise après une pause : mêmes réglages, nouvelle captation.
+ */
+async function reprendreCaptation() {
+    if (!videoEnPause || videoTransition) {
+        return;
+    }
+
+    videoTransition = 'resuming';
+    majBoutonsVideo();
+
+    try {
+        await demarrerCaptation(true);
+    } finally {
+        if (videoTransition === 'resuming') {
+            videoTransition = null;
+        }
+    }
+
+    majPanneauVideo();
+    majBandeauSession();
 }
 
 /**
@@ -1204,47 +1872,52 @@ async function demarrerCaptation() {
  *
  * Les fichiers déjà produits restent en file : couper la caméra ne doit
  * pas annuler ce qui attend d'être envoyé.
+ *
+ * 0.3.1 — Un seul arrêt à la fois : un second clic, ou « Terminer la
+ * session » juste après, attend le même arrêt au lieu d'en lancer un
+ * second. Le bouton affiche aussitôt « Arrêt en cours ».
  */
 async function arreterCaptation() {
-    if (!videoSessionId) {
+    if (videoArretPromesse) {
+        return videoArretPromesse;
+    }
+
+    if (!captationOuverte() && !videoPausePromesse) {
         return;
     }
 
-    // L'identifiant est figé maintenant. Le traitement d'un morceau dure
-    // plusieurs secondes — extraction, assemblage, réencodage — et l'arrêt
-    // peut tomber pendant. Sans cette copie, la fin du traitement
-    // travaillerait sous une session déjà refermée.
-    const sessionEnCours = videoSessionId;
+    videoArretPromesse = (async () => {
+        videoTransition = 'stopping';
+        majBoutonsVideo();
 
-    let fin = null;
+        // Une mise en pause en cours referme déjà la captation : on
+        // l'attend plutôt que d'en demander une seconde fermeture.
+        if (videoPausePromesse) {
+            await videoPausePromesse.catch(() => {});
+        }
+
+        await refermerCaptationCourante();
+
+        videoEnPause = false;
+
+        if (videoChronoTimer) {
+            clearInterval(videoChronoTimer);
+            videoChronoTimer = null;
+        }
+
+        addLogEntry(timeNow(), '—', 'retry',
+            t('dashboard.video_stopped', { clips: videoTotal('assembles') }));
+    })();
 
     try {
-        // L'arrêt attend désormais que FFmpeg ait refermé son fichier, et
-        // renvoie ce qu'il a pu rattraper : le morceau resté ouvert, ses
-        // images, et le ou les clips qu'il permet enfin d'assembler.
-        // Quelques secondes, une seule fois, à la fin d'une course.
-        fin = await invoke('stop_recording');
-    } catch (e) {
-        console.error('Stop recording error:', e);
+        await videoArretPromesse;
+    } finally {
+        videoArretPromesse = null;
+        videoTransition = null;
+        majChronoVideo();
+        majPanneauVideo();
+        majBandeauSession();
     }
-
-    // Mise en file AVANT de refermer la session : la file est rattachée à
-    // l'événement courant, et l'écran est sur le point d'en changer.
-    if (fin) {
-        await traiterFinDeCaptation(fin, sessionEnCours);
-    }
-
-    addLogEntry(timeNow(), '—', 'retry',
-        t('dashboard.video_stopped', { clips: videoClips }));
-
-    videoSessionId = null;
-
-    if (videoChronoTimer) {
-        clearInterval(videoChronoTimer);
-        videoChronoTimer = null;
-    }
-
-    document.getElementById('dash-video-panel').style.display = 'none';
 }
 
 /**
@@ -1275,11 +1948,12 @@ async function surMorceauPret(evt) {
 
     // FFmpeg met un instant à se fermer : il clôt le morceau en cours et
     // l'annonce après l'arrêt. Sans cette garde, on tenterait de le mettre
-    // en file sous une session qui n'existe plus.
+    // en file sous une session qui n'existe plus — ou, depuis la pause, sous
+    // la captation suivante (0.3.1).
     //
     // Le fichier n'est pas perdu pour autant — il reste sur le disque, et
     // le morceau incomplet n'avait de toute façon pas sa place dans un clip.
-    if (!videoSessionId) {
+    if (!videoSessionId || morceau.session_id !== videoSessionId) {
         return;
     }
 
@@ -1288,6 +1962,8 @@ async function surMorceauPret(evt) {
     // peut tomber pendant. Sans cette copie, la fin du traitement
     // travaillerait sous une session déjà refermée.
     const sessionEnCours = videoSessionId;
+
+    compterClipsFilmes(sessionEnCours, morceau.index);
 
     // Images d'analyse — extraites du MORCEAU, jamais du clip.
     //
@@ -1318,6 +1994,40 @@ async function surMorceauPret(evt) {
     } catch (e) {
         addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: e }));
     }
+}
+
+/**
+ * Clips entièrement filmés, d'après le dernier morceau clos (0.3.1).
+ *
+ * Le clip n couvre les morceaux (n-1)·pas à (n-1)·pas + parClip - 1 : il
+ * est filmé dès que son dernier morceau est clos, avant même d'être
+ * assemblé.
+ */
+function compterClipsFilmes(sessionId, indexMorceau) {
+    const captation = videoCaptations[sessionId];
+
+    if (!captation || !captation.plan) {
+        return;
+    }
+
+    const parClip = captation.plan.segments_per_clip;
+    const pas = captation.plan.segments_step;
+    const clos = indexMorceau + 1;
+
+    const filmes = clos >= parClip ? Math.floor((clos - parClip) / pas) + 1 : 0;
+
+    captation.filmes = Math.max(captation.filmes, filmes);
+    majPanneauVideo();
+}
+
+/**
+ * Somme d'un compteur sur toutes les captations de la session.
+ */
+function videoTotal(champ) {
+    return videoSessionsCourantes.reduce((somme, id) => {
+        const captation = videoCaptations[id];
+        return somme + (captation ? captation[champ] : 0);
+    }, 0);
 }
 
 /**
@@ -1364,6 +2074,25 @@ async function surCaptationCoupee(evt) {
 }
 
 /**
+ * Épreuve d'une captation : celle de son démarrage, pas celle qu'on
+ * regarde à l'écran — on peut désormais en ouvrir une autre pendant que
+ * les derniers clips se préparent.
+ */
+function evenementDeCaptation(sessionId) {
+    const captation = videoCaptations[sessionId];
+
+    if (captation) {
+        return captation.eventId;
+    }
+
+    if (AppState.activeEvent) {
+        return AppState.activeEvent.id;
+    }
+
+    return videoVidageEventId;
+}
+
+/**
  * Met en file les images d'analyse d'un morceau.
  *
  * Mise en file plutôt qu'envoi direct : c'est ce qui permet de couper
@@ -1371,10 +2100,12 @@ async function surCaptationCoupee(evt) {
  * après avoir fermé l'agent.
  */
 async function mettreImagesEnFile(images, sessionEnCours) {
+    const eventId = evenementDeCaptation(sessionEnCours);
+
     for (const image of images) {
         await invoke('queue_video_file', {
             sessionId: sessionEnCours,
-            eventId: AppState.selectedEvent.id,
+            eventId: eventId,
             kind: 'frames',
             filePath: image.path,
             clipIndex: null,
@@ -1385,7 +2116,7 @@ async function mettreImagesEnFile(images, sessionEnCours) {
     }
 
     videoImages += images.length;
-    majCompteursVideo();
+    majPanneauVideo();
 }
 
 /**
@@ -1396,8 +2127,15 @@ async function mettreImagesEnFile(images, sessionEnCours) {
  * autrement qu'un clip de course.
  */
 async function mettreClipEnFile(clip, sessionEnCours) {
-    videoClips++;
-    majCompteursVideo();
+    const captation = videoCaptations[sessionEnCours];
+    const eventId = evenementDeCaptation(sessionEnCours);
+
+    if (captation) {
+        captation.assembles++;
+        captation.filmes = Math.max(captation.filmes, captation.assembles);
+    }
+
+    majPanneauVideo();
 
     addLogEntry(timeNow(), clip.filename, 'success',
         t('dashboard.video_clip_ready', { index: clip.index }));
@@ -1410,13 +2148,14 @@ async function mettreClipEnFile(clip, sessionEnCours) {
         bitrateMbps: 2
     });
 
-    // Horodatages du clip, dérivés du départ de la session.
+    // Horodatages du clip, dérivés du départ de SA captation.
     //
     // `duration_secs` est la durée MESURÉE pour les clips de fin : le
     // dernier est plus court que les autres, et une fin annoncée trop tard
     // rattacherait des coureurs à des secondes que le fichier ne contient
     // pas.
-    const debutMs = videoDebutMs + clip.offset_secs * 1000;
+    const depart = captation ? captation.debutMs : videoDebutMs;
+    const debutMs = depart + clip.offset_secs * 1000;
     const finMs = debutMs + clip.duration_secs * 1000;
     const iso = (ms) => new Date(ms).toISOString();
 
@@ -1424,7 +2163,7 @@ async function mettreClipEnFile(clip, sessionEnCours) {
     // de la priorité et de l'autorisation HD, pas de l'ordre d'ajout.
     await invoke('queue_video_file', {
         sessionId: sessionEnCours,
-        eventId: AppState.selectedEvent.id,
+        eventId: eventId,
         kind: 'clip_proxy',
         filePath: proxyPath,
         clipIndex: clip.index,
@@ -1435,7 +2174,7 @@ async function mettreClipEnFile(clip, sessionEnCours) {
 
     await invoke('queue_video_file', {
         sessionId: sessionEnCours,
-        eventId: AppState.selectedEvent.id,
+        eventId: eventId,
         kind: 'clip_hd',
         filePath: clip.path,
         clipIndex: clip.index,
@@ -1443,6 +2182,8 @@ async function mettreClipEnFile(clip, sessionEnCours) {
         endedAt: iso(finMs),
         instantAt: null
     });
+
+    rafraichirFileVideo();
 }
 
 /**
@@ -1482,24 +2223,32 @@ function surEtatDisque(evt) {
     bloc.classList.toggle('is-critical',
         etat.level === 'critical' || etat.level === 'stopped');
 
-    // Le backend a coupé la captation : l'écran doit suivre.
+    // Le backend a coupé la captation : l'écran doit suivre. Avant 0.3.1, le
+    // panneau restait affiché avec un bouton « Arrêter la vidéo » qui ne
+    // faisait plus rien — la captation n'existait déjà plus.
     if (etat.level === 'stopped') {
         addLogEntry(timeNow(), '—', 'failed', t('dashboard.video_disk_full'));
+
+        if (videoSessionId) {
+            videoCumulMs += Date.now() - videoDebutMs;
+        }
+
         videoSessionId = null;
+        videoEnPause = false;
 
         if (videoChronoTimer) {
             clearInterval(videoChronoTimer);
             videoChronoTimer = null;
         }
+
+        majPanneauVideo();
+        majBandeauSession();
     }
 }
 
 function majChronoVideo() {
-    if (!videoSessionId) {
-        return;
-    }
-
-    const secondes = Math.floor((Date.now() - videoDebutMs) / 1000);
+    const courant = videoSessionId ? Date.now() - videoDebutMs : 0;
+    const secondes = Math.floor((videoCumulMs + courant) / 1000);
 
     const h = String(Math.floor(secondes / 3600)).padStart(2, '0');
     const m = String(Math.floor((secondes % 3600) / 60)).padStart(2, '0');
@@ -1508,31 +2257,253 @@ function majChronoVideo() {
     document.getElementById('dash-video-elapsed').textContent = `${h}:${m}:${s}`;
 }
 
-function majCompteursVideo() {
-    document.getElementById('dash-video-clips').textContent = videoClips;
+// ─── Panneau vidéo du tableau de bord (0.3.1) ───
+
+// Derniers décomptes de la file : toute l'épreuve (bloc HD, bandeau) et
+// captations de la session en cours (compteurs de clips).
+let videoStatsEvenement = null;
+let videoStatsSession = null;
+
+/**
+ * Clips et images qui attendent encore de partir, pour toute l'épreuve.
+ * Les clips HD retenus ne comptent que si leur envoi est autorisé.
+ */
+function videoEnAttenteEvenement() {
+    const s = videoStatsEvenement;
+
+    if (!s) {
+        return 0;
+    }
+
+    const hd = AppState.videoSendHd ? s.hd_pending + s.hd_sending : 0;
+
+    return s.frames_pending + s.frames_sending + s.proxy_pending + s.proxy_sending + hd;
+}
+
+function majPanneauVideo() {
+    const panneau = document.getElementById('dash-video-panel');
+    const evt = videoStatsEvenement;
+
+    const aDesClips = evt !== null && (evt.hd_pending + evt.hd_sending + evt.hd_sent + evt.hd_failed
+        + evt.proxy_pending + evt.proxy_sending + evt.proxy_sent) > 0;
+
+    const visible = sessionEnCours() && (videoActivite || AppState.envoiSeul || aDesClips);
+
+    panneau.style.display = visible ? 'block' : 'none';
+
+    if (!visible) {
+        return;
+    }
+
+    // ── Compteurs de la session (B4) ──
+    const ses = videoStatsSession;
+
+    document.getElementById('dash-video-filmed').textContent = videoTotal('filmes');
+    document.getElementById('dash-video-clips').textContent = videoTotal('assembles');
+    document.getElementById('dash-video-sent').textContent = ses ? ses.proxy_sent : 0;
+    document.getElementById('dash-video-queue').textContent =
+        ses ? ses.proxy_pending + ses.proxy_sending : 0;
     document.getElementById('dash-video-frames').textContent = videoImages;
+    document.getElementById('dash-video-frames-label').textContent =
+        t('dashboard.video_frames_detail', { sent: ses ? ses.frames_sent : 0 });
+
+    // Sans captation dans cette session, seuls l'envoi et le bloc HD ont
+    // un sens.
+    document.getElementById('dash-video-stats').style.display = videoActivite ? '' : 'none';
+    document.getElementById('dash-video-disk').style.display = captationOuverte() ? '' : 'none';
+
+    majBlocHd(evt);
+    majBoutonsVideo();
+}
+
+/**
+ * État et boutons de la captation.
+ */
+function majBoutonsVideo() {
+    const titre = document.getElementById('dash-video-title');
+    const point = document.getElementById('dash-video-dot');
+    const chrono = document.getElementById('dash-video-elapsed');
+    const pause = document.getElementById('dash-video-pause-btn');
+    const stop = document.getElementById('dash-video-stop-btn');
+
+    const ouverte = captationOuverte() || videoTransition !== null;
+
+    pause.style.display = ouverte ? 'inline-flex' : 'none';
+    stop.style.display = ouverte ? 'inline-flex' : 'none';
+    chrono.style.display = videoActivite ? '' : 'none';
+
+    pause.disabled = videoTransition !== null;
+    stop.disabled = videoTransition !== null;
+
+    let titreTexte;
+    let pointClasse;
+    let pauseTexte = videoEnPause ? t('dashboard.video_resume') : t('dashboard.video_pause');
+    let stopTexte = t('dashboard.video_stop');
+
+    if (videoTransition === 'stopping') {
+        titreTexte = t('dashboard.video_recording');
+        pointClasse = 'status-paused';
+        stopTexte = t('dashboard.video_stopping');
+    } else if (videoTransition === 'pausing') {
+        titreTexte = t('dashboard.video_recording');
+        pointClasse = 'status-paused';
+        pauseTexte = t('dashboard.video_pausing');
+    } else if (videoTransition === 'resuming') {
+        titreTexte = t('dashboard.video_paused');
+        pointClasse = 'status-paused';
+        pauseTexte = t('dashboard.video_resuming');
+    } else if (videoSessionId) {
+        titreTexte = t('dashboard.video_recording');
+        pointClasse = 'status-recording';
+    } else if (videoEnPause) {
+        titreTexte = t('dashboard.video_paused');
+        pointClasse = 'status-paused';
+    } else if (videoActivite) {
+        titreTexte = t('dashboard.video_stopped_title');
+        pointClasse = 'status-idle';
+    } else {
+        titreTexte = t('dashboard.video_sending_only');
+        pointClasse = 'status-idle';
+    }
+
+    titre.textContent = titreTexte;
+    point.className = 'status-dot ' + pointClasse;
+
+    // Le libellé change dès le clic : le photographe voit que sa demande
+    // est prise en compte, même si l'arrêt dure quelques secondes.
+    pause.querySelector('span').textContent = pauseTexte;
+    stop.querySelector('span').textContent = stopTexte;
+
+    pause.querySelector('.icon-pause').style.display = videoEnPause ? 'none' : '';
+    pause.querySelector('.icon-play').style.display = videoEnPause ? '' : 'none';
+    stop.querySelector('.spinner').style.display = videoTransition === 'stopping' ? '' : 'none';
+    stop.querySelector('.icon-stop').style.display = videoTransition === 'stopping' ? 'none' : '';
+}
+
+/**
+ * Bloc « Vidéo HD » (B5) : combien de clips pleine qualité restent, et un
+ * bouton pour les envoyer maintenant.
+ */
+function majBlocHd(evt) {
+    const statut = document.getElementById('dash-hd-status');
+    const progression = document.getElementById('dash-hd-progress');
+    const jauge = document.getElementById('dash-hd-fill');
+    const bouton = document.getElementById('dash-hd-btn');
+    const relance = document.getElementById('dash-hd-retry-btn');
+
+    if (!evt) {
+        statut.textContent = '';
+        progression.textContent = '';
+        jauge.style.width = '0%';
+        bouton.style.display = 'none';
+        relance.style.display = 'none';
+        return;
+    }
+
+    const restant = evt.hd_pending + evt.hd_sending;
+    const total = restant + evt.hd_sent + evt.hd_failed;
+
+    if (total === 0) {
+        statut.textContent = t('hd.none');
+        progression.textContent = '';
+        jauge.style.width = '0%';
+        bouton.style.display = 'none';
+        relance.style.display = 'none';
+        return;
+    }
+
+    const go = (evt.hd_bytes_pending / 1073741824).toFixed(1);
+
+    if (restant > 0) {
+        statut.textContent = t('hd.remaining', { count: restant, size: go })
+            + (AppState.videoSendHd && evt.hd_sending > 0 ? ' · ' + t('hd.sending') : '');
+    } else if (evt.hd_failed > 0) {
+        statut.textContent = t('hd.failed', { count: evt.hd_failed });
+    } else {
+        statut.textContent = t('hd.all_sent');
+    }
+
+    progression.textContent = t('hd.progress', { sent: evt.hd_sent, total: total });
+    jauge.style.width = Math.round((evt.hd_sent / total) * 100) + '%';
+
+    bouton.style.display = restant > 0 ? 'inline-flex' : 'none';
+    bouton.textContent = AppState.videoSendHd ? t('hd.suspend') : t('hd.send_now');
+    bouton.className = 'btn ' + (AppState.videoSendHd ? 'btn-secondary' : 'btn-primary');
+
+    relance.style.display = evt.hd_failed > 0 ? 'inline-flex' : 'none';
+}
+
+/**
+ * Autorise ou suspend l'envoi des clips HD.
+ *
+ * Même réglage que « Envoyer la pleine qualité pendant la course » dans
+ * les réglages : les deux restent d'accord.
+ */
+async function activerEnvoiHd(activer) {
+    try {
+        await invoke('set_hd_upload', { allow: activer });
+    } catch (e) {
+        addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: e }));
+        return;
+    }
+
+    AppState.videoSendHd = activer;
+    document.getElementById('config-video-hd').checked = activer;
+
+    addLogEntry(timeNow(), '—', activer ? 'success' : 'retry',
+        activer ? t('hd.started_log') : t('hd.suspended_log'));
+
+    if (activer) {
+        demarrerFileVideo();
+    }
+
+    majPanneauVideo();
+    rafraichirFileVideo();
 }
 
 // ═══════════════════════════════════════════════════════════════════════
 // FILE D'ENVOI VIDÉO
 // ═══════════════════════════════════════════════════════════════════════
 //
-// Vide la file en continu, un élément à la fois.
-//
-// Le rythme d'un élément par seconde évite de saturer le réseau et laisse
-// le temps d'interrompre proprement : couper l'envoi vidéo prend effet au
-// fichier suivant, pas au bout de trois clips.
+// 0.3.1 — Deux ouvriers, qui attendent chacun la fin de leur envoi avant
+// d'en commencer un autre. Avant, un minuteur lançait un envoi chaque
+// seconde sans attendre le précédent : tant que la file était pleine, les
+// envois s'empilaient — des dizaines de clips à la fois, qui prenaient la
+// liaison aux photos. Le backend refuse de toute façon un troisième envoi
+// simultané, et fait passer les photos d'abord.
+
+const VIDEO_OUVRIERS = 2;
+
+let videoFileActive = false;
+let videoOuvriersActifs = 0;
+let videoStatsTimer = null;
+let videoRafraichissementEnCours = false;
+let videoDerniereSaturation = 0;
 
 function demarrerFileVideo() {
-    if (!videoFileTimer) {
-        videoFileTimer = setInterval(traiterFileVideo, 1000);
+    videoFileActive = true;
+
+    while (videoOuvriersActifs < VIDEO_OUVRIERS) {
+        videoOuvriersActifs++;
+
+        ouvrierFileVideo().finally(() => {
+            videoOuvriersActifs--;
+        });
     }
+
+    if (!videoStatsTimer) {
+        videoStatsTimer = setInterval(rafraichirFileVideo, 2000);
+    }
+
+    rafraichirFileVideo();
 }
 
 function arreterFileVideo() {
-    if (videoFileTimer) {
-        clearInterval(videoFileTimer);
-        videoFileTimer = null;
+    videoFileActive = false;
+
+    if (videoStatsTimer) {
+        clearInterval(videoStatsTimer);
+        videoStatsTimer = null;
     }
 
     videoVidageEnCours = false;
@@ -1548,8 +2519,8 @@ function arreterFileVideo() {
  * prochaine ouverture de cet événement.
  */
 function demarrerVidageFinal() {
-    if (AppState.selectedEvent) {
-        videoVidageEventId = AppState.selectedEvent.id;
+    if (AppState.activeEvent) {
+        videoVidageEventId = AppState.activeEvent.id;
     }
 
     videoVidageEnCours = true;
@@ -1557,94 +2528,186 @@ function demarrerVidageFinal() {
 }
 
 /**
- * Événement auquel rattacher les envois.
- *
- * Pendant un vidage final, c'est l'événement figé à l'arrêt — pas celui que
- * le photographe vient éventuellement d'ouvrir.
+ * Épreuves dont la file est servie : celle de la session en cours d'abord,
+ * puis celle d'une session close qui finit de partir.
  */
-function eventIdFile() {
-    if (videoVidageEnCours && videoVidageEventId) {
-        return videoVidageEventId;
+function evenementsFileVideo() {
+    const ids = [];
+
+    if (AppState.activeEvent) {
+        ids.push(AppState.activeEvent.id);
     }
 
-    return AppState.selectedEvent ? AppState.selectedEvent.id : null;
+    if (videoVidageEnCours && videoVidageEventId && !ids.includes(videoVidageEventId)) {
+        ids.push(videoVidageEventId);
+    }
+
+    return ids;
 }
 
-async function traiterFileVideo() {
-    const eventId = eventIdFile();
+async function ouvrierFileVideo() {
+    while (videoFileActive) {
+        const attente = await traiterUnEnvoiVideo();
 
-    if (!eventId) {
-        return;
+        if (attente > 0) {
+            await dormir(attente);
+        }
+    }
+}
+
+/**
+ * Un envoi : un clip, ou un lot de dix images d'analyse.
+ *
+ * Renvoie le temps à attendre avant le suivant, en millisecondes.
+ */
+async function traiterUnEnvoiVideo() {
+    const ids = evenementsFileVideo();
+
+    if (ids.length === 0 || !AppState.token) {
+        return 2000;
     }
 
-    try {
-        const resultat = await invoke('process_video_queue', {
-            token: AppState.token,
-            eventId: eventId,
-            checkpointId: null
-        });
+    for (const eventId of ids) {
+        let resultat;
 
-        if (resultat && resultat.detail && resultat.detail.kind === 'clip') {
-            const clip = resultat.detail.clip;
-            addLogEntry(timeNow(), '—', 'success',
-                t('dashboard.video_clip_sent', { index: clip.index }));
-        }
-
-        if (resultat && resultat.detail && resultat.detail.totals) {
-            const totaux = resultat.detail.totals;
-
-            if (totaux.bibs > 0) {
-                addLogEntry(timeNow(), '—', 'success',
-                    t('dashboard.video_bibs_read', { count: totaux.bibs }));
+        try {
+            resultat = await invoke('process_video_queue', {
+                token: AppState.token,
+                eventId: eventId,
+                checkpointId: null
+            });
+        } catch (e) {
+            if (e === 'SESSION_EXPIRED') {
+                arreterFileVideo();
+                return 0;
             }
+
+            // Serveur injoignable : on réessaie un peu plus tard.
+            return 3000;
         }
 
-    } catch (e) {
-        if (e === 'SESSION_EXPIRED') {
-            arreterFileVideo();
-            return;
+        if (!resultat) {
+            continue;
         }
-    }
 
-    const restant = await rafraichirFileVideo();
+        if (resultat.busy) {
+            return 1000;
+        }
 
-    // Fin du vidage final. Les deux conditions comptent : une file vide
-    // pendant qu'un morceau s'assemble encore serait un faux signal, et le
-    // clip produit une seconde plus tard resterait en attente.
-    if (videoVidageEnCours && restant === 0 && videoTraitementsEnCours === 0) {
-        arreterFileVideo();
-    }
-}
+        if (resultat.throttled) {
+            // Une ligne de journal suffit, pas une par ouvrier.
+            if (Date.now() - videoDerniereSaturation > 30000) {
+                videoDerniereSaturation = Date.now();
+                addLogEntry(timeNow(), '—', 'retry',
+                    t('dashboard.video_throttled', { delay: resultat.throttled }));
+            }
 
-async function rafraichirFileVideo() {
-    const eventId = eventIdFile();
+            return resultat.throttled * 1000;
+        }
 
-    if (!eventId) {
+        if (resultat.detail) {
+            journaliserEnvoiVideo(resultat.detail);
+            rafraichirFileVideo();
+            return 0;
+        }
+
+        if (resultat.error) {
+            if (resultat.abandoned) {
+                addLogEntry(timeNow(), '—', 'failed',
+                    t('dashboard.video_send_failed', { error: resultat.error }));
+            }
+
+            return 2000;
+        }
+
         return 0;
     }
 
+    return 2000;
+}
+
+function journaliserEnvoiVideo(detail) {
+    if (detail.kind === 'clip') {
+        const cle = detail.variant === 'hd'
+            ? 'dashboard.video_clip_hd_sent'
+            : 'dashboard.video_clip_sent';
+
+        addLogEntry(timeNow(), '—', 'success', t(cle, { index: detail.clip.index }));
+    }
+
+    if (detail.totals && detail.totals.bibs > 0) {
+        addLogEntry(timeNow(), '—', 'success',
+            t('dashboard.video_bibs_read', { count: detail.totals.bibs }));
+    }
+}
+
+/**
+ * Relit la file : compteurs, bloc HD, fin du vidage final.
+ */
+async function rafraichirFileVideo() {
+    if (videoRafraichissementEnCours) {
+        return;
+    }
+
+    videoRafraichissementEnCours = true;
+
     try {
-        const stats = await invoke('video_queue_stats', {
-            eventId: eventId
-        });
+        // Fin du vidage final. Les deux conditions comptent : une file vide
+        // pendant qu'un morceau s'assemble encore serait un faux signal, et
+        // le clip produit une seconde plus tard resterait en attente. Les
+        // clips HD retenus ne le retiennent pas : ils attendent le bouton
+        // « Envoyer les HD maintenant ».
+        if (videoVidageEnCours && videoVidageEventId
+            && !(AppState.activeEvent && AppState.activeEvent.id === videoVidageEventId)) {
+            try {
+                const s = await invoke('video_queue_stats', {
+                    eventId: videoVidageEventId,
+                    sessions: null
+                });
 
-        const total = stats.frames_pending + stats.proxy_pending + stats.hd_pending;
+                const hd = AppState.videoSendHd ? s.hd_pending + s.hd_sending : 0;
+                const reste = s.frames_pending + s.frames_sending
+                    + s.proxy_pending + s.proxy_sending + hd;
 
-        document.getElementById('dash-video-queue').textContent = total;
+                if (reste === 0 && videoTraitementsEnCours === 0) {
+                    videoVidageEnCours = false;
+                    videoVidageEventId = null;
+                }
+            } catch (e) {
+                // Lecture ratée : on garde le vidage, par prudence.
+            }
+        }
 
-        const mo = (stats.total_bytes / 1048576).toFixed(0);
+        if (!AppState.activeEvent) {
+            if (!videoVidageEnCours) {
+                arreterFileVideo();
+            }
 
-        document.getElementById('dash-video-queue-label').textContent =
-            total > 0
-                ? t('dashboard.video_queue_size', { size: mo })
-                : t('dashboard.video_queue');
+            return;
+        }
 
-        return total;
+        const eventId = AppState.activeEvent.id;
 
-    } catch (e) {
-        // Sans importance : l'affichage se rafraîchira au prochain passage.
-        // On renvoie une file non vide par prudence : interrompre un vidage
-        // final sur une lecture ratée perdrait le dernier clip.
-        return -1;
+        try {
+            videoStatsEvenement = await invoke('video_queue_stats', {
+                eventId: eventId,
+                sessions: null
+            });
+
+            videoStatsSession = videoSessionsCourantes.length > 0
+                ? await invoke('video_queue_stats', {
+                    eventId: eventId,
+                    sessions: videoSessionsCourantes
+                })
+                : null;
+        } catch (e) {
+            // Sans importance : l'affichage se rafraîchira au prochain passage.
+        }
+
+        majPanneauVideo();
+        majBandeauSession();
+
+    } finally {
+        videoRafraichissementEnCours = false;
     }
 }

@@ -36,7 +36,7 @@
         "existing_include": "Meglévő fájlok feltöltése a mappából",
         "existing_exclude": "Csak új fájlok feltöltése",
         "parallel": "Párhuzamos feltöltések",
-        "parallel_hint": "Gyenge 4G esetén használjon 1-et. Stabil 5G mellett a 3 gyorsít.",
+        "parallel_hint": "A 3 a legtöbb hálózathoz megfelelő. Emelje 6-ra, ha a sávszélesség engedi; 1-re csak akkor térjen vissza, ha a küldések sikertelenek. 5G-n a feltöltés gyakran sokkal lassabb, mint 4G-n: lehetőleg csak 4G-t használjon.",
         "start": "Munkamenet indítása",
         "photos_title": "Fényképek",
         "video_title": "Videó",
@@ -64,12 +64,14 @@
         "video_split_warning": "Kényelmetlen felosztás: {segment} mp-es darabok, {count} klipenként. Próbáljon kerekebb értékeket.",
         "video_split_invalid": "Az átfedésnek rövidebbnek kell lennie a klip hosszánál.",
         "video_send_hd": "Teljes minőség küldése a verseny alatt",
-        "video_send_hd_hint": "Különben a klipek felhalmozódnak, és visszatérés után mennek el. Terhelt hálózaton így gyors marad a fényképek küldése.",
+        "video_send_hd_hint": "Különben a HD-klipek a lemezen várakoznak: bármikor elküldheti őket a figyelési képernyő „HD küldése most” gombjával. Terhelt hálózaton így gyors marad a fényképek küldése.",
         "disk_pending": "Válasszon kamerát és mappát a szükséges hely becsléséhez.",
         "disk_rate": "{rate} GB óránként",
         "disk_hours": "körülbelül {hours} óra felvétel",
         "disk_detail": "{free} GB szabad, {reserved} GB a rendszernek fenntartva",
-        "nothing_enabled": "Kapcsolja be legalább a fényképeket vagy a videót."
+        "nothing_enabled": "Kapcsolja be legalább a fényképeket vagy a videót.",
+        "hd_pending_title": "Várakozó HD-klipek",
+        "hd_pending_text": "Az esemény {count} HD-klipje vár küldésre ({size} GB)."
     },
     "dashboard": {
         "status_active": "Aktív",
@@ -108,7 +110,28 @@
         "msg_resumed": "Feltöltések folytatódnak",
         "msg_stopped": "Munkamenet leállítva",
         "msg_retry_queued": "{count} fájl újra sorba állítva",
-        "msg_error": "Hiba: {error}"
+        "msg_error": "Hiba: {error}",
+        "home_title": "Kezdőlap (a munkamenet folytatódik)",
+        "msg_parallel": "Párhuzamos feltöltések: {count} (a munkamenet folytatódik)",
+        "throughput": "Mb/s elküldve (1 perc)",
+        "video_filmed": "felvett klip",
+        "video_assembled": "összeállított klip",
+        "video_sent": "elküldött klip",
+        "video_waiting": "klip vár küldésre",
+        "video_frames_detail": "elemzési képkocka — {sent} elküldve",
+        "video_clip_hd_sent": "{index}. klip HD-ben elküldve",
+        "video_pause": "Videó szüneteltetése",
+        "video_resume": "Videó folytatása",
+        "video_pausing": "Szüneteltetés…",
+        "video_resuming": "Folytatás…",
+        "video_stopping": "Leállítás…",
+        "video_paused": "Felvétel szüneteltetve",
+        "video_stopped_title": "Felvétel leállítva",
+        "video_sending_only": "Videóküldés",
+        "video_paused_log": "Felvétel szüneteltetve — a folyamatban lévő klip lezárult, és a többivel együtt megy",
+        "video_resumed_log": "Felvétel folytatva",
+        "video_send_failed": "Videóküldés 3 próbálkozás után feladva: {error}",
+        "video_throttled": "A szerver túlterhelt: videóküldés szüneteltetve {delay} mp-re"
     },
     "watcher": {
         "detected": "Észlelve ({size} MB)",
@@ -120,7 +143,10 @@
         "attempt": "Feltöltés ({attempt}. kísérlet/3)",
         "success": "OK {duration} mp alatt ({speed} KB/s)",
         "failed": "Sikertelen {attempt}/{max}: {error}",
-        "retry_scheduled": "Újrapróbálás {delay} mp múlva ({attempt}. kísérlet/3)"
+        "retry_scheduled": "Újrapróbálás {delay} mp múlva ({attempt}. kísérlet/3)",
+        "success_timing": "OK {duration} mp alatt — hálózat {network} mp + szerver {server} mp",
+        "success_total": "OK {duration} mp alatt",
+        "throttled": "A szerver túlterhelt ({code}): {delay} mp szünet, {parallel} párhuzamos feltöltés"
     },
     "connection": {
         "restored": "Kapcsolat helyreállt",
@@ -130,5 +156,31 @@
     "complete": {
         "with_errors": "Kész: {sent} elküldve, {failed} sikertelen",
         "success": "Kész: {count} fotó sikeresen feltöltve!"
+    },
+    "hd": {
+        "title": "HD-videó",
+        "none": "Még nincs HD-klip.",
+        "remaining": "{count} HD-klip küldendő — {size} GB",
+        "progress": "{sent} / {total} HD-klip elküldve",
+        "all_sent": "Minden HD-klip elküldve.",
+        "failed": "{count} HD-klip sikertelen",
+        "sending": "küldés folyamatban",
+        "send_now": "HD küldése most",
+        "suspend": "HD-küldés szüneteltetése",
+        "retry": "Sikertelenek újrapróbálása",
+        "started_log": "HD-klipek küldése elindítva",
+        "suspended_log": "HD-klipek küldése szüneteltetve",
+        "hint": "A HD az ügynökből megy, soha nem a galériából: a galériából küldve duplikátum keletkezik. A fényképek továbbra is elsőbbséget élveznek."
+    },
+    "nav": {
+        "banner_title": "Futó munkamenet: {event}",
+        "banner_photos": "{sent} fénykép elküldve, {pending} várakozik",
+        "banner_video_recording": "videófelvétel folyamatban",
+        "banner_video_paused": "videó szüneteltetve",
+        "banner_video_sending": "{count} videófájl küldendő",
+        "banner_back": "Vissza a figyeléshez",
+        "event_running": "● Munkamenet fut",
+        "confirm_replace": "Munkamenet fut ehhez: „{event}”. Befejezi, hogy ezt indíthassa?",
+        "confirm_logout": "Munkamenet fut. Befejezi és kijelentkezik?"
     }
 }

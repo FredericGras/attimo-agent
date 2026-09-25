@@ -36,7 +36,7 @@
         "existing_include": "Nahrať existujúce súbory v priečinku",
         "existing_exclude": "Nahrať iba nové súbory",
         "parallel": "Paralelné nahrávanie",
-        "parallel_hint": "Pri slabom 4G použite 1. Pri stabilnom 5G zrýchli 3.",
+        "parallel_hint": "3 vyhovuje väčšine sietí. Zvýšte na 6, ak to rýchlosť pripojenia dovolí; na 1 sa vráťte, len keď odosielanie zlyháva. V 5G býva odosielanie často oveľa pomalšie ako v 4G: používajte radšej len 4G.",
         "start": "Spustiť reláciu",
         "photos_title": "Fotografie",
         "video_title": "Video",
@@ -64,12 +64,14 @@
         "video_split_warning": "Nepraktické rozdelenie: časti po {segment} s, {count} na klip. Skúste okrúhlejšie hodnoty.",
         "video_split_invalid": "Prekryv musí byť kratší ako dĺžka klipu.",
         "video_send_hd": "Odosielať plnú kvalitu počas pretekov",
-        "video_send_hd_hint": "Inak sa klipy hromadia a odídu po návrate. Na vyťaženej sieti to udrží odosielanie fotografií rýchle.",
+        "video_send_hd_hint": "Inak klipy HD čakajú na disku: odošlete ich, kedy budete chcieť, tlačidlom „Odoslať HD teraz“ na obrazovke sledovania. Na vyťaženej sieti to udrží odosielanie fotografií rýchle.",
         "disk_pending": "Vyberte kameru a priečinok na odhad potrebného miesta.",
         "disk_rate": "{rate} GB za hodinu",
         "disk_hours": "približne {hours} h natáčania",
         "disk_detail": "{free} GB voľných, {reserved} GB vyhradených pre systém",
-        "nothing_enabled": "Zapnite aspoň fotografie alebo video."
+        "nothing_enabled": "Zapnite aspoň fotografie alebo video.",
+        "hd_pending_title": "Čakajúce klipy HD",
+        "hd_pending_text": "Klipy HD tohto podujatia čakajúce na odoslanie: {count} ({size} GB)."
     },
     "dashboard": {
         "status_active": "Aktívny",
@@ -108,7 +110,28 @@
         "msg_resumed": "Nahrávanie obnovené",
         "msg_stopped": "Relácia zastavená",
         "msg_retry_queued": "{count} súbor(ov) znovu v rade",
-        "msg_error": "Chyba: {error}"
+        "msg_error": "Chyba: {error}",
+        "home_title": "Úvod (relácia pokračuje)",
+        "msg_parallel": "Paralelné nahrávanie: {count} (relácia pokračuje)",
+        "throughput": "Mb/s odoslané (1 min)",
+        "video_filmed": "natočených klipov",
+        "video_assembled": "zostavených klipov",
+        "video_sent": "odoslaných klipov",
+        "video_waiting": "klipov čaká na odoslanie",
+        "video_frames_detail": "snímok na analýzu — odoslaných {sent}",
+        "video_clip_hd_sent": "Klip {index} v HD odoslaný",
+        "video_pause": "Pozastaviť video",
+        "video_resume": "Pokračovať vo videu",
+        "video_pausing": "Pozastavuje sa…",
+        "video_resuming": "Obnovuje sa…",
+        "video_stopping": "Zastavuje sa…",
+        "video_paused": "Natáčanie pozastavené",
+        "video_stopped_title": "Natáčanie zastavené",
+        "video_sending_only": "Odosielanie videa",
+        "video_paused_log": "Natáčanie pozastavené — rozpracovaný klip bol uzavretý a odíde s ostatnými",
+        "video_resumed_log": "Natáčanie obnovené",
+        "video_send_failed": "Odosielanie videa ukončené po 3 pokusoch: {error}",
+        "video_throttled": "Server je preťažený: odosielanie videa pozastavené na {delay} s"
     },
     "watcher": {
         "detected": "Detegované ({size} MB)",
@@ -120,7 +143,10 @@
         "attempt": "Nahrávanie (pokus {attempt}/3)",
         "success": "OK za {duration}s ({speed} KB/s)",
         "failed": "Zlyhanie {attempt}/{max}: {error}",
-        "retry_scheduled": "Nový pokus za {delay}s (pokus {attempt}/3)"
+        "retry_scheduled": "Nový pokus za {delay}s (pokus {attempt}/3)",
+        "success_timing": "OK za {duration} s — sieť {network} s + server {server} s",
+        "success_total": "OK za {duration} s",
+        "throttled": "Server je preťažený ({code}): pauza {delay} s, paralelné nahrávanie: {parallel}"
     },
     "connection": {
         "restored": "Pripojenie obnovené",
@@ -130,5 +156,31 @@
     "complete": {
         "with_errors": "Hotovo: {sent} odoslaných, {failed} neúspešných",
         "success": "Hotovo: {count} fotografií úspešne nahraných!"
+    },
+    "hd": {
+        "title": "Video HD",
+        "none": "Zatiaľ žiadne klipy HD.",
+        "remaining": "Klipy HD na odoslanie: {count} — {size} GB",
+        "progress": "Odoslaných {sent} / {total} klipov HD",
+        "all_sent": "Všetky klipy HD boli odoslané.",
+        "failed": "Neúspešné klipy HD: {count}",
+        "sending": "prebieha odosielanie",
+        "send_now": "Odoslať HD teraz",
+        "suspend": "Pozastaviť odosielanie HD",
+        "retry": "Zopakovať neúspešné",
+        "started_log": "Odosielanie klipov HD spustené",
+        "suspended_log": "Odosielanie klipov HD pozastavené",
+        "hint": "HD sa odosiela z agenta, nikdy z galérie: odoslané z galérie vytvorí duplikát. Fotografie majú naďalej prednosť."
+    },
+    "nav": {
+        "banner_title": "Prebieha relácia: {event}",
+        "banner_photos": "odoslané fotografie: {sent}, čakajúce: {pending}",
+        "banner_video_recording": "prebieha natáčanie videa",
+        "banner_video_paused": "video pozastavené",
+        "banner_video_sending": "videosúbory na odoslanie: {count}",
+        "banner_back": "Späť na sledovanie",
+        "event_running": "● Prebieha relácia",
+        "confirm_replace": "Pre „{event}“ prebieha relácia. Ukončiť ju a spustiť túto?",
+        "confirm_logout": "Prebieha relácia. Ukončiť ju a odhlásiť sa?"
     }
 }

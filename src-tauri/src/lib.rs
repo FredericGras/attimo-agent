@@ -33,6 +33,8 @@ pub struct ActiveSession {
     pub paused: Arc<AtomicBool>,
     pub watcher_handle: Option<notify::RecommendedWatcher>,
     pub tx: tokio::sync::mpsc::UnboundedSender<crate::watcher::FileJob>,
+    /// Envois simultanés autorisés (0.3.1) : réglable en cours de session.
+    pub regulateur: Arc<crate::uploader::Regulateur>,
 }
 
 pub struct AppState {
@@ -120,6 +122,7 @@ pub fn run() {
             commands::validate_app_password,
             commands::logout,
             commands::get_stored_auth,
+            commands::agent_info,
             // Événements (Phase 3)
             commands::fetch_events,
             commands::fetch_checkpoints,
@@ -128,6 +131,7 @@ pub fn run() {
             commands::pause_session,
             commands::resume_session,
             commands::stop_session,
+            commands::set_parallel,
             // Stats et retry
             commands::get_session_stats,
             commands::retry_failed,

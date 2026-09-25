@@ -36,7 +36,7 @@
         "existing_include": "Bestaande bestanden in de map uploaden",
         "existing_exclude": "Alleen nieuwe bestanden uploaden",
         "parallel": "Parallelle uploads",
-        "parallel_hint": "Bij zwak 4G, gebruik 1. Bij stabiel 5G versnelt 3.",
+        "parallel_hint": "3 past bij de meeste netwerken. Ga naar 6 als de bandbreedte het toelaat; ga alleen terug naar 1 als uploads mislukken. Via 5G is uploaden vaak veel trager dan via 4G: gebruik bij voorkeur alleen 4G.",
         "start": "Sessie starten",
         "photos_title": "Foto's",
         "video_title": "Video",
@@ -64,12 +64,14 @@
         "video_split_warning": "Onhandige opdeling: stukken van {segment} s, {count} per clip. Probeer rondere waarden.",
         "video_split_invalid": "De overlap moet korter blijven dan de clipduur.",
         "video_send_hd": "Volledige kwaliteit tijdens de wedstrijd versturen",
-        "video_send_hd_hint": "Anders stapelen de clips zich op en gaan ze na afloop weg. Op een druk netwerk blijft het versturen van foto's zo snel.",
+        "video_send_hd_hint": "Anders blijven de HD-clips op de schijf wachten: verstuur ze wanneer u wilt met de knop 'HD nu versturen' op het bewakingsscherm. Op een druk netwerk blijft het versturen van foto's zo snel.",
         "disk_pending": "Kies een camera en een map om de benodigde ruimte te schatten.",
         "disk_rate": "{rate} GB per uur",
         "disk_hours": "ongeveer {hours} u opname",
         "disk_detail": "{free} GB vrij, {reserved} GB gereserveerd voor het systeem",
-        "nothing_enabled": "Schakel minstens foto's of video in."
+        "nothing_enabled": "Schakel minstens foto's of video in.",
+        "hd_pending_title": "Wachtende HD-clips",
+        "hd_pending_text": "{count} HD-clip(s) van dit evenement wachten op verzending ({size} GB)."
     },
     "dashboard": {
         "status_active": "Actief",
@@ -108,7 +110,28 @@
         "msg_resumed": "Uploads hervat",
         "msg_stopped": "Sessie gestopt",
         "msg_retry_queued": "{count} bestand(en) opnieuw in de wachtrij",
-        "msg_error": "Fout: {error}"
+        "msg_error": "Fout: {error}",
+        "home_title": "Start (de sessie loopt door)",
+        "msg_parallel": "Parallelle uploads: {count} (de sessie loopt door)",
+        "throughput": "Mb/s verzonden (1 min)",
+        "video_filmed": "gefilmde clips",
+        "video_assembled": "samengestelde clips",
+        "video_sent": "verzonden clips",
+        "video_waiting": "clips wachten op verzending",
+        "video_frames_detail": "analysebeelden — {sent} verzonden",
+        "video_clip_hd_sent": "Clip {index} in HD verstuurd",
+        "video_pause": "Video pauzeren",
+        "video_resume": "Video hervatten",
+        "video_pausing": "Pauzeren…",
+        "video_resuming": "Hervatten…",
+        "video_stopping": "Bezig met stoppen…",
+        "video_paused": "Opname gepauzeerd",
+        "video_stopped_title": "Opname gestopt",
+        "video_sending_only": "Video-upload",
+        "video_paused_log": "Opname gepauzeerd — de lopende clip is afgesloten en gaat mee met de andere",
+        "video_resumed_log": "Opname hervat",
+        "video_send_failed": "Video-upload na 3 pogingen opgegeven: {error}",
+        "video_throttled": "Server overbelast: video-upload {delay} s gepauzeerd"
     },
     "watcher": {
         "detected": "Gedetecteerd ({size} MB)",
@@ -120,7 +143,10 @@
         "attempt": "Upload (poging {attempt}/3)",
         "success": "OK in {duration}s ({speed} KB/s)",
         "failed": "Mislukt {attempt}/{max}: {error}",
-        "retry_scheduled": "Nieuwe poging over {delay}s (poging {attempt}/3)"
+        "retry_scheduled": "Nieuwe poging over {delay}s (poging {attempt}/3)",
+        "success_timing": "OK in {duration} s — netwerk {network} s + server {server} s",
+        "success_total": "OK in {duration} s",
+        "throttled": "Server overbelast ({code}): {delay} s pauze, {parallel} parallelle upload(s)"
     },
     "connection": {
         "restored": "Verbinding hersteld",
@@ -130,5 +156,31 @@
     "complete": {
         "with_errors": "Klaar: {sent} verzonden, {failed} mislukt",
         "success": "Klaar: {count} foto's succesvol geüpload!"
+    },
+    "hd": {
+        "title": "HD-video",
+        "none": "Nog geen HD-clips.",
+        "remaining": "{count} HD-clip(s) te versturen — {size} GB",
+        "progress": "{sent} / {total} HD-clips verzonden",
+        "all_sent": "Alle HD-clips zijn verzonden.",
+        "failed": "{count} HD-clip(s) mislukt",
+        "sending": "bezig met versturen",
+        "send_now": "HD nu versturen",
+        "suspend": "HD-verzending pauzeren",
+        "retry": "Mislukte opnieuw proberen",
+        "started_log": "Verzending van HD-clips gestart",
+        "suspended_log": "Verzending van HD-clips gepauzeerd",
+        "hint": "HD wordt vanuit de agent verstuurd, nooit vanuit de galerij: vanuit de galerij verstuurd, ontstaat er een duplicaat. Foto's houden voorrang."
+    },
+    "nav": {
+        "banner_title": "Lopende sessie: {event}",
+        "banner_photos": "{sent} foto('s) verzonden, {pending} wachtend",
+        "banner_video_recording": "video-opname bezig",
+        "banner_video_paused": "video gepauzeerd",
+        "banner_video_sending": "{count} videobestand(en) te versturen",
+        "banner_back": "Terug naar de bewaking",
+        "event_running": "● Sessie loopt",
+        "confirm_replace": "Er loopt een sessie voor '{event}'. Beëindigen om deze te starten?",
+        "confirm_logout": "Er loopt een sessie. Beëindigen en afmelden?"
     }
 }

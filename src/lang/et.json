@@ -36,7 +36,7 @@
         "existing_include": "Laadi üles kaustas olevad failid",
         "existing_exclude": "Laadi üles ainult uued failid",
         "parallel": "Paralleelsed üleslaadimised",
-        "parallel_hint": "Nõrga 4G puhul kasutage 1. Stabiilse 5G puhul kiirendab 3.",
+        "parallel_hint": "3 sobib enamikule võrkudele. Tõstke 6-ni, kui ribalaius lubab; minge tagasi 1-le ainult siis, kui saatmine ebaõnnestub. 5G-võrgus on üleslaadimine sageli palju aeglasem kui 4G-võrgus: eelistage ainult 4G-d.",
         "start": "Alusta seanssi",
         "photos_title": "Fotod",
         "video_title": "Video",
@@ -64,12 +64,14 @@
         "video_split_warning": "Ebamugav jaotus: {segment}-sekundilised tükid, {count} klipi kohta. Proovige ümaramaid väärtusi.",
         "video_split_invalid": "Kattuvus peab olema klipi kestusest lühem.",
         "video_send_hd": "Saada täiskvaliteet võistluse ajal",
-        "video_send_hd_hint": "Muidu klipid kogunevad ja lähevad pärast naasmist. Koormatud võrgus hoiab see fotode saatmise kiirena.",
+        "video_send_hd_hint": "Muidu ootavad HD-klipid kettal: saatke need millal soovite jälgimisekraani nupuga „Saada HD kohe“. Koormatud võrgus hoiab see fotode saatmise kiirena.",
         "disk_pending": "Valige kaamera ja kaust, et hinnata vajalikku ruumi.",
         "disk_rate": "{rate} GB tunnis",
         "disk_hours": "umbes {hours} h salvestust",
         "disk_detail": "{free} GB vaba, {reserved} GB reserveeritud süsteemile",
-        "nothing_enabled": "Lülitage sisse vähemalt fotod või video."
+        "nothing_enabled": "Lülitage sisse vähemalt fotod või video.",
+        "hd_pending_title": "Ootel HD-klipid",
+        "hd_pending_text": "Selle ürituse saatmist ootavad HD-klipid: {count} ({size} GB)."
     },
     "dashboard": {
         "status_active": "Aktiivne",
@@ -108,7 +110,28 @@
         "msg_resumed": "Üleslaadimised jätkuvad",
         "msg_stopped": "Seanss peatatud",
         "msg_retry_queued": "{count} fail(i) tagasi järjekorda",
-        "msg_error": "Viga: {error}"
+        "msg_error": "Viga: {error}",
+        "home_title": "Avaleht (seanss jätkub)",
+        "msg_parallel": "Paralleelsed üleslaadimised: {count} (seanss jätkub)",
+        "throughput": "Mb/s saadetud (1 min)",
+        "video_filmed": "filmitud klippi",
+        "video_assembled": "kokku pandud klippi",
+        "video_sent": "saadetud klippi",
+        "video_waiting": "klippi ootab saatmist",
+        "video_frames_detail": "analüüsikaadrit — {sent} saadetud",
+        "video_clip_hd_sent": "Klipp {index} HD-kvaliteedis saadetud",
+        "video_pause": "Peata video",
+        "video_resume": "Jätka videot",
+        "video_pausing": "Peatamine…",
+        "video_resuming": "Jätkamine…",
+        "video_stopping": "Lõpetamine…",
+        "video_paused": "Salvestamine peatatud",
+        "video_stopped_title": "Salvestamine lõpetatud",
+        "video_sending_only": "Video saatmine",
+        "video_paused_log": "Salvestamine peatatud — pooleli olnud klipp suleti ja see saadetakse koos teistega",
+        "video_resumed_log": "Salvestamine jätkub",
+        "video_send_failed": "Video saatmine katkestati pärast 3 katset: {error}",
+        "video_throttled": "Server on ülekoormatud: video saatmine peatatud {delay} s"
     },
     "watcher": {
         "detected": "Tuvastatud ({size} MB)",
@@ -120,7 +143,10 @@
         "attempt": "Üleslaadimine (katse {attempt}/3)",
         "success": "OK {duration}s-ga ({speed} KB/s)",
         "failed": "Ebaõnnestus {attempt}/{max}: {error}",
-        "retry_scheduled": "Uus katse {delay}s pärast (katse {attempt}/3)"
+        "retry_scheduled": "Uus katse {delay}s pärast (katse {attempt}/3)",
+        "success_timing": "OK {duration} s — võrk {network} s + server {server} s",
+        "success_total": "OK {duration} s",
+        "throttled": "Server on ülekoormatud ({code}): paus {delay} s, paralleelseid üleslaadimisi: {parallel}"
     },
     "connection": {
         "restored": "Ühendus taastatud",
@@ -130,5 +156,31 @@
     "complete": {
         "with_errors": "Valmis: {sent} saadetud, {failed} ebaõnnestunud",
         "success": "Valmis: {count} fotot edukalt üles laaditud!"
+    },
+    "hd": {
+        "title": "HD-video",
+        "none": "HD-klippe veel pole.",
+        "remaining": "Saata HD-klippe: {count} — {size} GB",
+        "progress": "{sent} / {total} HD-klippi saadetud",
+        "all_sent": "Kõik HD-klipid on saadetud.",
+        "failed": "Ebaõnnestunud HD-klipid: {count}",
+        "sending": "saatmine käib",
+        "send_now": "Saada HD kohe",
+        "suspend": "Peata HD saatmine",
+        "retry": "Proovi ebaõnnestunuid uuesti",
+        "started_log": "HD-klippide saatmine alustatud",
+        "suspended_log": "HD-klippide saatmine peatatud",
+        "hint": "HD saadetakse agendist, mitte kunagi galeriist: galeriist saadetuna tekib duplikaat. Fotod on endiselt eelisjärjekorras."
+    },
+    "nav": {
+        "banner_title": "Seanss käib: {event}",
+        "banner_photos": "saadetud fotod: {sent}, ootel: {pending}",
+        "banner_video_recording": "videosalvestus käib",
+        "banner_video_paused": "video peatatud",
+        "banner_video_sending": "saata videofaile: {count}",
+        "banner_back": "Tagasi jälgimise juurde",
+        "event_running": "● Seanss käib",
+        "confirm_replace": "Ürituse „{event}“ seanss käib. Kas lõpetada see, et alustada seda?",
+        "confirm_logout": "Seanss käib. Kas lõpetada see ja logida välja?"
     }
 }

@@ -97,6 +97,20 @@ pub async fn get_stored_auth() -> Result<Option<LoginResponse>, String> {
     }
 }
 
+// ─── Commande: agent_info (0.3.1) ───
+//
+// Version et édition, affichées en pied d'écran : sur un poste où l'agent de
+// production et celui de DEV sont installés côte à côte, le photographe doit
+// voir d'un coup d'œil lequel il a ouvert.
+
+#[tauri::command]
+pub fn agent_info() -> serde_json::Value {
+    serde_json::json!({
+        "version": env!("CARGO_PKG_VERSION"),
+        "edition": database::EDITION.map(str::trim).filter(|e| !e.is_empty()),
+    })
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // COMMANDES ÉVÉNEMENTS (Phase 3 — inchangées)
 // ═══════════════════════════════════════════════════════════════════════
@@ -162,6 +176,9 @@ pub async fn start_session(
     let running = Arc::new(AtomicBool::new(true));
     let paused = Arc::new(AtomicBool::new(false));
 
+    // Rien de la session précédente ne reste dans le canal.
+    uploader::reinitialiser_photos_en_cours();
+
     let (tx, rx) = mpsc::unbounded_channel::<watcher::FileJob>();
     let tx_for_state = tx.clone();
 
@@ -179,14 +196,17 @@ pub async fn start_session(
         token,
         event_id,
         checkpoint_id,
-        parallel: parallel as u32,
+        parallel: (parallel.max(1) as u32).min(uploader::MAX_PARALLEL),
     };
+
+    let regulateur = Arc::new(uploader::Regulateur::new(upload_config.parallel));
 
     uploader::start_upload_workers(
         rx,
         upload_config,
         running.clone(),
         paused.clone(),
+        regulateur.clone(),
         app_handle.clone(),
     );
 
@@ -198,6 +218,7 @@ pub async fn start_session(
             paused,
             watcher_handle: Some(watcher_handle),
             tx: tx_for_state,
+            regulateur,
         });
     }
 
@@ -213,7 +234,30 @@ pub async fn pause_session(state: tauri::State<'_, AppState>) -> Result<(), Stri
     match &*session_lock {
         Some(session) => {
             session.paused.store(true, Ordering::Relaxed);
+            uploader::photos_en_pause(true);
             info!("Session #{} mise en pause", session.session_id);
+            Ok(())
+        }
+        None => Err("Aucune session active.".to_string()),
+    }
+}
+
+/// Change le nombre d'envois simultanés sans relancer la session (0.3.1).
+///
+/// Relancer la session pour ce seul réglage en ouvrirait une nouvelle en
+/// base locale : les photos du dossier seraient toutes renvoyées.
+#[tauri::command]
+pub async fn set_parallel(
+    state: tauri::State<'_, AppState>,
+    parallel: i32,
+) -> Result<(), String> {
+    let session_lock = state.active_session.lock().await;
+
+    match &*session_lock {
+        Some(session) => {
+            let n = (parallel.max(1) as u32).min(uploader::MAX_PARALLEL);
+            session.regulateur.regler(n);
+            info!("Session #{} : {} envoi(s) simultané(s)", session.session_id, n);
             Ok(())
         }
         None => Err("Aucune session active.".to_string()),
@@ -226,6 +270,7 @@ pub async fn resume_session(state: tauri::State<'_, AppState>) -> Result<(), Str
     match &*session_lock {
         Some(session) => {
             session.paused.store(false, Ordering::Relaxed);
+            uploader::photos_en_pause(false);
             info!("Session #{} reprise", session.session_id);
             Ok(())
         }
@@ -242,6 +287,11 @@ pub async fn stop_session(state: tauri::State<'_, AppState>) -> Result<(), Strin
             session.running.store(false, Ordering::Relaxed);
             session.watcher_handle.take();
             let _ = database::stop_session(session.session_id);
+
+            // Les photos restées dans le canal ne partiront plus : la vidéo
+            // ne doit plus leur céder la place.
+            uploader::reinitialiser_photos_en_cours();
+
             Ok(())
         }
         None => Err("Aucune session active.".to_string()),
@@ -279,7 +329,10 @@ pub async fn retry_failed(
                 filename: file.filename.clone(),
                 file_size: file.file_size as u64,
             };
-            let _ = session.tx.send(job);
+
+            if session.tx.send(job).is_ok() {
+                uploader::photo_ajoutee();
+            }
         }
     }
 
@@ -363,7 +416,22 @@ pub async fn start_recording(
     }
 
     let plan = config.plan()?;
-    let dossier = std::path::PathBuf::from(&config.output_dir);
+
+    // Un sous-dossier par captation (0.3.1).
+    //
+    // Morceaux, clips, versions légères et images d'analyse portent des noms
+    // qui repartent de zéro à chaque captation (m_000000.mp4, clip_0001.mp4).
+    // Dans un même dossier, une deuxième captation — la reprise après une
+    // pause, ou la course du lendemain — écrasait les fichiers de la
+    // première, y compris des clips HD encore en file d'envoi.
+    let mut config = config;
+    let dossier = std::path::PathBuf::from(&config.output_dir).join(&session_id);
+
+    std::fs::create_dir_all(&dossier)
+        .map_err(|e| format!("Impossible de créer le dossier de la captation : {}", e))?;
+
+    config.output_dir = dossier.to_string_lossy().to_string();
+
     let config_manifeste = config.clone();
 
     // Espace disque (SAAS 430).
@@ -763,11 +831,17 @@ pub async fn queue_video_file(
 /// Le photographe doit voir ce chiffre avant de décider d'activer l'envoi
 /// vidéo : sans lui, il bascule à l'aveugle sur un réseau qu'il ne connaît
 /// pas.
+///
+/// `sessions` (0.3.1) restreint le décompte aux captations de la session en
+/// cours ; absent, il porte sur toute l'épreuve.
 #[tauri::command]
-pub async fn video_queue_stats(event_id: i64) -> Result<crate::video_queue::QueueStats, String> {
+pub async fn video_queue_stats(
+    event_id: i64,
+    sessions: Option<Vec<String>>,
+) -> Result<crate::video_queue::QueueStats, String> {
     let conn = database::connexion().map_err(|e| format!("Base indisponible : {}", e))?;
 
-    crate::video_queue::statistiques(&conn, event_id)
+    crate::video_queue::statistiques_filtrees(&conn, event_id, &sessions.unwrap_or_default())
 }
 
 /// Autorise ou interdit l'envoi des clips pleine qualité.
@@ -787,12 +861,34 @@ pub async fn set_hd_upload(
     Ok(())
 }
 
+/// Envois vidéo simultanés au plus (0.3.1).
+///
+/// L'interface appelait `process_video_queue` chaque seconde sans attendre
+/// la fin de l'appel précédent : tant que la file était pleine, un nouvel
+/// envoi démarrait chaque seconde, jusqu'à des dizaines de clips en même
+/// temps qui prenaient la liaison aux photos. Deux envois au plus, quel que
+/// soit le nombre d'appels : la garde est ici, pas seulement dans
+/// l'interface.
+const ENVOIS_VIDEO_SIMULTANES: usize = 2;
+
+fn places_envoi_video() -> &'static tokio::sync::Semaphore {
+    static PLACES: std::sync::OnceLock<tokio::sync::Semaphore> = std::sync::OnceLock::new();
+
+    PLACES.get_or_init(|| tokio::sync::Semaphore::new(ENVOIS_VIDEO_SIMULTANES))
+}
+
 /// Envoie le prochain élément de la file.
 ///
-/// Un seul à la fois, appelé en boucle par le frontend. Ce découpage permet
-/// d'afficher l'avancement, et surtout d'interrompre proprement : un
-/// photographe qui coupe l'envoi vidéo voit l'effet au fichier suivant, pas
-/// au bout de trois clips.
+/// Un clip, ou un lot d'au plus dix images d'analyse (0.3.1). L'interface
+/// appelle cette commande en boucle depuis deux ouvriers qui attendent
+/// chacun la fin de leur appel ; la commande refuse elle-même un troisième
+/// envoi simultané (réponse `busy`).
+///
+/// Réponses :
+///   - rien : la file est vide pour cet événement ;
+///   - `busy` : deux envois vidéo sont déjà en cours ;
+///   - `throttled` : le serveur a demandé d'attendre (secondes) ;
+///   - `detail` : envoi réussi ; `error` : envoi échoué.
 #[tauri::command]
 pub async fn process_video_queue(
     state: tauri::State<'_, AppState>,
@@ -800,13 +896,18 @@ pub async fn process_video_queue(
     event_id: i64,
     checkpoint_id: Option<i64>,
 ) -> Result<Option<serde_json::Value>, String> {
+    let Ok(_place) = places_envoi_video().try_acquire() else {
+        return Ok(Some(serde_json::json!({ "busy": true })));
+    };
+
     let autoriser_hd = *state.allow_hd_upload.lock().await;
 
     let conn = database::connexion().map_err(|e| format!("Base indisponible : {}", e))?;
 
-    let elements = crate::video_queue::prochains(&conn, event_id, autoriser_hd, 1)?;
-
-    let Some(element) = elements.into_iter().next() else {
+    let Some(tete) = crate::video_queue::prochains(&conn, event_id, autoriser_hd, 1)?
+        .into_iter()
+        .next()
+    else {
         return Ok(None);
     };
 
@@ -822,17 +923,26 @@ pub async fn process_video_queue(
     {
         let mut recoupees = state.reconciled_sessions.lock().await;
 
-        if !recoupees.contains(&element.session_id) {
+        if !recoupees.contains(&tete.session_id) {
             let sonde = crate::video_uploader::VideoUploadConfig {
                 token: token.clone(),
                 event_id,
                 checkpoint_id,
-                session_id: element.session_id.clone(),
+                session_id: tete.session_id.clone(),
             };
 
             // En cas d'échec, la session n'est pas marquée : on réessaiera au
             // passage suivant. Mieux vaut redemander que de repartir aveugle.
-            let etat = crate::video_uploader::etat_session(&sonde).await?;
+            let etat = match crate::video_uploader::etat_session(&sonde).await {
+                Ok(etat) => etat,
+                Err(e) => {
+                    if let Some(attente) = crate::video_uploader::attente_si_sature(&e) {
+                        return Ok(Some(serde_json::json!({ "throttled": attente })));
+                    }
+
+                    return Err(e);
+                }
+            };
 
             let deja: Vec<(u32, bool, bool)> = etat
                 .clips
@@ -840,21 +950,21 @@ pub async fn process_video_queue(
                 .map(|c| (c.index, c.has_proxy, c.has_hd))
                 .collect();
 
-            let bilan = crate::video_queue::reconcilier(&conn, &element.session_id, &deja)?;
+            let bilan = crate::video_queue::reconcilier(&conn, &tete.session_id, &deja)?;
 
-            recoupees.insert(element.session_id.clone());
+            recoupees.insert(tete.session_id.clone());
 
             if bilan.skipped > 0 {
                 info!(
                     "Reprise {} : {} fichier(s) déjà reçus, {} Mo épargnés",
-                    element.session_id,
+                    tete.session_id,
                     bilan.skipped,
                     bilan.bytes_saved / 1_048_576
                 );
 
                 // L'élément retenu vient peut-être d'être écarté. On rend la
-                // main plutôt que de l'envoyer pour rien : le passage suivant,
-                // dans une seconde, repartira d'une file assainie.
+                // main plutôt que de l'envoyer pour rien : le passage suivant
+                // repartira d'une file assainie.
                 return Ok(Some(serde_json::json!({
                     "reconciled": bilan.skipped,
                     "bytes_saved": bilan.bytes_saved,
@@ -863,88 +973,152 @@ pub async fn process_video_queue(
         }
     }
 
-    // Réservation atomique. Si un autre passage l'a déjà prise, on ne fait
-    // rien : c'est ce qui empêche d'envoyer plusieurs fois le même fichier.
-    if !crate::video_queue::reserver(&conn, element.id)? {
+    // Réservation atomique : un clip, ou un lot d'images d'une même session.
+    // Ce qu'un autre envoi a déjà pris n'est jamais repris.
+    let elements = crate::video_queue::reserver_prochain_envoi(
+        &conn,
+        event_id,
+        autoriser_hd,
+        crate::video_uploader::FRAMES_PAR_LOT,
+    )?;
+
+    let Some(premier) = elements.first().cloned() else {
         return Ok(None);
-    }
+    };
 
     // Une ligne héritée d'une base antérieure n'a pas d'événement. On lui
     // attribue celui qui est ouvert : c'est le seul rattachement possible,
     // et il vaut mieux que de la laisser flotter d'une course à l'autre.
-    let _ = conn.execute(
-        "UPDATE video_queue SET event_id = ?2 WHERE id = ?1 AND event_id IS NULL",
-        rusqlite::params![element.id, event_id],
-    );
+    for element in &elements {
+        let _ = conn.execute(
+            "UPDATE video_queue SET event_id = ?2 WHERE id = ?1 AND event_id IS NULL",
+            rusqlite::params![element.id, event_id],
+        );
+    }
 
     let config = crate::video_uploader::VideoUploadConfig {
         token,
         event_id,
         checkpoint_id,
-        session_id: element.session_id.clone(),
+        session_id: premier.session_id.clone(),
     };
 
-    let resultat = match element.kind {
-        crate::video_queue::QueueKind::Frames => {
-            let images = vec![crate::video_uploader::FrameToUpload {
-                path: element.file_path.clone(),
-                instant_at: element.instant_at.clone().unwrap_or_default(),
-            }];
+    // ─── Images d'analyse : un lot, une requête ───
+    if premier.kind == crate::video_queue::QueueKind::Frames {
+        let images: Vec<crate::video_uploader::FrameToUpload> = elements
+            .iter()
+            .map(|e| crate::video_uploader::FrameToUpload {
+                path: e.file_path.clone(),
+                instant_at: e.instant_at.clone().unwrap_or_default(),
+            })
+            .collect();
 
-            crate::video_uploader::envoyer_images(&config, &images)
-                .await
-                .map(|t| serde_json::json!({ "kind": "frames", "totals": t }))
-        }
-        crate::video_queue::QueueKind::ClipProxy | crate::video_queue::QueueKind::ClipHd => {
-            let variante = if element.kind == crate::video_queue::QueueKind::ClipProxy {
-                crate::video_uploader::ClipVariant::Proxy
-            } else {
-                crate::video_uploader::ClipVariant::Hd
-            };
+        return match crate::video_uploader::envoyer_lot_images(&config, &images).await {
+            Ok(lot) => {
+                let mut abandonnes = 0;
 
-            crate::video_uploader::envoyer_clip(
-                &config,
-                std::path::Path::new(&element.file_path),
-                variante,
-                element.clip_index.unwrap_or(0),
-                element.started_at.as_deref().unwrap_or(""),
-                element.ended_at.as_deref().unwrap_or(""),
-            )
-            .await
-            .map(|c| serde_json::json!({ "kind": "clip", "clip": c }))
-        }
+                for (rang, element) in elements.iter().enumerate() {
+                    if lot.echecs.contains(&rang) {
+                        if crate::video_queue::marquer_echec(&conn, element.id, "Analyse refusée")? {
+                            abandonnes += 1;
+                        }
+                    } else {
+                        crate::video_queue::marquer_envoye(&conn, element.id)?;
+                    }
+                }
+
+                Ok(Some(serde_json::json!({
+                    "detail": {
+                        "kind": "frames",
+                        "totals": lot.totaux,
+                        "count": elements.len() - lot.echecs.len(),
+                        "failed": lot.echecs.len(),
+                        "abandoned": abandonnes,
+                    },
+                })))
+            }
+            Err(e) => conclure_echec(&conn, &elements, e),
+        };
+    }
+
+    // ─── Un clip ───
+    let variante = if premier.kind == crate::video_queue::QueueKind::ClipProxy {
+        crate::video_uploader::ClipVariant::Proxy
+    } else {
+        crate::video_uploader::ClipVariant::Hd
     };
+
+    let resultat = crate::video_uploader::envoyer_clip(
+        &config,
+        std::path::Path::new(&premier.file_path),
+        variante,
+        premier.clip_index.unwrap_or(0),
+        premier.started_at.as_deref().unwrap_or(""),
+        premier.ended_at.as_deref().unwrap_or(""),
+    )
+    .await;
 
     match resultat {
-        Ok(detail) => {
-            crate::video_queue::marquer_envoye(&conn, element.id)?;
+        Ok(clip) => {
+            crate::video_queue::marquer_envoye(&conn, premier.id)?;
 
             Ok(Some(serde_json::json!({
-                "id": element.id,
-                "file": element.file_path,
-                "detail": detail,
+                "id": premier.id,
+                "file": premier.file_path,
+                "detail": {
+                    "kind": "clip",
+                    "variant": if variante == crate::video_uploader::ClipVariant::Hd { "hd" } else { "proxy" },
+                    "clip": clip,
+                },
             })))
         }
-        Err(e) => {
-            // Un token expiré n'est pas un échec du fichier : inutile de
-            // consommer une tentative, il faut se reconnecter.
-            if e == "SESSION_EXPIRED" {
-                // Ce n'est pas le fichier qui est en cause : on le remet en
-                // file sans consommer de tentative.
-                crate::video_queue::liberer(&conn, element.id)?;
-                return Err(e);
-            }
-
-            let abandonne = crate::video_queue::marquer_echec(&conn, element.id, &e)?;
-
-            Ok(Some(serde_json::json!({
-                "id": element.id,
-                "file": element.file_path,
-                "error": e,
-                "abandoned": abandonne,
-            })))
-        }
+        Err(e) => conclure_echec(&conn, &elements, e),
     }
+}
+
+/// Ce que devient un envoi vidéo qui n'a pas abouti.
+///
+/// Trois cas, parce que trois causes :
+///   - jeton expiré : ce n'est pas le fichier, il repart sans consommer de
+///     tentative, et l'interface demande de se reconnecter ;
+///   - serveur saturé (429, 503) : il repart aussi sans consommer de
+///     tentative, après le délai demandé ;
+///   - le reste : une tentative de consommée, abandon à la troisième.
+fn conclure_echec(
+    conn: &rusqlite::Connection,
+    elements: &[crate::video_queue::QueueItem],
+    e: String,
+) -> Result<Option<serde_json::Value>, String> {
+    if e == "SESSION_EXPIRED" {
+        for element in elements {
+            crate::video_queue::liberer(conn, element.id)?;
+        }
+
+        return Err(e);
+    }
+
+    if let Some(attente) = crate::video_uploader::attente_si_sature(&e) {
+        for element in elements {
+            crate::video_queue::liberer(conn, element.id)?;
+        }
+
+        info!("File vidéo : serveur saturé, pause de {} s", attente);
+
+        return Ok(Some(serde_json::json!({ "throttled": attente })));
+    }
+
+    let mut abandonne = false;
+
+    for element in elements {
+        abandonne |= crate::video_queue::marquer_echec(conn, element.id, &e)?;
+    }
+
+    Ok(Some(serde_json::json!({
+        "id": elements.first().map(|el| el.id),
+        "file": elements.first().map(|el| el.file_path.clone()),
+        "error": e,
+        "abandoned": abandonne,
+    })))
 }
 
 /// Remet en file les éléments abandonnés.
@@ -1047,6 +1221,17 @@ async fn arreter(
         let Some(poignee) = verrou.as_mut() else {
             return Err("Aucune captation en cours.".to_string());
         };
+
+        // Un seul arrêt à la fois (0.3.1). Le second appelant — double clic,
+        // ou « Terminer la session » juste après « Arrêter la vidéo » — ne
+        // doit ni attendre un FFmpeg déjà parti, ni rattraper une seconde
+        // fois le dernier morceau. L'interface reconnaît ce code et attend
+        // simplement la fin du premier arrêt.
+        if poignee.arret_demande {
+            return Err("ARRET_EN_COURS".to_string());
+        }
+
+        poignee.arret_demande = true;
 
         info!("Arrêt de la captation {}", poignee.session_id);
 
