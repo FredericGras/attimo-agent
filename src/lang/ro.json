@@ -21,7 +21,16 @@
         "no_photos": "Nicio fotografie încă",
         "checkpoints_one": "{count} punct de control",
         "checkpoints_other": "{count} puncte de control",
-        "logout_title": "Deconectare"
+        "logout_title": "Deconectare",
+        "videos_one": "{count} video online",
+        "videos_other": "{count} videoclipuri online",
+        "mode": "Identificare: {mode}",
+        "mode_bib": "numere de concurs (OCR)",
+        "mode_face": "fețe",
+        "mode_mixed": "mixt număr + față",
+        "mode_roster": "listă de înscriși",
+        "mode_vehicle": "vehicule",
+        "mode_none": "niciuna"
     },
     "config": {
         "back_title": "Înapoi",
@@ -145,7 +154,8 @@
         "video_frames_label": "Imagini de analiză",
         "video_missing": "{count} fișier(e) video eliminat(e) din coadă: negăsit(e) pe disc",
         "video_missing_clips": "{count} fișier(e) video eliminat(e) din coadă: negăsit(e) pe disc (clipuri {clips})",
-        "video_online_event": "{total} online pentru eveniment"
+        "video_online_event": "{total} online pentru eveniment",
+        "video_folder": "Dosarul acestei înregistrări: {folder}"
     },
     "watcher": {
         "detected": "Detectat ({size} MB)",
@@ -163,7 +173,8 @@
         "throttled": "Server supraîncărcat ({code}): pauză {delay} s, {parallel} încărcare(ări) în paralel",
         "success_server": "OK în {duration} s (server {server} s)",
         "server_had_it": "serverul o avea deja",
-        "already_online": "Deja online — nu a fost retrimisă"
+        "already_online": "Deja online — nu a fost retrimisă",
+        "missing_on_server": "Lipsă din galerie — retrimisă"
     },
     "connection": {
         "restored": "Conexiune restabilită",
@@ -188,7 +199,14 @@
         "retry": "Reîncearcă eșuatele",
         "started_log": "Trimiterea clipurilor HD a început",
         "suspended_log": "Trimiterea clipurilor HD a fost suspendată",
-        "hint": "HD se trimite din agent, niciodată din galerie: trimis din galerie, creează un duplicat. Fotografiile au în continuare prioritate."
+        "hint": "HD se trimite din agent, niciodată din galerie: trimis din galerie, creează un duplicat. Fotografiile au în continuare prioritate.",
+        "sent_missing": "{sent} trimise — {missing} negăsite pe disc (rămân în versiune ușoară)",
+        "rate": "{rate} Mb/s",
+        "time_left": "mai rămân ≈ {time}",
+        "duration_s": "{n} s",
+        "duration_min": "{n} min",
+        "duration_h": "{h} h {m} min",
+        "auto_notice": "HD trimis automat: calitatea completă pleacă în timpul cursei (atenție la abonamentul 4G)."
     },
     "nav": {
         "banner_title": "Sesiune în curs: {event}",

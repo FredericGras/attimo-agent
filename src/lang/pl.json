@@ -21,7 +21,16 @@
         "no_photos": "Brak zdjęć",
         "checkpoints_one": "{count} punkt kontrolny",
         "checkpoints_other": "{count} punktów kontrolnych",
-        "logout_title": "Wyloguj się"
+        "logout_title": "Wyloguj się",
+        "videos_one": "{count} wideo online",
+        "videos_other": "Wideo online: {count}",
+        "mode": "Identyfikacja: {mode}",
+        "mode_bib": "numery startowe (OCR)",
+        "mode_face": "twarze",
+        "mode_mixed": "mieszana numer + twarz",
+        "mode_roster": "lista uczestników",
+        "mode_vehicle": "pojazdy",
+        "mode_none": "brak"
     },
     "config": {
         "back_title": "Wstecz",
@@ -145,7 +154,8 @@
         "video_frames_label": "Klatki do analizy",
         "video_missing": "Usunięto z kolejki plików wideo: {count} — nie znaleziono na dysku",
         "video_missing_clips": "Usunięto z kolejki plików wideo: {count} — nie znaleziono na dysku (klipy {clips})",
-        "video_online_event": "{total} online w wydarzeniu"
+        "video_online_event": "{total} online w wydarzeniu",
+        "video_folder": "Folder tego nagrania: {folder}"
     },
     "watcher": {
         "detected": "Wykryto ({size} MB)",
@@ -163,7 +173,8 @@
         "throttled": "Serwer przeciążony ({code}): przerwa {delay} s, równoległe przesyłanie: {parallel}",
         "success_server": "OK w {duration} s (serwer {server} s)",
         "server_had_it": "serwer już je miał",
-        "already_online": "Już online — nie wysłano ponownie"
+        "already_online": "Już online — nie wysłano ponownie",
+        "missing_on_server": "Brak w galerii — wysłane ponownie"
     },
     "connection": {
         "restored": "Połączenie przywrócone",
@@ -188,7 +199,14 @@
         "retry": "Ponów nieudane",
         "started_log": "Rozpoczęto wysyłanie klipów HD",
         "suspended_log": "Wstrzymano wysyłanie klipów HD",
-        "hint": "HD wysyła się z agenta, nigdy z galerii: wysłane z galerii tworzy duplikat. Zdjęcia nadal mają pierwszeństwo."
+        "hint": "HD wysyła się z agenta, nigdy z galerii: wysłane z galerii tworzy duplikat. Zdjęcia nadal mają pierwszeństwo.",
+        "sent_missing": "Wysłano: {sent} — nie znaleziono na dysku: {missing} (pozostają w wersji lekkiej)",
+        "rate": "{rate} Mb/s",
+        "time_left": "zostało ≈ {time}",
+        "duration_s": "{n} s",
+        "duration_min": "{n} min",
+        "duration_h": "{h} godz. {m} min",
+        "auto_notice": "HD wysyłane automatycznie: pełna jakość idzie w trakcie zawodów (uwaga na pakiet 4G)."
     },
     "nav": {
         "banner_title": "Trwa sesja: {event}",

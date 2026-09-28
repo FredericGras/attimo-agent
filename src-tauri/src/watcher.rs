@@ -97,7 +97,23 @@ pub struct FileJob {
     pub filename: String,
     /// Taille en octets
     pub file_size: u64,
+    /// Empreinte MD5, calculée au scan (0.3.3). Absente pour une photo
+    /// détectée en direct : l'envoi la calcule.
+    pub empreinte: Option<String>,
+    /// Le serveur détient-il déjà cette photo ? Réponse de la vérification
+    /// au scan ; absente si le serveur n'a pas pu répondre.
+    pub sur_le_serveur: Option<bool>,
 }
+
+/// Ce qu'il faut pour interroger le serveur au scan (0.3.3).
+#[derive(Debug, Clone)]
+pub struct VerificationServeur {
+    pub token: String,
+    pub event_id: i64,
+}
+
+/// Photos vérifiées ensemble auprès du serveur, au scan.
+const GROUPE_VERIFICATION: usize = 64;
 
 // ─── Filtrage des fichiers ──────────────────────────────────
 
@@ -224,7 +240,7 @@ async fn process_detected_file(
         }
     };
 
-    inscrire_fichier(path, file_size, session_id, tx, app_handle);
+    inscrire_fichier(path, file_size, session_id, tx, app_handle, None, None);
 
     true
 }
@@ -242,6 +258,8 @@ fn inscrire_fichier(
     session_id: i64,
     tx: &mpsc::UnboundedSender<FileJob>,
     app_handle: &tauri::AppHandle,
+    empreinte: Option<String>,
+    sur_le_serveur: Option<bool>,
 ) {
     // Extraire le nom du fichier
     let filename = match path.file_name().and_then(|n| n.to_str()) {
@@ -324,12 +342,18 @@ fn inscrire_fichier(
         file_path: path,
         filename,
         file_size,
+        empreinte,
+        sur_le_serveur,
     };
 
     match tx.send(job) {
         // Compté pour la priorité des photos sur la vidéo.
         Ok(()) => crate::uploader::photo_ajoutee(),
-        Err(e) => warn!("Erreur envoi vers uploader: {}", e),
+        // Session close pendant le scan : normal, pas une erreur (0.3.3).
+        Err(e) => info!(
+            "Scan interrompu, session close : {} n'est pas confiée à l'envoi",
+            e.0.filename
+        ),
     }
 
     // Les compteurs suivent la détection, sans attendre le premier envoi
@@ -352,6 +376,7 @@ pub async fn scan_existing_files(
     tx: &mpsc::UnboundedSender<FileJob>,
     app_handle: &tauri::AppHandle,
     running: &Arc<AtomicBool>,
+    verification: Option<&VerificationServeur>,
 ) {
     info!("Scan des fichiers existants dans: {}", folder.display());
 
@@ -380,34 +405,98 @@ pub async fn scan_existing_files(
     // fichiers sont inscrits dans l'ordre : même garantie qu'avant (taille
     // inchangée pendant 500 ms), sans payer ces 500 ms une photo après
     // l'autre.
-    for paquet in jpegs.chunks(VERIFICATIONS_SIMULTANEES) {
-        // Vérifier si l'arrêt a été demandé
-        if !running.load(Ordering::Relaxed) {
-            info!("Scan interrompu (arrêt demandé)");
-            break;
+    //
+    // 0.3.3 — Par groupes de 64, les photos stables reçoivent leur empreinte
+    // et l'avis du serveur (hash-check) avant d'être confiées à l'envoi.
+    'groupes: for groupe in jpegs.chunks(GROUPE_VERIFICATION) {
+        let mut stables: Vec<(PathBuf, u64)> = Vec::new();
+
+        for paquet in groupe.chunks(VERIFICATIONS_SIMULTANEES) {
+            // Vérifier si l'arrêt a été demandé
+            if !running.load(Ordering::Relaxed) {
+                info!("Scan interrompu (arrêt demandé)");
+                break 'groupes;
+            }
+
+            let verifications: Vec<_> = paquet
+                .iter()
+                .map(|path| {
+                    let path = path.clone();
+                    tokio::spawn(async move { wait_for_stability(&path).await })
+                })
+                .collect();
+
+            for (path, verification) in paquet.iter().zip(verifications) {
+                match verification.await.ok().flatten() {
+                    Some(taille) => stables.push((path.clone(), taille)),
+                    None => debug!("Fichier instable ou trop petit, ignoré: {}", path.display()),
+                }
+            }
         }
 
-        let verifications: Vec<_> = paquet
-            .iter()
-            .map(|path| {
-                let path = path.clone();
-                tokio::spawn(async move { wait_for_stability(&path).await })
-            })
-            .collect();
+        let avis = avis_du_serveur(&stables, verification).await;
 
-        for (path, verification) in paquet.iter().zip(verifications) {
-            match verification.await.ok().flatten() {
-                Some(taille) => {
-                    inscrire_fichier(path.clone(), taille, session_id, tx, app_handle)
-                }
-                None => debug!("Fichier instable ou trop petit, ignoré: {}", path.display()),
-            }
+        for ((path, taille), (empreinte, sur_le_serveur)) in stables.into_iter().zip(avis) {
+            inscrire_fichier(path, taille, session_id, tx, app_handle, empreinte, sur_le_serveur);
         }
 
         crate::uploader::signaler_stats(session_id, app_handle, true);
     }
 
     let _ = app_handle.emit("scan_complete", serde_json::json!({}));
+}
+
+/// Empreintes des photos d'un groupe, et ce que le serveur en dit (0.3.3).
+///
+/// Rien n'est calculé si aucune vérification n'est prévue, ou si la route
+/// est connue pour absente : le comportement est alors celui de 0.3.2.
+async fn avis_du_serveur(
+    fichiers: &[(PathBuf, u64)],
+    verification: Option<&VerificationServeur>,
+) -> Vec<(Option<String>, Option<bool>)> {
+    let aucun = || vec![(None, None); fichiers.len()];
+
+    let Some(v) = verification else {
+        return aucun();
+    };
+
+    if crate::verification::route_absente() {
+        return aucun();
+    }
+
+    let mut empreintes: Vec<Option<String>> = Vec::with_capacity(fichiers.len());
+
+    for paquet in fichiers.chunks(VERIFICATIONS_SIMULTANEES) {
+        let calculs: Vec<_> = paquet
+            .iter()
+            .map(|(path, _)| {
+                let path = path.clone();
+                tokio::task::spawn_blocking(move || {
+                    std::fs::read(&path).ok().map(|o| crate::empreinte::md5_hexa(&o))
+                })
+            })
+            .collect();
+
+        for calcul in calculs {
+            empreintes.push(calcul.await.ok().flatten());
+        }
+    }
+
+    let connues: Vec<String> = empreintes.iter().flatten().cloned().collect();
+
+    let serveur = crate::verification::verifier_empreintes(&v.token, v.event_id, &connues).await;
+
+    empreintes
+        .into_iter()
+        .map(|e| {
+            let avis = match (&e, &serveur) {
+                (Some(h), Some(existantes)) => Some(existantes.contains(h)),
+                _ => None,
+            };
+
+            (e, avis)
+        })
+        .collect()
 }
 
 /// Liste les fichiers d'un dossier (non récursif, un seul niveau)
@@ -490,6 +579,7 @@ pub fn start_watching(
     tx: mpsc::UnboundedSender<FileJob>,
     running: Arc<AtomicBool>,
     app_handle: tauri::AppHandle,
+    verification: Option<VerificationServeur>,
 ) -> Result<RecommendedWatcher, String> {
     // ── Canal intermédiaire ──
     // notify fonctionne en synchrone (callback sur un thread).
@@ -633,6 +723,7 @@ pub fn start_watching(
                 &tx_scan,
                 &app_scan,
                 &running_scan,
+                verification.as_ref(),
             )
             .await;
         });

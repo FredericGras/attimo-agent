@@ -21,7 +21,16 @@
         "no_photos": "Ei vielä kuvia",
         "checkpoints_one": "{count} tarkistuspiste",
         "checkpoints_other": "{count} tarkistuspistettä",
-        "logout_title": "Kirjaudu ulos"
+        "logout_title": "Kirjaudu ulos",
+        "videos_one": "{count} video verkossa",
+        "videos_other": "{count} videota verkossa",
+        "mode": "Tunnistus: {mode}",
+        "mode_bib": "kilpailunumerot (OCR)",
+        "mode_face": "kasvot",
+        "mode_mixed": "numero + kasvot",
+        "mode_roster": "osallistujalista",
+        "mode_vehicle": "ajoneuvot",
+        "mode_none": "ei mitään"
     },
     "config": {
         "back_title": "Takaisin",
@@ -145,7 +154,8 @@
         "video_frames_label": "Analyysikuvat",
         "video_missing": "{count} videotiedosto(a) poistettu jonosta: ei löydy levyltä",
         "video_missing_clips": "{count} videotiedosto(a) poistettu jonosta: ei löydy levyltä (klipit {clips})",
-        "video_online_event": "{total} verkossa tapahtumassa"
+        "video_online_event": "{total} verkossa tapahtumassa",
+        "video_folder": "Tämän kuvauksen kansio: {folder}"
     },
     "watcher": {
         "detected": "Havaittu ({size} Mt)",
@@ -163,7 +173,8 @@
         "throttled": "Palvelin ylikuormittunut ({code}): tauko {delay} s, {parallel} rinnakkaista latausta",
         "success_server": "OK {duration} s:ssa (palvelin {server} s)",
         "server_had_it": "palvelimella se oli jo",
-        "already_online": "Jo verkossa — ei lähetetty uudelleen"
+        "already_online": "Jo verkossa — ei lähetetty uudelleen",
+        "missing_on_server": "Puuttuu galleriasta — lähetetty uudelleen"
     },
     "connection": {
         "restored": "Yhteys palautettu",
@@ -188,7 +199,14 @@
         "retry": "Yritä epäonnistuneita uudelleen",
         "started_log": "HD-klippien lähetys aloitettu",
         "suspended_log": "HD-klippien lähetys keskeytetty",
-        "hint": "HD lähetetään agentista, ei koskaan galleriasta: galleriasta lähetettynä syntyy kaksoiskappale. Kuvat ovat edelleen etusijalla."
+        "hint": "HD lähetetään agentista, ei koskaan galleriasta: galleriasta lähetettynä syntyy kaksoiskappale. Kuvat ovat edelleen etusijalla.",
+        "sent_missing": "{sent} lähetetty — {missing} ei löydy levyltä (jäävät kevytversioiksi)",
+        "rate": "{rate} Mb/s",
+        "time_left": "jäljellä ≈ {time}",
+        "duration_s": "{n} s",
+        "duration_min": "{n} min",
+        "duration_h": "{h} h {m} min",
+        "auto_notice": "HD lähetetään automaattisesti: täysi laatu lähtee kilpailun aikana (huomioi 4G-liittymäsi)."
     },
     "nav": {
         "banner_title": "Istunto käynnissä: {event}",

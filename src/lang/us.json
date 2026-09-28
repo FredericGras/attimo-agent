@@ -21,7 +21,16 @@
         "no_photos": "No photos yet",
         "checkpoints_one": "{count} checkpoint",
         "checkpoints_other": "{count} checkpoints",
-        "logout_title": "Sign out"
+        "logout_title": "Sign out",
+        "videos_one": "{count} video online",
+        "videos_other": "{count} videos online",
+        "mode": "Identification: {mode}",
+        "mode_bib": "bib numbers (OCR)",
+        "mode_face": "faces",
+        "mode_mixed": "mixed bib + face",
+        "mode_roster": "entry list",
+        "mode_vehicle": "vehicles",
+        "mode_none": "none"
     },
     "config": {
         "back_title": "Back",
@@ -145,7 +154,8 @@
         "video_frames_label": "Analysis frames",
         "video_missing": "{count} video file(s) removed from the queue: not found on disk",
         "video_missing_clips": "{count} video file(s) removed from the queue: not found on disk (clips {clips})",
-        "video_online_event": "{total} online for the event"
+        "video_online_event": "{total} online for the event",
+        "video_folder": "Folder for this recording: {folder}"
     },
     "watcher": {
         "detected": "Detected ({size} MB)",
@@ -163,7 +173,8 @@
         "throttled": "Server overloaded ({code}): pausing {delay} s, {parallel} parallel upload(s)",
         "success_server": "OK in {duration} s (server {server} s)",
         "server_had_it": "the server already had it",
-        "already_online": "Already online — not sent again"
+        "already_online": "Already online — not sent again",
+        "missing_on_server": "Missing from the gallery — sent again"
     },
     "connection": {
         "restored": "Connection restored",
@@ -188,7 +199,14 @@
         "retry": "Retry failed clips",
         "started_log": "HD clip upload started",
         "suspended_log": "HD clip upload paused",
-        "hint": "HD is sent from the agent, never from the gallery: sent from the gallery, it creates a duplicate. Photos keep priority."
+        "hint": "HD is sent from the agent, never from the gallery: sent from the gallery, it creates a duplicate. Photos keep priority.",
+        "sent_missing": "{sent} sent — {missing} not found on disk (remain as preview only)",
+        "rate": "{rate} Mb/s",
+        "time_left": "≈ {time} left",
+        "duration_s": "{n} s",
+        "duration_min": "{n} min",
+        "duration_h": "{h} h {m} min",
+        "auto_notice": "HD sent automatically: full quality is uploaded during the race (watch your 4G data plan)."
     },
     "nav": {
         "banner_title": "Session running: {event}",

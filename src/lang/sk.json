@@ -21,7 +21,16 @@
         "no_photos": "Zatiaľ žiadne fotografie",
         "checkpoints_one": "{count} kontrolný bod",
         "checkpoints_other": "{count} kontrolných bodov",
-        "logout_title": "Odhlásiť sa"
+        "logout_title": "Odhlásiť sa",
+        "videos_one": "{count} video online",
+        "videos_other": "Videí online: {count}",
+        "mode": "Identifikácia: {mode}",
+        "mode_bib": "štartové čísla (OCR)",
+        "mode_face": "tváre",
+        "mode_mixed": "zmiešaná číslo + tvár",
+        "mode_roster": "zoznam prihlásených",
+        "mode_vehicle": "vozidlá",
+        "mode_none": "žiadna"
     },
     "config": {
         "back_title": "Späť",
@@ -145,7 +154,8 @@
         "video_frames_label": "Snímky na analýzu",
         "video_missing": "Odstránené z frontu video súborov: {count} — nenájdené na disku",
         "video_missing_clips": "Odstránené z frontu video súborov: {count} — nenájdené na disku (klipy {clips})",
-        "video_online_event": "{total} online v udalosti"
+        "video_online_event": "{total} online v udalosti",
+        "video_folder": "Priečinok tohto natáčania: {folder}"
     },
     "watcher": {
         "detected": "Detegované ({size} MB)",
@@ -163,7 +173,8 @@
         "throttled": "Server je preťažený ({code}): pauza {delay} s, paralelné nahrávanie: {parallel}",
         "success_server": "OK za {duration} s (server {server} s)",
         "server_had_it": "server ju už mal",
-        "already_online": "Už online — znova neodoslaná"
+        "already_online": "Už online — znova neodoslaná",
+        "missing_on_server": "Chýba v galérii — odoslané znova"
     },
     "connection": {
         "restored": "Pripojenie obnovené",
@@ -188,7 +199,14 @@
         "retry": "Zopakovať neúspešné",
         "started_log": "Odosielanie klipov HD spustené",
         "suspended_log": "Odosielanie klipov HD pozastavené",
-        "hint": "HD sa odosiela z agenta, nikdy z galérie: odoslané z galérie vytvorí duplikát. Fotografie majú naďalej prednosť."
+        "hint": "HD sa odosiela z agenta, nikdy z galérie: odoslané z galérie vytvorí duplikát. Fotografie majú naďalej prednosť.",
+        "sent_missing": "Odoslané: {sent} — nenájdené na disku: {missing} (zostávajú v odľahčenej verzii)",
+        "rate": "{rate} Mb/s",
+        "time_left": "zostáva ≈ {time}",
+        "duration_s": "{n} s",
+        "duration_min": "{n} min",
+        "duration_h": "{h} h {m} min",
+        "auto_notice": "HD sa odosiela automaticky: plná kvalita odchádza počas pretekov (pozor na dátový balík 4G)."
     },
     "nav": {
         "banner_title": "Prebieha relácia: {event}",

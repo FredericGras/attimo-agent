@@ -21,7 +21,16 @@
         "no_photos": "Još nema fotografija",
         "checkpoints_one": "{count} kontrolna točka",
         "checkpoints_other": "{count} kontrolnih točaka",
-        "logout_title": "Odjava"
+        "logout_title": "Odjava",
+        "videos_one": "{count} video na mreži",
+        "videos_other": "Videozapisa na mreži: {count}",
+        "mode": "Identifikacija: {mode}",
+        "mode_bib": "startni brojevi (OCR)",
+        "mode_face": "lica",
+        "mode_mixed": "mješovito broj + lice",
+        "mode_roster": "popis prijavljenih",
+        "mode_vehicle": "vozila",
+        "mode_none": "nema"
     },
     "config": {
         "back_title": "Natrag",
@@ -145,7 +154,8 @@
         "video_frames_label": "Slike za analizu",
         "video_missing": "Uklonjeno iz reda videodatoteka: {count} — nisu pronađene na disku",
         "video_missing_clips": "Uklonjeno iz reda videodatoteka: {count} — nisu pronađene na disku (klipovi {clips})",
-        "video_online_event": "{total} na mreži za događaj"
+        "video_online_event": "{total} na mreži za događaj",
+        "video_folder": "Mapa ovog snimanja: {folder}"
     },
     "watcher": {
         "detected": "Otkriveno ({size} MB)",
@@ -163,7 +173,8 @@
         "throttled": "Poslužitelj je preopterećen ({code}): pauza {delay} s, paralelni prijenosi: {parallel}",
         "success_server": "OK za {duration} s (poslužitelj {server} s)",
         "server_had_it": "poslužitelj ju je već imao",
-        "already_online": "Već na mreži — nije ponovno poslana"
+        "already_online": "Već na mreži — nije ponovno poslana",
+        "missing_on_server": "Nedostaje u galeriji — ponovno poslana"
     },
     "connection": {
         "restored": "Veza obnovljena",
@@ -188,7 +199,14 @@
         "retry": "Ponovi neuspjele",
         "started_log": "Slanje HD klipova pokrenuto",
         "suspended_log": "Slanje HD klipova pauzirano",
-        "hint": "HD se šalje iz agenta, nikad iz galerije: poslan iz galerije stvara duplikat. Fotografije i dalje imaju prednost."
+        "hint": "HD se šalje iz agenta, nikad iz galerije: poslan iz galerije stvara duplikat. Fotografije i dalje imaju prednost.",
+        "sent_missing": "Poslano: {sent} — nije pronađeno na disku: {missing} (ostaju u laganoj verziji)",
+        "rate": "{rate} Mb/s",
+        "time_left": "preostalo ≈ {time}",
+        "duration_s": "{n} s",
+        "duration_min": "{n} min",
+        "duration_h": "{h} h {m} min",
+        "auto_notice": "HD se šalje automatski: puna kvaliteta ide tijekom utrke (pazite na 4G paket)."
     },
     "nav": {
         "banner_title": "Sesija u tijeku: {event}",

@@ -21,7 +21,16 @@
         "no_photos": "Níl aon ghrianghraf fós",
         "checkpoints_one": "{count} seicphointe",
         "checkpoints_other": "{count} seicphointe",
-        "logout_title": "Logáil amach"
+        "logout_title": "Logáil amach",
+        "videos_one": "{count} físeán ar líne",
+        "videos_other": "{count} físeán ar líne",
+        "mode": "Aitheantas: {mode}",
+        "mode_bib": "uimhreacha rásaíochta (OCR)",
+        "mode_face": "aghaidheanna",
+        "mode_mixed": "measctha uimhir + aghaidh",
+        "mode_roster": "liosta iontrálacha",
+        "mode_vehicle": "feithiclí",
+        "mode_none": "dada"
     },
     "config": {
         "back_title": "Ar ais",
@@ -145,7 +154,8 @@
         "video_frames_label": "Frámaí anailíse",
         "video_missing": "{count} comhad físe bainte den scuaine: níor aimsíodh ar an diosca iad",
         "video_missing_clips": "{count} comhad físe bainte den scuaine: níor aimsíodh ar an diosca iad (clipeanna {clips})",
-        "video_online_event": "{total} ar líne don ócáid"
+        "video_online_event": "{total} ar líne don ócáid",
+        "video_folder": "Fillteán an taifeadta seo: {folder}"
     },
     "watcher": {
         "detected": "Aimsíodh ({size} MB)",
@@ -163,7 +173,8 @@
         "throttled": "Freastalaí ró-ualaithe ({code}): sos {delay} s, uaslódálacha comhthráthacha: {parallel}",
         "success_server": "OK i {duration} s (freastalaí {server} s)",
         "server_had_it": "bhí sé ag an bhfreastalaí cheana",
-        "already_online": "Ar líne cheana — níor seoladh arís é"
+        "already_online": "Ar líne cheana — níor seoladh arís é",
+        "missing_on_server": "Ar iarraidh ón ngailearaí — seolta arís"
     },
     "connection": {
         "restored": "Ceangal athbhunaithe",
@@ -188,7 +199,14 @@
         "retry": "Bain triail eile as na cinn a theip",
         "started_log": "Tosaíodh ar sheoladh na gclipeanna HD",
         "suspended_log": "Cuireadh seoladh na gclipeanna HD ar sos",
-        "hint": "Seoltar HD ón ngníomhaire, riamh ón ngailearaí: má sheoltar ón ngailearaí é, cruthaítear dúblach. Tá tosaíocht fós ag na grianghraif."
+        "hint": "Seoltar HD ón ngníomhaire, riamh ón ngailearaí: má sheoltar ón ngailearaí é, cruthaítear dúblach. Tá tosaíocht fós ag na grianghraif.",
+        "sent_missing": "{sent} seolta — {missing} nár aimsíodh ar an diosca (fanann siad sa leagan éadrom)",
+        "rate": "{rate} Mb/s",
+        "time_left": "≈ {time} fágtha",
+        "duration_s": "{n} s",
+        "duration_min": "{n} nóim",
+        "duration_h": "{h} u {m} nóim",
+        "auto_notice": "Seoltar HD go huathoibríoch: uaslódáiltear an cháilíocht iomlán le linn an rása (bí aireach ar do phlean 4G)."
     },
     "nav": {
         "banner_title": "Seisiún ar siúl: {event}",

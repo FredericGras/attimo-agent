@@ -36,6 +36,27 @@ if errorlevel 1 (
     exit /b 1
 )
 
+REM Libelles de l'interface, depuis 0.3.3 : tests Node, si Node est installe.
+cd ..
+where node >nul 2>nul
+if errorlevel 1 goto sans_node
+
+node --test "tests/*.test.cjs"
+if errorlevel 1 goto echec_interface
+goto fin
+
+:sans_node
+echo.
+echo Node.js absent : tests des libelles de l'interface non lances.
+goto fin
+
+:echec_interface
+echo.
+echo *** DES TESTS DE L'INTERFACE ECHOUENT ***
+pause
+exit /b 1
+
+:fin
 echo.
 echo OK : toute la suite passe.
 echo.

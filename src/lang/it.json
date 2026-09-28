@@ -21,7 +21,16 @@
         "no_photos": "Nessuna foto ancora",
         "checkpoints_one": "{count} checkpoint",
         "checkpoints_other": "{count} checkpoint",
-        "logout_title": "Esci"
+        "logout_title": "Esci",
+        "videos_one": "{count} video online",
+        "videos_other": "{count} video online",
+        "mode": "Identificazione: {mode}",
+        "mode_bib": "pettorali (OCR)",
+        "mode_face": "volti",
+        "mode_mixed": "misto pettorale + volto",
+        "mode_roster": "elenco iscritti",
+        "mode_vehicle": "veicoli",
+        "mode_none": "nessuna"
     },
     "config": {
         "back_title": "Indietro",
@@ -145,7 +154,8 @@
         "video_frames_label": "Immagini di analisi",
         "video_missing": "{count} file video rimossi dalla coda: non trovati sul disco",
         "video_missing_clips": "{count} file video rimossi dalla coda: non trovati sul disco (clip {clips})",
-        "video_online_event": "{total} online per l'evento"
+        "video_online_event": "{total} online per l'evento",
+        "video_folder": "Cartella di questa ripresa: {folder}"
     },
     "watcher": {
         "detected": "Rilevato ({size} MB)",
@@ -163,7 +173,8 @@
         "throttled": "Server saturo ({code}): pausa di {delay} s, {parallel} upload paralleli",
         "success_server": "OK in {duration} s (server {server} s)",
         "server_had_it": "il server l'aveva già",
-        "already_online": "Già online — non reinviata"
+        "already_online": "Già online — non reinviata",
+        "missing_on_server": "Assente dalla galleria — reinviata"
     },
     "connection": {
         "restored": "Connessione ripristinata",
@@ -188,7 +199,14 @@
         "retry": "Riprova quelli non riusciti",
         "started_log": "Invio dei clip HD avviato",
         "suspended_log": "Invio dei clip HD sospeso",
-        "hint": "L'HD si invia dall'agente, mai dalla galleria: inviato dalla galleria, crea un doppione. Le foto restano prioritarie."
+        "hint": "L'HD si invia dall'agente, mai dalla galleria: inviato dalla galleria, crea un doppione. Le foto restano prioritarie.",
+        "sent_missing": "{sent} inviati — {missing} non trovati sul disco (restano in versione leggera)",
+        "rate": "{rate} Mb/s",
+        "time_left": "mancano ≈ {time}",
+        "duration_s": "{n} s",
+        "duration_min": "{n} min",
+        "duration_h": "{h} h {m} min",
+        "auto_notice": "HD inviato automaticamente: la qualità piena parte durante la gara (attenzione al piano dati 4G)."
     },
     "nav": {
         "banner_title": "Sessione in corso: {event}",

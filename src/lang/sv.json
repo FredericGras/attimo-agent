@@ -21,7 +21,16 @@
         "no_photos": "Inga foton ännu",
         "checkpoints_one": "{count} checkpoint",
         "checkpoints_other": "{count} checkpoints",
-        "logout_title": "Logga ut"
+        "logout_title": "Logga ut",
+        "videos_one": "{count} video online",
+        "videos_other": "{count} videor online",
+        "mode": "Identifiering: {mode}",
+        "mode_bib": "startnummer (OCR)",
+        "mode_face": "ansikten",
+        "mode_mixed": "blandat startnummer + ansikte",
+        "mode_roster": "deltagarlista",
+        "mode_vehicle": "fordon",
+        "mode_none": "ingen"
     },
     "config": {
         "back_title": "Tillbaka",
@@ -145,7 +154,8 @@
         "video_frames_label": "Analysbilder",
         "video_missing": "{count} videofil(er) borttagna från kön: hittades inte på disken",
         "video_missing_clips": "{count} videofil(er) borttagna från kön: hittades inte på disken (klipp {clips})",
-        "video_online_event": "{total} online för evenemanget"
+        "video_online_event": "{total} online för evenemanget",
+        "video_folder": "Mapp för denna inspelning: {folder}"
     },
     "watcher": {
         "detected": "Upptäckt ({size} MB)",
@@ -163,7 +173,8 @@
         "throttled": "Servern är överbelastad ({code}): paus i {delay} s, {parallel} parallella uppladdning(ar)",
         "success_server": "OK på {duration} s (server {server} s)",
         "server_had_it": "servern hade det redan",
-        "already_online": "Redan online — skickas inte igen"
+        "already_online": "Redan online — skickas inte igen",
+        "missing_on_server": "Saknas i galleriet — skickas igen"
     },
     "connection": {
         "restored": "Anslutning återställd",
@@ -188,7 +199,14 @@
         "retry": "Försök igen med misslyckade",
         "started_log": "Uppladdning av HD-klipp startad",
         "suspended_log": "Uppladdning av HD-klipp pausad",
-        "hint": "HD skickas från agenten, aldrig från galleriet: skickat från galleriet skapas en dubblett. Foton har fortfarande förtur."
+        "hint": "HD skickas från agenten, aldrig från galleriet: skickat från galleriet skapas en dubblett. Foton har fortfarande förtur.",
+        "sent_missing": "{sent} skickade — {missing} hittades inte på disken (finns kvar som lättversion)",
+        "rate": "{rate} Mb/s",
+        "time_left": "≈ {time} kvar",
+        "duration_s": "{n} s",
+        "duration_min": "{n} min",
+        "duration_h": "{h} h {m} min",
+        "auto_notice": "HD skickas automatiskt: full kvalitet laddas upp under loppet (tänk på ditt 4G-abonnemang)."
     },
     "nav": {
         "banner_title": "Pågående session: {event}",

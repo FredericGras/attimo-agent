@@ -76,6 +76,17 @@ pub struct SportEvent {
     pub photo_count: i64,
     pub is_live: bool,
     pub checkpoints: Vec<Checkpoint>,
+
+    /// Vidéos en ligne pour l'épreuve (0.3.3). Le serveur ne l'envoie pas
+    /// encore : absent, rien ne s'affiche.
+    #[serde(default, alias = "videos_count")]
+    pub video_count: Option<i64>,
+
+    /// Mode d'identification de l'épreuve (0.3.3) : bib, face, mixed,
+    /// roster, vehicle ou none (`SportEvent::recognition_mode` côté
+    /// serveur). Absent aujourd'hui, comme `video_count`.
+    #[serde(default)]
+    pub recognition_mode: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -371,4 +382,29 @@ pub async fn fetch_checkpoints(token: &str, event_id: i64) -> Result<Vec<Checkpo
     }
 
     Ok(api_response.data.unwrap_or_default())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn les_champs_video_et_mode_sont_facultatifs() {
+        // Réponse du serveur d'aujourd'hui : ni vidéos, ni mode.
+        let aujourdhui = r#"{"id":1,"name":"V9","event_date":null,"sport_type":"running",
+            "photo_count":60,"is_live":false,"is_published":false,"checkpoints":[]}"#;
+
+        let e: SportEvent = serde_json::from_str(aujourdhui).unwrap();
+        assert_eq!(e.video_count, None);
+        assert_eq!(e.recognition_mode, None);
+
+        // Réponse attendue quand le serveur les ajoutera.
+        let demain = r#"{"id":1,"name":"V9","event_date":null,"sport_type":"running",
+            "photo_count":60,"is_live":false,"checkpoints":[],
+            "video_count":19,"recognition_mode":"mixed"}"#;
+
+        let e: SportEvent = serde_json::from_str(demain).unwrap();
+        assert_eq!(e.video_count, Some(19));
+        assert_eq!(e.recognition_mode.as_deref(), Some("mixed"));
+    }
 }

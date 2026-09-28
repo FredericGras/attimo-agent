@@ -21,7 +21,16 @@
         "no_photos": "Nog geen foto's",
         "checkpoints_one": "{count} checkpoint",
         "checkpoints_other": "{count} checkpoints",
-        "logout_title": "Uitloggen"
+        "logout_title": "Uitloggen",
+        "videos_one": "{count} video online",
+        "videos_other": "{count} video's online",
+        "mode": "Identificatie: {mode}",
+        "mode_bib": "startnummers (OCR)",
+        "mode_face": "gezichten",
+        "mode_mixed": "gemengd startnummer + gezicht",
+        "mode_roster": "deelnemerslijst",
+        "mode_vehicle": "voertuigen",
+        "mode_none": "geen"
     },
     "config": {
         "back_title": "Terug",
@@ -145,7 +154,8 @@
         "video_frames_label": "Analysebeelden",
         "video_missing": "{count} videobestand(en) uit de wachtrij verwijderd: niet gevonden op de schijf",
         "video_missing_clips": "{count} videobestand(en) uit de wachtrij verwijderd: niet gevonden op de schijf (clips {clips})",
-        "video_online_event": "{total} online voor het evenement"
+        "video_online_event": "{total} online voor het evenement",
+        "video_folder": "Map van deze opname: {folder}"
     },
     "watcher": {
         "detected": "Gedetecteerd ({size} MB)",
@@ -163,7 +173,8 @@
         "throttled": "Server overbelast ({code}): {delay} s pauze, {parallel} parallelle upload(s)",
         "success_server": "OK in {duration} s (server {server} s)",
         "server_had_it": "de server had hem al",
-        "already_online": "Al online — niet opnieuw verzonden"
+        "already_online": "Al online — niet opnieuw verzonden",
+        "missing_on_server": "Ontbreekt in de galerij — opnieuw verzonden"
     },
     "connection": {
         "restored": "Verbinding hersteld",
@@ -188,7 +199,14 @@
         "retry": "Mislukte opnieuw proberen",
         "started_log": "Verzending van HD-clips gestart",
         "suspended_log": "Verzending van HD-clips gepauzeerd",
-        "hint": "HD wordt vanuit de agent verstuurd, nooit vanuit de galerij: vanuit de galerij verstuurd, ontstaat er een duplicaat. Foto's houden voorrang."
+        "hint": "HD wordt vanuit de agent verstuurd, nooit vanuit de galerij: vanuit de galerij verstuurd, ontstaat er een duplicaat. Foto's houden voorrang.",
+        "sent_missing": "{sent} verzonden — {missing} niet gevonden op de schijf (blijven als lichte versie)",
+        "rate": "{rate} Mb/s",
+        "time_left": "nog ≈ {time}",
+        "duration_s": "{n} s",
+        "duration_min": "{n} min",
+        "duration_h": "{h} u {m} min",
+        "auto_notice": "HD wordt automatisch verzonden: de volledige kwaliteit gaat tijdens de wedstrijd omhoog (let op je 4G-bundel)."
     },
     "nav": {
         "banner_title": "Lopende sessie: {event}",

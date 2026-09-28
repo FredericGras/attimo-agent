@@ -111,6 +111,7 @@ pub fn photos_en_cours() -> usize {
 pub fn reinitialiser_photos_en_cours() {
     PHOTOS_EN_COURS.store(0, Ordering::Relaxed);
     PHOTOS_EN_PAUSE.store(false, Ordering::Relaxed);
+    crate::verification::reinitialiser();
 }
 
 /// Envoi des photos mis en pause par le photographe.
@@ -259,6 +260,28 @@ pub fn attente_saturation(code: u16, retry_after: Option<u64>, consecutives: u32
     attente.clamp(1, ATTENTE_MAX_SECS)
 }
 
+/// Quel libellé afficher pour un envoi réussi (0.3.3).
+///
+/// - `reseau_serveur` : « OK en X s — réseau Y s + serveur Z s ». Seulement
+///   si l'envoi mesuré pèse au moins 30 % du total, et si les deux parts
+///   tiennent dans le total. Sinon le chrono du serveur a compté le
+///   transfert, et on lisait « réseau 0,0 s + serveur 2,1 s » pour 2,6 Mo en
+///   4G — impossible.
+/// - `serveur` : « OK en X s (serveur Z s) ».
+/// - `total` : « OK en X s », sans en-tête Server-Timing.
+pub fn format_mesure(total_ms: u64, envoi_ms: Option<u64>, serveur_ms: Option<u64>) -> &'static str {
+    match (envoi_ms, serveur_ms) {
+        (Some(envoi), Some(serveur))
+            if envoi * 10 >= total_ms * 3
+                && (envoi + serveur) as f64 <= total_ms as f64 * 1.05 + 150.0 =>
+        {
+            "reseau_serveur"
+        }
+        (_, Some(_)) => "serveur",
+        _ => "total",
+    }
+}
+
 /// Lit le temps de traitement serveur dans l'en-tête Server-Timing.
 ///
 /// Le serveur envoie `app;dur=123.4` (millisecondes). On prend la mesure
@@ -383,6 +406,13 @@ fn empreinte_deja_en_ligne(event_id: i64, empreinte: &str) -> bool {
         .and_then(|c| database::empreinte_connue(&c, event_id, empreinte).ok())
         .flatten()
         .is_some()
+}
+
+/// Oublie une photo que la mémoire locale croyait en ligne à tort (0.3.3).
+fn oublier_empreinte(event_id: i64, empreinte: &str) {
+    if let Err(e) = database::connexion().and_then(|c| database::oublier_empreinte(&c, event_id, empreinte)) {
+        warn!("Empreinte {} non oubliée : {}", empreinte, e);
+    }
 }
 
 /// Retient qu'une photo est en ligne pour l'épreuve.
@@ -821,13 +851,61 @@ pub fn start_upload_workers(
                 // reconnaître une photo déjà en ligne, et son contenu part
                 // ensuite tel quel. Une lecture ratée n'arrête rien ici : les
                 // tentatives d'envoi relisent et disent pourquoi.
+                //
+                // 0.3.3 — Au scan, l'empreinte et l'avis du serveur arrivent
+                // avec la photo : une photo déjà en ligne n'est même pas
+                // relue. Le serveur fait foi ; sans réponse de sa part, la
+                // mémoire locale décide, comme en 0.3.2.
                 let mut contenu: Option<Arc<Vec<u8>>> = None;
-                let mut empreinte: Option<String> = None;
+                let mut empreinte: Option<String> = job.empreinte.clone();
+                let mut avis_serveur: Option<bool> = job.sur_le_serveur;
 
-                if let Ok(octets) = lire_photo(&job.file_path).await {
-                    let calcul = crate::empreinte::md5_hexa(&octets);
+                if empreinte.is_none() {
+                    if let Ok(octets) = lire_photo(&job.file_path).await {
+                        empreinte = Some(crate::empreinte::md5_hexa(&octets));
+                        contenu = Some(Arc::new(octets));
+                    }
+                }
 
-                    if empreinte_deja_en_ligne(config_clone.event_id, &calcul) {
+                if let Some(calcul) = empreinte.clone() {
+                    let connue = empreinte_deja_en_ligne(config_clone.event_id, &calcul);
+
+                    // Détectée en direct, et crue en ligne : le serveur est
+                    // interrogé pour elle seule, s'il sait répondre.
+                    if connue && avis_serveur.is_none() {
+                        avis_serveur = crate::verification::verifier_empreintes(
+                            &config_clone.token,
+                            config_clone.event_id,
+                            std::slice::from_ref(&calcul),
+                        )
+                        .await
+                        .map(|existantes| existantes.contains(&calcul));
+                    }
+
+                    let decision = crate::verification::decider(connue, avis_serveur);
+
+                    if let crate::verification::Decision::Envoyer { oublier_local: true } = decision {
+                        oublier_empreinte(config_clone.event_id, &calcul);
+
+                        info!("Worker {} ↺ {} absente du serveur : renvoyée", i, job.filename);
+
+                        let _ = app_clone.emit(
+                            "upload_back",
+                            serde_json::json!({ "filename": &job.filename }),
+                        );
+                    }
+
+                    if let crate::verification::Decision::Ecarter { retenir_local } = decision {
+                        if retenir_local {
+                            retenir_empreinte(
+                                config_clone.event_id,
+                                &calcul,
+                                job.file_size,
+                                &job.filename,
+                                None,
+                            );
+                        }
+
                         let _ = database::update_file_status(
                             job.db_file_id,
                             "already",
@@ -850,9 +928,6 @@ pub fn start_upload_workers(
                         check_all_complete(job.session_id, &app_clone);
                         continue;
                     }
-
-                    empreinte = Some(calcul);
-                    contenu = Some(Arc::new(octets));
                 }
 
                 // Tentatives comptées : un 429 n'en consomme pas.
@@ -932,7 +1007,7 @@ pub fn start_upload_workers(
 
                             // Envoi = mesuré par l'agent (0.3.2) ; serveur =
                             // ce que le serveur annonce (Server-Timing).
-                            // L'interface juge si les deux se tiennent.
+                            // `display` dit quel libellé est honnête (0.3.3).
                             let _ = app_clone.emit(
                                 "upload_success",
                                 serde_json::json!({
@@ -941,6 +1016,7 @@ pub fn start_upload_workers(
                                     "duration_ms": envoi.total_ms,
                                     "server_ms": envoi.serveur_ms,
                                     "network_ms": envoi.envoi_ms,
+                                    "display": format_mesure(envoi.total_ms, envoi.envoi_ms, envoi.serveur_ms),
                                     "server_photo_id": envoi.photo_id,
                                     "duplicate": envoi.doublon_serveur,
                                 }),
@@ -1236,6 +1312,26 @@ mod tests {
         assert_eq!(lire_server_timing("cache;desc=\"hit\", total;dur=\"42\""), Some(42.0));
         assert_eq!(lire_server_timing("miss"), None);
         assert_eq!(lire_server_timing(""), None);
+    }
+
+    #[test]
+    fn la_regle_des_30_pour_cent() {
+        // Le cas du compte rendu : 2,6 Mo en 4G, « réseau 0,0 s + serveur 2,1 s ».
+        assert_eq!(format_mesure(2600, Some(40), Some(2100)), "serveur");
+
+        // Envoi sous 30 % du total : pas de répartition.
+        assert_eq!(format_mesure(3000, Some(800), Some(300)), "serveur");
+
+        // 30 % tout juste, et les deux parts tiennent : répartition affichée.
+        assert_eq!(format_mesure(3000, Some(900), Some(300)), "reseau_serveur");
+        assert_eq!(format_mesure(3100, Some(2800), Some(300)), "reseau_serveur");
+
+        // Le chrono serveur couvre le transfert : les parts débordent.
+        assert_eq!(format_mesure(3100, Some(2800), Some(2700)), "serveur");
+
+        // Sans Server-Timing.
+        assert_eq!(format_mesure(3100, Some(2800), None), "total");
+        assert_eq!(format_mesure(3100, None, None), "total");
     }
 
     #[test]

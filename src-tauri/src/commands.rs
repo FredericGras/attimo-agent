@@ -194,6 +194,7 @@ pub async fn start_session(
         tx,
         running.clone(),
         app_handle.clone(),
+        Some(watcher::VerificationServeur { token: token.clone(), event_id }),
     )?;
 
     let upload_config = uploader::UploadConfig {
@@ -332,6 +333,8 @@ pub async fn retry_failed(
                 file_path: std::path::PathBuf::from(&file.file_path),
                 filename: file.filename.clone(),
                 file_size: file.file_size as u64,
+                empreinte: None,
+                sur_le_serveur: None,
             };
 
             if session.tx.send(job).is_ok() {
@@ -392,6 +395,23 @@ pub async fn plan_recording(
     config.plan()
 }
 
+/// Motif écrit au manifeste d'une captation sans analyse (0.3.3).
+const MOTIF_SANS_ANALYSE: &str = "galerie sans identification";
+
+/// Inscrit au manifeste de la captation en cours que l'analyse est coupée,
+/// si elle porte sur cette épreuve.
+async fn manifeste_sans_analyse(state: &AppState, event_id: i64) {
+    let mut verrou = state.manifest_writer.lock().await;
+
+    if let Some(writer) = verrou.as_mut() {
+        if writer.manifeste().session.attimo.event_id == event_id {
+            if let Err(e) = writer.desactiver_analyse(MOTIF_SANS_ANALYSE) {
+                log::warn!("Manifeste non mis à jour : {}", e);
+            }
+        }
+    }
+}
+
 /// Ce que le démarrage d'une captation renvoie à l'interface : le
 /// découpage, et le numéro du premier clip (0.3.2).
 #[derive(Debug, Clone, Serialize)]
@@ -399,6 +419,9 @@ pub struct DemarrageCaptation {
     #[serde(flatten)]
     pub plan: crate::recorder::SegmentPlan,
     pub premier_numero: u32,
+    /// Dossier de cette captation (0.3.3), écrit au journal : après une
+    /// pause ou une relance, les fichiers sont dans un nouveau `video_…`.
+    pub dossier: String,
 }
 
 /// Démarre la captation.
@@ -506,7 +529,7 @@ pub async fn start_recording(
     // Le manifeste naît avec la session, pas à la fin : il doit être
     // exploitable pendant la course, car l'envoi peut démarrer alors que la
     // captation continue.
-    let writer = crate::manifest::ManifestWriter::new(
+    let mut writer = crate::manifest::ManifestWriter::new(
         &dossier,
         session_id,
         &config_manifeste,
@@ -525,6 +548,12 @@ pub async fn start_recording(
         *verrou = Some(poignee);
     }
 
+    // Épreuve déjà connue sans identification : le manifeste le dit dès sa
+    // création (0.3.3).
+    if state.analyse_desactivee.lock().await.contains(&attimo_event_id) {
+        writer.desactiver_analyse(MOTIF_SANS_ANALYSE)?;
+    }
+
     {
         let mut verrou = state.manifest_writer.lock().await;
         *verrou = Some(writer);
@@ -540,9 +569,11 @@ pub async fn start_recording(
     //
     // Lancée en dernier, une fois l'état complet : elle peut arrêter la
     // captation, ce qui suppose de trouver le manifeste en place.
+    let dossier_texte = dossier.to_string_lossy().to_string();
+
     crate::disk::surveiller(app.clone(), dossier, flux, running, session_id_disque);
 
-    Ok(DemarrageCaptation { plan, premier_numero })
+    Ok(DemarrageCaptation { plan, premier_numero, dossier: dossier_texte })
 }
 
 /// Assemble un clip si les morceaux nécessaires sont prêts.
@@ -1114,6 +1145,7 @@ pub async fn process_video_queue(
                 let ecartees = crate::video_queue::ecarter_images(&conn, event_id)? + elements.len();
 
                 state.analyse_desactivee.lock().await.insert(event_id);
+                manifeste_sans_analyse(&state, event_id).await;
 
                 info!(
                     "Épreuve {} sans identification : {} image(s) d'analyse écartée(s)",
@@ -1303,6 +1335,7 @@ pub async fn video_analysis_probe(
 
     if reponse == Some(false) {
         state.analyse_desactivee.lock().await.insert(event_id);
+        manifeste_sans_analyse(&state, event_id).await;
 
         if let Ok(conn) = database::connexion() {
             let _ = crate::video_queue::ecarter_images(&conn, event_id);
@@ -1312,6 +1345,42 @@ pub async fn video_analysis_probe(
     }
 
     Ok(reponse)
+}
+
+/// Plus grand numéro de clip connu du serveur pour l'épreuve (0.3.3).
+///
+/// Rien si le serveur ne sait pas répondre pour toute l'épreuve — c'est le
+/// cas aujourd'hui — ou ne répond pas : la numérotation garde alors son
+/// comportement (file locale et interface). Une ligne au journal technique.
+#[tauri::command]
+pub async fn video_server_clip_max(token: String, event_id: i64) -> Result<Option<u32>, String> {
+    let config = crate::video_uploader::VideoUploadConfig {
+        token,
+        event_id,
+        checkpoint_id: None,
+        session_id: String::new(),
+    };
+
+    match crate::video_uploader::numero_max_serveur(&config).await {
+        Ok(max) => {
+            info!("Épreuve {} : plus grand clip connu du serveur : {:?}", event_id, max);
+            Ok(max)
+        }
+        Err(e) => {
+            info!(
+                "Épreuve {} : numéro de clip du serveur indisponible ({}), file locale seule",
+                event_id, e
+            );
+            Ok(None)
+        }
+    }
+}
+
+/// Octets vidéo envoyés depuis le lancement : tous envois, et HD (0.3.3).
+#[tauri::command]
+pub async fn video_bytes_sent() -> serde_json::Value {
+    let (total, hd) = crate::video_uploader::octets_envoyes();
+    serde_json::json!({ "total": total, "hd": hd })
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1477,14 +1546,30 @@ async fn arreter(
 
         // Un mp4 dont l'index n'a pas été écrit n'a pas de durée lisible.
         // C'est ce test qui décide si ce morceau est récupérable.
-        if crate::assembler::duree_reelle(app, &chemin).await.is_some() {
+        if let Some(duree) = crate::assembler::duree_reelle(app, &chemin).await {
             fin.morceau_final_exploitable = true;
 
             // Les images d'abord : elles portent les dossards, et elles se
             // perdaient elles aussi avec ce morceau.
-            match extraire_images_morceau(state, app, index, interval).await {
-                Ok(resultat) => fin.frames = resultat.frames,
-                Err(e) => log::error!("Images du dernier morceau : {}", e),
+            //
+            // 0.3.3 — Un dernier morceau de moins de 2 s (pause ou arrêt
+            // juste après une coupe) ne donne aucune image : FFmpeg sortait
+            // en erreur (-22), et le journal recevait « Aucune image extraite
+            // du morceau N » avec tout son rapport, à chaque pause.
+            if assez_long_pour_des_images(duree) {
+                match extraire_images_morceau(state, app, index, interval).await {
+                    Ok(resultat) => fin.frames = resultat.frames,
+                    Err(e) => info!(
+                        "Dernier morceau {} : {}",
+                        index,
+                        e.lines().next().unwrap_or("aucune image extraite")
+                    ),
+                }
+            } else {
+                info!(
+                    "Dernier morceau {} : {:.1} s, trop court pour des images d'analyse",
+                    index, duree
+                );
             }
 
             match assembler_si_pret(state, app, index, true).await {
@@ -1543,6 +1628,13 @@ async fn arreter(
     }
 
     Ok(fin)
+}
+
+/// Durée minimale d'un morceau pour en extraire des images (0.3.3).
+const DUREE_MIN_IMAGES_SECS: f64 = 2.0;
+
+fn assez_long_pour_des_images(duree_secs: f64) -> bool {
+    duree_secs >= DUREE_MIN_IMAGES_SECS
 }
 
 /// Assemble un dernier clip avec les morceaux restants.
@@ -1609,4 +1701,17 @@ pub async fn disk_estimate(
     );
 
     crate::disk::estimer(&dossier, &flux)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn un_dernier_morceau_trop_court_ne_donne_pas_dimages() {
+        assert!(!assez_long_pour_des_images(0.4));
+        assert!(!assez_long_pour_des_images(1.99));
+        assert!(assez_long_pour_des_images(2.0));
+        assert!(assez_long_pour_des_images(30.0));
+    }
 }

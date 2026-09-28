@@ -286,6 +286,11 @@ async function loadEvents() {
 
             const cpLabel = tPlural('events.checkpoints', event.checkpoints.length);
 
+            // Vidéos en ligne et mode d'identification (0.3.3) : affichés
+            // seulement si le serveur les donne. Il ne le fait pas encore.
+            const videosLabel = Affichage.videosEnLigne(event.video_count, tPlural);
+            const modeLabel = Affichage.modeIdentification(event.recognition_mode, t);
+
             const liveHtml = event.is_live
                 ? '<span class="event-live">● LIVE</span>'
                 : '';
@@ -310,7 +315,9 @@ async function loadEvents() {
                 <div class="event-meta">
                     ${event.event_date ? `<span>${escapeHtml(event.event_date)}</span>` : ''}
                     <span>${escapeHtml(photoLabel)}</span>
+                    ${videosLabel ? `<span>${escapeHtml(videosLabel)}</span>` : ''}
                     <span>${escapeHtml(cpLabel)}</span>
+                    ${modeLabel ? `<span>${escapeHtml(modeLabel)}</span>` : ''}
                 </div>
             `;
             card.addEventListener('click', () => selectEvent(event));
@@ -1032,9 +1039,14 @@ function preparerTableauDeBord(event) {
     document.getElementById('upload-log').innerHTML = `<div class="log-empty">${escapeHtml(t('dashboard.log_empty'))}</div>`;
 
     // Lignes écrites avant la session (fichiers vidéo retirés à
-    // l'ouverture de l'épreuve) : reprises ici, déjà copiées sur le disque.
+    // l'ouverture de l'épreuve) : reprises ici, déjà copiées sur le disque,
+    // et rappelées dans le bloc vidéo (0.3.3).
+    videoAvis = null;
+    releveOctetsHd.length = 0;
+
     for (const ligne of journalAvantSession.splice(0)) {
         ajouterLigneEcran(ligne.heure, '—', 'retry', ligne.message);
+        videoAvis = ligne.message;
     }
     debitFenetre.length = 0;
 
@@ -1485,8 +1497,8 @@ async function initRustEventListeners() {
     // alors le transfert —, la répartition n'a pas de sens : on affiche le
     // total et la valeur du serveur, sans rien en déduire.
     await listen('upload_success', (event) => {
-        const { filename, size, duration_ms, server_ms, network_ms, duplicate } = event.payload;
-        let message = messageEnvoiPhoto(duration_ms, network_ms, server_ms);
+        const { filename, size, duration_ms, server_ms, network_ms, duplicate, display } = event.payload;
+        let message = Affichage.messageEnvoiPhoto(display, duration_ms, network_ms, server_ms, t);
 
         if (duplicate) {
             message += ' — ' + t('upload.server_had_it');
@@ -1494,6 +1506,13 @@ async function initRustEventListeners() {
 
         addLogEntry(timeNow(), filename, 'success', message);
         noterEnvoi(size || 0, duration_ms || 0);
+    });
+
+    // ── Photo absente de la galerie, que la mémoire locale croyait en
+    //    ligne : le serveur fait foi, elle repart (0.3.3) ──
+    await listen('upload_back', (event) => {
+        const { filename } = event.payload;
+        addLogEntry(timeNow(), filename, 'retry', t('upload.missing_on_server'));
     });
 
     // ── Photo déjà en ligne : non renvoyée (0.3.2) ──
@@ -1733,36 +1752,6 @@ function updateStats(sent, pending, failed) {
     majBandeauSession();
 }
 
-/**
- * Libellé d'un envoi de photo réussi (0.3.2).
- *
- * Trois cas : envoi et serveur distincts ; temps serveur seul, quand il
- * recouvre l'envoi ; total seul, sans en-tête Server-Timing.
- */
-function messageEnvoiPhoto(totalMs, envoiMs, serveurMs) {
-    const secondes = (ms) => (ms / 1000).toFixed(1);
-    const connu = (v) => v !== null && v !== undefined;
-
-    // Les deux parts tiennent dans le total (tolérance de mesure : 5 % et
-    // 150 ms) : elles ne se recouvrent pas, la répartition est juste.
-    if (connu(envoiMs) && connu(serveurMs) && envoiMs + serveurMs <= totalMs * 1.05 + 150) {
-        return t('upload.success_timing', {
-            duration: secondes(totalMs),
-            network: secondes(envoiMs),
-            server: secondes(serveurMs)
-        });
-    }
-
-    if (connu(serveurMs)) {
-        return t('upload.success_server', {
-            duration: secondes(totalMs),
-            server: secondes(serveurMs)
-        });
-    }
-
-    return t('upload.success_total', { duration: secondes(totalMs) });
-}
-
 // ─── Débit réel des photos (0.3.1) ───
 //
 // Octets effectivement envoyés sur la dernière minute, tous envois
@@ -1885,6 +1874,17 @@ let videoDisqueParCaptation = {};
 let videoAnalyseDesactivee = false;
 let videoAnalyseAnnoncee = false;
 
+// ─── 0.3.3 ───
+
+// Dernier avis à montrer dans le bloc vidéo (fichiers retirés de la file).
+let videoAvis = null;
+
+// Épreuves dont le serveur a déjà été interrogé sur ses numéros de clip.
+const videoServeurInterroge = new Set();
+
+// Relevés des octets HD envoyés, pour le débit et le temps restant.
+const releveOctetsHd = [];
+
 // Prochain numéro de clip, par épreuve. Tenu ici en plus de la file : le
 // dernier clip d'une captation n'entre en file qu'après sa version légère,
 // plusieurs secondes après l'arrêt — une reprise immédiate ne doit pas
@@ -1967,6 +1967,10 @@ async function demarrerCaptation(reprise) {
         videoConfigCaptation = construireConfigVideo();
     }
 
+    // Numérotation (0.3.3) : le plus grand clip connu du serveur compte
+    // aussi — autre poste, réinstallation, file purgée.
+    await interrogerNumeroServeur(evenement.id);
+
     const sessionId = 'video_' + Date.now();
     const debut = Date.now();
 
@@ -2011,6 +2015,12 @@ async function demarrerCaptation(reprise) {
         if (plan.premier_numero > 1) {
             addLogEntry(timeNow(), '—', 'success',
                 t('dashboard.video_numbering', { index: plan.premier_numero }));
+        }
+
+        // Une captation = un dossier video_… : après une pause ou une
+        // relance, le journal dit où sont les nouveaux fichiers (0.3.3).
+        if (plan.dossier) {
+            addLogEntry(timeNow(), '—', 'success', t('dashboard.video_folder', { folder: plan.dossier }));
         }
 
         // L'épreuve accepte-t-elle les images d'analyse ? Demandé sans
@@ -2142,6 +2152,33 @@ async function reprendreCaptation() {
 
     majPanneauVideo();
     majBandeauSession();
+}
+
+/**
+ * Plus grand numéro de clip connu du serveur pour l'épreuve (0.3.3).
+ *
+ * Une fois par épreuve et par lancement : ensuite la numérotation ne fait
+ * que monter localement. Sans réponse du serveur, rien ne change.
+ */
+async function interrogerNumeroServeur(eventId) {
+    if (videoServeurInterroge.has(eventId)) {
+        return;
+    }
+
+    videoServeurInterroge.add(eventId);
+
+    try {
+        const max = await invoke('video_server_clip_max', {
+            token: AppState.token,
+            eventId: eventId
+        });
+
+        if (max) {
+            retenirNumeroClip(eventId, max + 1);
+        }
+    } catch (e) {
+        console.error('Clip numbering error:', e);
+    }
 }
 
 /**
@@ -2710,6 +2747,15 @@ function majPanneauVideo() {
     document.getElementById('dash-video-stats').style.display = videoActivite ? '' : 'none';
     document.getElementById('dash-video-disk').style.display = captationOuverte() ? '' : 'none';
 
+    // Avis (0.3.3) : fichiers retirés de la file, rappelés ici.
+    const avis = document.getElementById('dash-video-notice');
+    avis.textContent = videoAvis || '';
+    avis.style.display = videoAvis ? '' : 'none';
+
+    // HD envoyée automatiquement (0.3.3) : à savoir sur un forfait 4G.
+    document.getElementById('dash-hd-auto').style.display =
+        AppState.videoSendHd && (videoActivite || captationOuverte()) ? '' : 'none';
+
     majBlocHd(evt);
     majBoutonsVideo();
 }
@@ -2805,37 +2851,21 @@ function majBlocHd(evt) {
         return;
     }
 
-    const restant = evt.hd_pending + evt.hd_sending;
-    const total = restant + evt.hd_sent + evt.hd_failed;
+    // 0.3.3 : libellés dans affichage.js (testés), avec les clips
+    // introuvables sur le disque, le débit et le temps restant.
+    const mbps = AppState.videoSendHd ? Affichage.debitHd(releveOctetsHd, Date.now()) : null;
+    const bloc = Affichage.blocHd(evt, AppState.videoSendHd, mbps, t);
+    const restant = bloc.restant;
 
-    if (total === 0) {
-        statut.textContent = t('hd.none');
-        progression.textContent = '';
-        jauge.style.width = '0%';
-        bouton.style.display = 'none';
-        relance.style.display = 'none';
-        return;
-    }
-
-    const go = (evt.hd_bytes_pending / 1073741824).toFixed(1);
-
-    if (restant > 0) {
-        statut.textContent = t('hd.remaining', { count: restant, size: go })
-            + (AppState.videoSendHd && evt.hd_sending > 0 ? ' · ' + t('hd.sending') : '');
-    } else if (evt.hd_failed > 0) {
-        statut.textContent = t('hd.failed', { count: evt.hd_failed });
-    } else {
-        statut.textContent = t('hd.all_sent');
-    }
-
-    progression.textContent = t('hd.progress', { sent: evt.hd_sent, total: total });
-    jauge.style.width = Math.round((evt.hd_sent / total) * 100) + '%';
+    statut.textContent = bloc.statut;
+    progression.textContent = bloc.progression;
+    jauge.style.width = bloc.jauge + '%';
 
     bouton.style.display = restant > 0 ? 'inline-flex' : 'none';
     bouton.textContent = AppState.videoSendHd ? t('hd.suspend') : t('hd.send_now');
     bouton.className = 'btn ' + (AppState.videoSendHd ? 'btn-secondary' : 'btn-primary');
 
-    relance.style.display = evt.hd_failed > 0 ? 'inline-flex' : 'none';
+    relance.style.display = bloc.echecs > 0 ? 'inline-flex' : 'none';
 }
 
 /**
@@ -3097,6 +3127,11 @@ function journaliserAbsents(absents) {
 
     addLogEntry(heure, '—', 'retry', message);
 
+    // Aussi dans le bloc vidéo (0.3.3) : au milieu du journal, la ligne se
+    // perdait.
+    videoAvis = message;
+    majPanneauVideo();
+
     // Purge faite à l'ouverture de l'épreuve, hors session : la ligne est
     // reprise au journal de la session qui démarre, qui repart à blanc.
     if (!sessionEnCours()) {
@@ -3184,6 +3219,24 @@ async function rafraichirFileVideo() {
         }
 
         const eventId = AppState.activeEvent.id;
+
+        // Octets HD envoyés, pour le débit et le temps restant (0.3.3).
+        if (AppState.videoSendHd) {
+            try {
+                const octets = await invoke('video_bytes_sent');
+                const maintenant = Date.now();
+
+                releveOctetsHd.push({ t: maintenant, hd: octets.hd });
+
+                while (releveOctetsHd.length > 0 && maintenant - releveOctetsHd[0].t > 60000) {
+                    releveOctetsHd.shift();
+                }
+            } catch (e) {
+                // Sans importance : le débit s'affichera au passage suivant.
+            }
+        } else {
+            releveOctetsHd.length = 0;
+        }
 
         // Toutes les 30 s environ : un fichier supprimé du disque pendant
         // la session sort de la file (0.3.2).

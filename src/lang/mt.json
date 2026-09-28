@@ -21,7 +21,16 @@
         "no_photos": "Għad m'hemm l-ebda ritratti",
         "checkpoints_one": "{count} checkpoint",
         "checkpoints_other": "{count} checkpoints",
-        "logout_title": "Oħroġ"
+        "logout_title": "Oħroġ",
+        "videos_one": "{count} vidjo online",
+        "videos_other": "{count} vidjows online",
+        "mode": "Identifikazzjoni: {mode}",
+        "mode_bib": "numri tal-parteċipanti (OCR)",
+        "mode_face": "uċuħ",
+        "mode_mixed": "imħallat numru + wiċċ",
+        "mode_roster": "lista tal-parteċipanti",
+        "mode_vehicle": "vetturi",
+        "mode_none": "xejn"
     },
     "config": {
         "back_title": "Lura",
@@ -145,7 +154,8 @@
         "video_frames_label": "Frejms tal-analiżi",
         "video_missing": "{count} fajl(s) tal-vidjo tneħħew mill-kju: ma nstabux fuq id-diska",
         "video_missing_clips": "{count} fajl(s) tal-vidjo tneħħew mill-kju: ma nstabux fuq id-diska (clips {clips})",
-        "video_online_event": "{total} online għall-avveniment"
+        "video_online_event": "{total} online għall-avveniment",
+        "video_folder": "Folder ta' din ir-reġistrazzjoni: {folder}"
     },
     "watcher": {
         "detected": "Misjub ({size} MB)",
@@ -163,7 +173,8 @@
         "throttled": "Server mgħobbi żżejjed ({code}): pawża ta' {delay} s, uploads paralleli: {parallel}",
         "success_server": "OK fi {duration} s (server {server} s)",
         "server_had_it": "is-server kien diġà għandu",
-        "already_online": "Diġà online — ma ntbagħatx mill-ġdid"
+        "already_online": "Diġà online — ma ntbagħatx mill-ġdid",
+        "missing_on_server": "Nieqes mill-gallerija — mibgħut mill-ġdid"
     },
     "connection": {
         "restored": "Konnessjoni reġgħet lura",
@@ -188,7 +199,14 @@
         "retry": "Erġa' pprova dawk li fallew",
         "started_log": "Il-bgħit tal-clips HD beda",
         "suspended_log": "Il-bgħit tal-clips HD twaqqaf",
-        "hint": "L-HD tintbagħat mill-aġent, qatt mill-gallerija: jekk tintbagħat mill-gallerija, toħloq duplikat. Ir-ritratti jibqgħu għandhom il-prijorità."
+        "hint": "L-HD tintbagħat mill-aġent, qatt mill-gallerija: jekk tintbagħat mill-gallerija, toħloq duplikat. Ir-ritratti jibqgħu għandhom il-prijorità.",
+        "sent_missing": "{sent} mibgħuta — {missing} ma nstabux fuq id-diska (jibqgħu f'verżjoni ħafifa)",
+        "rate": "{rate} Mb/s",
+        "time_left": "fadal ≈ {time}",
+        "duration_s": "{n} s",
+        "duration_min": "{n} min",
+        "duration_h": "{h} siegħa {m} min",
+        "auto_notice": "HD mibgħuta awtomatikament: il-kwalità sħiħa titla' matul it-tellieqa (oqgħod attent għall-pakkett 4G)."
     },
     "nav": {
         "banner_title": "Sessjoni għaddejja: {event}",

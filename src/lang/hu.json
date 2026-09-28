@@ -21,7 +21,16 @@
         "no_photos": "Még nincsenek fotók",
         "checkpoints_one": "{count} ellenőrzőpont",
         "checkpoints_other": "{count} ellenőrzőpont",
-        "logout_title": "Kijelentkezés"
+        "logout_title": "Kijelentkezés",
+        "videos_one": "{count} videó online",
+        "videos_other": "{count} videó online",
+        "mode": "Azonosítás: {mode}",
+        "mode_bib": "rajtszámok (OCR)",
+        "mode_face": "arcok",
+        "mode_mixed": "vegyes rajtszám + arc",
+        "mode_roster": "nevezési lista",
+        "mode_vehicle": "járművek",
+        "mode_none": "nincs"
     },
     "config": {
         "back_title": "Vissza",
@@ -145,7 +154,8 @@
         "video_frames_label": "Elemzési képkockák",
         "video_missing": "{count} videofájl eltávolítva a sorból: nem található a lemezen",
         "video_missing_clips": "{count} videofájl eltávolítva a sorból: nem található a lemezen (klipek: {clips})",
-        "video_online_event": "{total} online az eseményben"
+        "video_online_event": "{total} online az eseményben",
+        "video_folder": "A felvétel mappája: {folder}"
     },
     "watcher": {
         "detected": "Észlelve ({size} MB)",
@@ -163,7 +173,8 @@
         "throttled": "A szerver túlterhelt ({code}): {delay} mp szünet, {parallel} párhuzamos feltöltés",
         "success_server": "OK {duration} mp alatt (szerver {server} mp)",
         "server_had_it": "a szervernek már megvolt",
-        "already_online": "Már online — nem küldtük újra"
+        "already_online": "Már online — nem küldtük újra",
+        "missing_on_server": "Hiányzik a galériából — újraküldve"
     },
     "connection": {
         "restored": "Kapcsolat helyreállt",
@@ -188,7 +199,14 @@
         "retry": "Sikertelenek újrapróbálása",
         "started_log": "HD-klipek küldése elindítva",
         "suspended_log": "HD-klipek küldése szüneteltetve",
-        "hint": "A HD az ügynökből megy, soha nem a galériából: a galériából küldve duplikátum keletkezik. A fényképek továbbra is elsőbbséget élveznek."
+        "hint": "A HD az ügynökből megy, soha nem a galériából: a galériából küldve duplikátum keletkezik. A fényképek továbbra is elsőbbséget élveznek.",
+        "sent_missing": "{sent} elküldve — {missing} nem található a lemezen (könnyített változatban maradnak)",
+        "rate": "{rate} Mb/s",
+        "time_left": "még ≈ {time}",
+        "duration_s": "{n} mp",
+        "duration_min": "{n} perc",
+        "duration_h": "{h} óra {m} perc",
+        "auto_notice": "A HD automatikusan megy: a teljes minőség a verseny alatt töltődik fel (figyeljen a 4G-keretre)."
     },
     "nav": {
         "banner_title": "Futó munkamenet: {event}",

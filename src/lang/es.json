@@ -21,7 +21,16 @@
         "no_photos": "Aún no hay fotos",
         "checkpoints_one": "{count} checkpoint",
         "checkpoints_other": "{count} checkpoints",
-        "logout_title": "Cerrar sesión"
+        "logout_title": "Cerrar sesión",
+        "videos_one": "{count} vídeo en línea",
+        "videos_other": "{count} vídeos en línea",
+        "mode": "Identificación: {mode}",
+        "mode_bib": "dorsales (OCR)",
+        "mode_face": "caras",
+        "mode_mixed": "mixto dorsal + cara",
+        "mode_roster": "lista de inscritos",
+        "mode_vehicle": "vehículos",
+        "mode_none": "ninguna"
     },
     "config": {
         "back_title": "Volver",
@@ -145,7 +154,8 @@
         "video_frames_label": "Imágenes de análisis",
         "video_missing": "{count} archivo(s) de vídeo retirado(s) de la cola: no encontrado(s) en el disco",
         "video_missing_clips": "{count} archivo(s) de vídeo retirado(s) de la cola: no encontrado(s) en el disco (clips {clips})",
-        "video_online_event": "{total} en línea en el evento"
+        "video_online_event": "{total} en línea en el evento",
+        "video_folder": "Carpeta de esta grabación: {folder}"
     },
     "watcher": {
         "detected": "Detectado ({size} MB)",
@@ -163,7 +173,8 @@
         "throttled": "Servidor saturado ({code}): pausa de {delay} s, {parallel} subida(s) en paralelo",
         "success_server": "OK en {duration} s (servidor {server} s)",
         "server_had_it": "el servidor ya la tenía",
-        "already_online": "Ya en línea — no se reenvía"
+        "already_online": "Ya en línea — no se reenvía",
+        "missing_on_server": "Ausente de la galería — reenviada"
     },
     "connection": {
         "restored": "Conexión restablecida",
@@ -188,7 +199,14 @@
         "retry": "Reintentar los fallidos",
         "started_log": "Envío de los clips HD iniciado",
         "suspended_log": "Envío de los clips HD suspendido",
-        "hint": "La HD se envía desde el agente, nunca desde la galería: enviada desde la galería, crea un duplicado. Las fotos siguen teniendo prioridad."
+        "hint": "La HD se envía desde el agente, nunca desde la galería: enviada desde la galería, crea un duplicado. Las fotos siguen teniendo prioridad.",
+        "sent_missing": "{sent} enviados — {missing} no encontrados en el disco (quedan en versión ligera)",
+        "rate": "{rate} Mb/s",
+        "time_left": "quedan ≈ {time}",
+        "duration_s": "{n} s",
+        "duration_min": "{n} min",
+        "duration_h": "{h} h {m} min",
+        "auto_notice": "HD enviada automáticamente: la calidad completa se sube durante la carrera (atención a la tarifa 4G)."
     },
     "nav": {
         "banner_title": "Sesión en curso: {event}",

@@ -21,7 +21,16 @@
         "no_photos": "Pagaidām nav fotoattēlu",
         "checkpoints_one": "{count} kontrolpunkts",
         "checkpoints_other": "{count} kontrolpunkti",
-        "logout_title": "Iziet"
+        "logout_title": "Iziet",
+        "videos_one": "{count} video tiešsaistē",
+        "videos_other": "Video tiešsaistē: {count}",
+        "mode": "Identifikācija: {mode}",
+        "mode_bib": "starta numuri (OCR)",
+        "mode_face": "sejas",
+        "mode_mixed": "jaukts numurs + seja",
+        "mode_roster": "dalībnieku saraksts",
+        "mode_vehicle": "transportlīdzekļi",
+        "mode_none": "nav"
     },
     "config": {
         "back_title": "Atpakaļ",
@@ -145,7 +154,8 @@
         "video_frames_label": "Analīzes attēli",
         "video_missing": "No rindas izņemti video faili: {count} — diskā nav atrasti",
         "video_missing_clips": "No rindas izņemti video faili: {count} — diskā nav atrasti (klipi {clips})",
-        "video_online_event": "{total} tiešsaistē pasākumā"
+        "video_online_event": "{total} tiešsaistē pasākumā",
+        "video_folder": "Šīs ierakstīšanas mape: {folder}"
     },
     "watcher": {
         "detected": "Atklāts ({size} MB)",
@@ -163,7 +173,8 @@
         "throttled": "Serveris ir pārslogots ({code}): pauze {delay} s, paralēlās augšupielādes: {parallel}",
         "success_server": "OK {duration} s (serveris {server} s)",
         "server_had_it": "serverim tas jau bija",
-        "already_online": "Jau tiešsaistē — atkārtoti netika sūtīts"
+        "already_online": "Jau tiešsaistē — atkārtoti netika sūtīts",
+        "missing_on_server": "Galerijā trūkst — nosūtīts atkārtoti"
     },
     "connection": {
         "restored": "Savienojums atjaunots",
@@ -188,7 +199,14 @@
         "retry": "Atkārtot neizdevušos",
         "started_log": "HD klipu sūtīšana sākta",
         "suspended_log": "HD klipu sūtīšana pauzēta",
-        "hint": "HD sūta no aģenta, nekad no galerijas: nosūtīts no galerijas, tas rada dublikātu. Fotoattēliem joprojām ir prioritāte."
+        "hint": "HD sūta no aģenta, nekad no galerijas: nosūtīts no galerijas, tas rada dublikātu. Fotoattēliem joprojām ir prioritāte.",
+        "sent_missing": "Nosūtīti: {sent} — diskā nav atrasti: {missing} (paliek vieglajā versijā)",
+        "rate": "{rate} Mb/s",
+        "time_left": "atlicis ≈ {time}",
+        "duration_s": "{n} s",
+        "duration_min": "{n} min",
+        "duration_h": "{h} h {m} min",
+        "auto_notice": "HD tiek sūtīts automātiski: pilna kvalitāte tiek augšupielādēta sacensību laikā (uzmanieties ar 4G datu plānu)."
     },
     "nav": {
         "banner_title": "Notiek sesija: {event}",

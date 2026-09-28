@@ -166,7 +166,7 @@ fn chaque_cle_appelee_par_linterface_existe() {
 
     let mut manquantes = Vec::new();
 
-    for fichier in ["main.js", "index.html"] {
+    for fichier in ["main.js", "affichage.js", "index.html"] {
         let source = std::fs::read_to_string(dossier_interface().join(fichier)).unwrap();
 
         for cle in cles_appelees(&source) {

@@ -139,6 +139,10 @@ pub struct QueueStats {
 
     /// Fichiers sortis de la file parce qu'ils n'existent plus sur le disque.
     pub missing: i64,
+
+    /// Dont clips HD (0.3.3) : le bloc HD les annonce « introuvables sur le
+    /// disque » au lieu de « tous envoyés ».
+    pub hd_missing: i64,
 }
 
 /// Voie d'un envoi vidéo (0.3.2) : ce qu'il sert en premier.
@@ -440,7 +444,13 @@ pub fn statistiques_filtrees(
                     stats.frames_skipped = nombre;
                 }
             }
-            "missing" => stats.missing += nombre,
+            "missing" => {
+                stats.missing += nombre;
+
+                if nature == QueueKind::ClipHd {
+                    stats.hd_missing = nombre;
+                }
+            }
             _ => {}
         }
     }
@@ -1457,6 +1467,7 @@ mod tests {
         let stats = statistiques(&conn, EVT).unwrap();
         assert_eq!(stats.hd_pending, 1);
         assert_eq!(stats.missing, 1);
+        assert_eq!(stats.hd_missing, 1);
 
         // Déjà sorti : une seconde purge ne le signale plus.
         assert!(purger_absents(&conn, EVT).unwrap().is_empty());

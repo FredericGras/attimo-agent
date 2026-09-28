@@ -23,7 +23,16 @@
         "no_photos": "Pas encore de photos",
         "checkpoints_one": "{count} checkpoint",
         "checkpoints_other": "{count} checkpoints",
-        "logout_title": "Déconnexion"
+        "logout_title": "Déconnexion",
+        "videos_one": "{count} vidéo en ligne",
+        "videos_other": "{count} vidéos en ligne",
+        "mode": "Identification : {mode}",
+        "mode_bib": "dossards (OCR)",
+        "mode_face": "visages",
+        "mode_mixed": "mixte dossard + visage",
+        "mode_roster": "liste des inscrits",
+        "mode_vehicle": "véhicules",
+        "mode_none": "aucune"
     },
 
     "config": {
@@ -149,7 +158,8 @@
         "video_frames_label": "Images d'analyse",
         "video_missing": "{count} fichier(s) vidéo retiré(s) de la file : introuvable(s) sur le disque",
         "video_missing_clips": "{count} fichier(s) vidéo retiré(s) de la file : introuvable(s) sur le disque (clips {clips})",
-        "video_online_event": "{total} en ligne sur l'épreuve"
+        "video_online_event": "{total} en ligne sur l'épreuve",
+        "video_folder": "Dossier de cette captation : {folder}"
     },
 
     "watcher": {
@@ -169,7 +179,8 @@
         "throttled": "Serveur saturé ({code}) : pause de {delay} s, {parallel} envoi(s) simultané(s)",
         "success_server": "OK en {duration} s (serveur {server} s)",
         "server_had_it": "le serveur l'avait déjà",
-        "already_online": "Déjà en ligne — non renvoyée"
+        "already_online": "Déjà en ligne — non renvoyée",
+        "missing_on_server": "Absente de la galerie — renvoyée"
     },
 
     "connection": {
@@ -197,7 +208,14 @@
         "retry": "Relancer les échecs",
         "started_log": "Envoi des clips HD lancé",
         "suspended_log": "Envoi des clips HD suspendu",
-        "hint": "La HD s'envoie depuis l'agent, jamais depuis la galerie : envoyée depuis la galerie, elle crée un doublon. Les photos restent prioritaires."
+        "hint": "La HD s'envoie depuis l'agent, jamais depuis la galerie : envoyée depuis la galerie, elle crée un doublon. Les photos restent prioritaires.",
+        "sent_missing": "{sent} envoyés — {missing} introuvables sur le disque (restent en version légère)",
+        "rate": "{rate} Mb/s",
+        "time_left": "reste ≈ {time}",
+        "duration_s": "{n} s",
+        "duration_min": "{n} min",
+        "duration_h": "{h} h {m} min",
+        "auto_notice": "HD envoyée automatiquement : la pleine qualité part pendant la course (attention au forfait 4G)."
     },
 
     "nav": {

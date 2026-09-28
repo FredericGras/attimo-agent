@@ -103,6 +103,29 @@ pub const ANALYSE_DESACTIVEE: &str = "ANALYSE_DESACTIVEE";
 /// (`SportClipFrameController::resolveEvent`).
 const MESSAGE_ANALYSE_DESACTIVEE: &str = "Recognition is disabled";
 
+/// Octets vidéo remis au serveur depuis le lancement (0.3.3) : tous les
+/// envois vidéo, et la part des clips HD. L'interface en tire le débit et
+/// le temps restant de l'envoi HD.
+static OCTETS_VIDEO: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+static OCTETS_HD: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// (tous envois vidéo, dont HD), en octets.
+pub fn octets_envoyes() -> (u64, u64) {
+    use std::sync::atomic::Ordering;
+
+    (OCTETS_VIDEO.load(Ordering::Relaxed), OCTETS_HD.load(Ordering::Relaxed))
+}
+
+fn compter_octets(octets: u64, hd: bool) {
+    use std::sync::atomic::Ordering;
+
+    OCTETS_VIDEO.fetch_add(octets, Ordering::Relaxed);
+
+    if hd {
+        OCTETS_HD.fetch_add(octets, Ordering::Relaxed);
+    }
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // CONFIGURATION
 // ═══════════════════════════════════════════════════════════════════════
@@ -444,6 +467,8 @@ pub async fn envoyer_clip(
                 .message
                 .unwrap_or_else(|| "Le serveur a refusé le morceau.".to_string()));
         }
+
+        compter_octets(longueur as u64, variant == ClipVariant::Hd);
     }
 
     // ─── Finalisation ───
@@ -602,10 +627,14 @@ pub async fn envoyer_lot_images(
         formulaire = formulaire.text("checkpoint_id", checkpoint.to_string());
     }
 
+    let mut octets_lot: u64 = 0;
+
     for (rang, image) in lot.iter().enumerate() {
         let octets = tokio::fs::read(&image.path)
             .await
             .map_err(|e| format!("Lecture de l'image impossible : {}", e))?;
+
+        octets_lot += octets.len() as u64;
 
         let nom = Path::new(&image.path)
             .file_name()
@@ -669,6 +698,8 @@ pub async fn envoyer_lot_images(
             .message
             .unwrap_or_else(|| "Le serveur a refusé les images.".to_string()));
     }
+
+    compter_octets(octets_lot, false);
 
     Ok(LotImages {
         totaux: corps.totals.unwrap_or(vide),
@@ -740,6 +771,65 @@ fn interpreter_sonde((code, message, champs_refuses): (u16, String, bool)) -> Op
     }
 
     None
+}
+
+/// Plus grand numéro de clip que le serveur connaît pour l'épreuve (0.3.3).
+///
+/// Sur un autre poste, après une réinstallation ou une file purgée, l'agent
+/// ne sait rien des clips déjà envoyés : sans le serveur, il repartirait à
+/// clip_0001 et créerait des doublons de noms dans la galerie.
+///
+/// Le serveur actuel ne répond que session par session (`clips/status`
+/// exige `session_id`) : sans session, il refuse (422), et l'agent garde
+/// son comportement — file locale et interface. Dès que le serveur
+/// acceptera la requête sans session, pour toute l'épreuve, avec la liste
+/// `clips` ou un champ `max_clip_index`, ce chiffre sera pris en compte.
+pub async fn numero_max_serveur(config: &VideoUploadConfig) -> Result<Option<u32>, String> {
+    numero_max_serveur_sur(client()?, API_BASE_URL, config).await
+}
+
+pub(crate) async fn numero_max_serveur_sur(
+    client: &reqwest::Client,
+    base: &str,
+    config: &VideoUploadConfig,
+) -> Result<Option<u32>, String> {
+    let url = format!("{}/api/sport/events/{}/clips/status", base, config.event_id);
+
+    let reponse = authentifier(client.get(&url), &config.token)
+        // Demandé au démarrage d'une captation : il ne doit pas la retarder.
+        .timeout(Duration::from_secs(5))
+        .send()
+        .await
+        .map_err(|e| message_erreur(&e))?;
+
+    let statut = reponse.status();
+
+    if !statut.is_success() {
+        return Err(format!("statut {}", statut.as_u16()));
+    }
+
+    let corps: serde_json::Value = reponse
+        .json()
+        .await
+        .map_err(|e| format!("Réponse inattendue du serveur : {}", e))?;
+
+    Ok(lire_numero_max(&corps))
+}
+
+/// Plus grand numéro dans une réponse d'état : `max_clip_index`, sinon le
+/// plus grand `index` de `clips`. Rien si aucun des deux n'est lisible.
+fn lire_numero_max(corps: &serde_json::Value) -> Option<u32> {
+    if let Some(max) = corps.get("max_clip_index").and_then(|v| v.as_u64()) {
+        return Some(max as u32);
+    }
+
+    corps
+        .get("clips")?
+        .as_array()?
+        .iter()
+        .filter_map(|c| c.get("index").and_then(|i| i.as_u64()))
+        .max()
+        .map(|m| m as u32)
 }
 
 /// Identifiant d'envoi d'un clip.
@@ -895,6 +985,54 @@ mod tests {
 
         // Le serveur limite l'identifiant à 64 caractères.
         assert!(identifiant_envoi(9_999_999, session, ClipVariant::Proxy, 99_999).len() <= 64);
+    }
+
+    fn config_test() -> VideoUploadConfig {
+        VideoUploadConfig {
+            token: "jeton".into(),
+            event_id: 42,
+            checkpoint_id: None,
+            session_id: String::new(),
+        }
+    }
+
+    #[tokio::test]
+    async fn le_serveur_donne_le_plus_grand_numero() {
+        let (base, requete) = crate::verification::serveur_factice::une_reponse(
+            200,
+            r#"{"success":true,"clips":[{"index":3},{"index":27},{"index":12}]}"#,
+        )
+        .await;
+
+        let max = numero_max_serveur_sur(&reqwest::Client::new(), &base, &config_test()).await;
+
+        assert_eq!(max, Ok(Some(27)));
+
+        // Toute l'épreuve : aucune session dans la requête.
+        let requete = requete.await.unwrap();
+        assert!(requete.starts_with("GET /api/sport/events/42/clips/status HTTP"));
+    }
+
+    #[tokio::test]
+    async fn le_serveur_actuel_refuse_sans_session() {
+        // Aujourd'hui : validation Laravel, session_id obligatoire.
+        let (base, _) = crate::verification::serveur_factice::une_reponse(
+            422,
+            r#"{"message":"The session id field is required.","errors":{"session_id":["x"]}}"#,
+        )
+        .await;
+
+        let max = numero_max_serveur_sur(&reqwest::Client::new(), &base, &config_test()).await;
+
+        assert!(max.is_err());
+    }
+
+    #[test]
+    fn lit_le_numero_max_sous_ses_deux_formes() {
+        assert_eq!(lire_numero_max(&serde_json::json!({"max_clip_index": 41})), Some(41));
+        assert_eq!(lire_numero_max(&serde_json::json!({"clips": [{"index": 2}, {"index": 9}]})), Some(9));
+        assert_eq!(lire_numero_max(&serde_json::json!({"clips": []})), None);
+        assert_eq!(lire_numero_max(&serde_json::json!({"success": true})), None);
     }
 
     #[test]

@@ -21,7 +21,16 @@
         "no_photos": "Veel pole fotosid",
         "checkpoints_one": "{count} kontrollpunkt",
         "checkpoints_other": "{count} kontrollpunkti",
-        "logout_title": "Logi välja"
+        "logout_title": "Logi välja",
+        "videos_one": "{count} video võrgus",
+        "videos_other": "{count} videot võrgus",
+        "mode": "Tuvastamine: {mode}",
+        "mode_bib": "stardinumbrid (OCR)",
+        "mode_face": "näod",
+        "mode_mixed": "segatud number + nägu",
+        "mode_roster": "osalejate nimekiri",
+        "mode_vehicle": "sõidukid",
+        "mode_none": "puudub"
     },
     "config": {
         "back_title": "Tagasi",
@@ -145,7 +154,8 @@
         "video_frames_label": "Analüüsikaadrid",
         "video_missing": "Järjekorrast eemaldati videofaile: {count} — kettalt ei leitud",
         "video_missing_clips": "Järjekorrast eemaldati videofaile: {count} — kettalt ei leitud (klipid {clips})",
-        "video_online_event": "{total} ürituse jaoks võrgus"
+        "video_online_event": "{total} ürituse jaoks võrgus",
+        "video_folder": "Selle salvestuse kaust: {folder}"
     },
     "watcher": {
         "detected": "Tuvastatud ({size} MB)",
@@ -163,7 +173,8 @@
         "throttled": "Server on ülekoormatud ({code}): paus {delay} s, paralleelseid üleslaadimisi: {parallel}",
         "success_server": "OK {duration} s (server {server} s)",
         "server_had_it": "serveris oli see juba olemas",
-        "already_online": "Juba võrgus — uuesti ei saadetud"
+        "already_online": "Juba võrgus — uuesti ei saadetud",
+        "missing_on_server": "Galeriist puudu — saadeti uuesti"
     },
     "connection": {
         "restored": "Ühendus taastatud",
@@ -188,7 +199,14 @@
         "retry": "Proovi ebaõnnestunuid uuesti",
         "started_log": "HD-klippide saatmine alustatud",
         "suspended_log": "HD-klippide saatmine peatatud",
-        "hint": "HD saadetakse agendist, mitte kunagi galeriist: galeriist saadetuna tekib duplikaat. Fotod on endiselt eelisjärjekorras."
+        "hint": "HD saadetakse agendist, mitte kunagi galeriist: galeriist saadetuna tekib duplikaat. Fotod on endiselt eelisjärjekorras.",
+        "sent_missing": "Saadetud: {sent} — kettalt ei leitud: {missing} (jäävad kergversiooniks)",
+        "rate": "{rate} Mb/s",
+        "time_left": "jäänud ≈ {time}",
+        "duration_s": "{n} s",
+        "duration_min": "{n} min",
+        "duration_h": "{h} h {m} min",
+        "auto_notice": "HD saadetakse automaatselt: täiskvaliteet läheb üles võistluse ajal (jälgi 4G-paketti)."
     },
     "nav": {
         "banner_title": "Seanss käib: {event}",

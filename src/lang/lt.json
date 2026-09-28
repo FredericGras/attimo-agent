@@ -21,7 +21,16 @@
         "no_photos": "Dar nėra nuotraukų",
         "checkpoints_one": "{count} kontrolinis taškas",
         "checkpoints_other": "{count} kontrolinių taškų",
-        "logout_title": "Atsijungti"
+        "logout_title": "Atsijungti",
+        "videos_one": "{count} vaizdo įrašas internete",
+        "videos_other": "Vaizdo įrašų internete: {count}",
+        "mode": "Identifikavimas: {mode}",
+        "mode_bib": "starto numeriai (OCR)",
+        "mode_face": "veidai",
+        "mode_mixed": "mišrus numeris + veidas",
+        "mode_roster": "dalyvių sąrašas",
+        "mode_vehicle": "transporto priemonės",
+        "mode_none": "nėra"
     },
     "config": {
         "back_title": "Atgal",
@@ -145,7 +154,8 @@
         "video_frames_label": "Analizės kadrai",
         "video_missing": "Iš eilės pašalinta vaizdo failų: {count} — nerasta diske",
         "video_missing_clips": "Iš eilės pašalinta vaizdo failų: {count} — nerasta diske (klipai {clips})",
-        "video_online_event": "{total} internete renginyje"
+        "video_online_event": "{total} internete renginyje",
+        "video_folder": "Šio įrašymo aplankas: {folder}"
     },
     "watcher": {
         "detected": "Aptikta ({size} MB)",
@@ -163,7 +173,8 @@
         "throttled": "Serveris perkrautas ({code}): pauzė {delay} s, lygiagrečių įkėlimų: {parallel}",
         "success_server": "OK per {duration} s (serveris {server} s)",
         "server_had_it": "serveris ją jau turėjo",
-        "already_online": "Jau internete — pakartotinai nesiųsta"
+        "already_online": "Jau internete — pakartotinai nesiųsta",
+        "missing_on_server": "Galerijoje nėra — išsiųsta iš naujo"
     },
     "connection": {
         "restored": "Ryšys atkurtas",
@@ -188,7 +199,14 @@
         "retry": "Kartoti nepavykusius",
         "started_log": "HD klipų siuntimas pradėtas",
         "suspended_log": "HD klipų siuntimas pristabdytas",
-        "hint": "HD siunčiama iš agento, niekada iš galerijos: išsiųsta iš galerijos, sukuria dublikatą. Nuotraukos išlieka pirmenybinės."
+        "hint": "HD siunčiama iš agento, niekada iš galerijos: išsiųsta iš galerijos, sukuria dublikatą. Nuotraukos išlieka pirmenybinės.",
+        "sent_missing": "Išsiųsta: {sent} — diske nerasta: {missing} (lieka lengvojoje versijoje)",
+        "rate": "{rate} Mb/s",
+        "time_left": "liko ≈ {time}",
+        "duration_s": "{n} s",
+        "duration_min": "{n} min",
+        "duration_h": "{h} val. {m} min",
+        "auto_notice": "HD siunčiama automatiškai: visa kokybė keliama varžybų metu (atkreipkite dėmesį į 4G planą)."
     },
     "nav": {
         "banner_title": "Vyksta seansas: {event}",

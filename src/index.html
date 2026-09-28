@@ -430,6 +430,9 @@
                     </div>
                 </div>
 
+                <!-- Avis (0.3.3) : fichiers vidéo retirés de la file -->
+                <div class="video-notice" id="dash-video-notice" style="display:none;"></div>
+
                 <!-- Compteurs de la session : filmés, assemblés, envoyés, en attente -->
                 <div class="video-stats" id="dash-video-stats">
                     <div class="video-stat">
@@ -470,6 +473,7 @@
                             <button type="button" id="dash-hd-btn" class="btn btn-primary" style="display:none;" data-i18n="hd.send_now">Envoyer les HD maintenant</button>
                         </div>
                     </div>
+                    <div class="video-hd-auto" id="dash-hd-auto" style="display:none;" data-i18n="hd.auto_notice">HD envoyée automatiquement : la pleine qualité part pendant la course (attention au forfait 4G).</div>
                     <small class="form-hint" data-i18n="hd.hint">La HD s'envoie depuis l'agent, jamais depuis la galerie : envoyée depuis la galerie, elle crée un doublon. Les photos restent prioritaires.</small>
                 </div>
 
@@ -532,6 +536,7 @@
 
     <!-- Scripts : i18n chargé en premier (global), puis main.js (module) -->
     <script src="i18n.js"></script>
+    <script src="affichage.js"></script>
     <script type="module" src="main.js"></script>
 </body>
 </html>

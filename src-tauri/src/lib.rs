@@ -20,6 +20,7 @@ mod secret;
 mod traductions;
 mod watcher;
 mod uploader;
+mod verification;
 mod video_queue;
 mod video_uploader;
 
@@ -170,6 +171,9 @@ pub fn run() {
             commands::video_analysis_probe,
             commands::journal_append,
             commands::export_journal,
+            // 0.3.3
+            commands::video_server_clip_max,
+            commands::video_bytes_sent,
         ])
         .run(tauri::generate_context!())
         .expect("Erreur lors du lancement de l'application");

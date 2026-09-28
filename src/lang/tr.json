@@ -21,7 +21,16 @@
         "no_photos": "Henüz fotoğraf yok",
         "checkpoints_one": "{count} kontrol noktası",
         "checkpoints_other": "{count} kontrol noktası",
-        "logout_title": "Çıkış yap"
+        "logout_title": "Çıkış yap",
+        "videos_one": "{count} video çevrimiçi",
+        "videos_other": "{count} video çevrimiçi",
+        "mode": "Kimlik tespiti: {mode}",
+        "mode_bib": "göğüs numaraları (OCR)",
+        "mode_face": "yüzler",
+        "mode_mixed": "karma numara + yüz",
+        "mode_roster": "katılımcı listesi",
+        "mode_vehicle": "araçlar",
+        "mode_none": "yok"
     },
     "config": {
         "back_title": "Geri",
@@ -145,7 +154,8 @@
         "video_frames_label": "Analiz kareleri",
         "video_missing": "{count} video dosyası kuyruktan kaldırıldı: diskte bulunamadı",
         "video_missing_clips": "{count} video dosyası kuyruktan kaldırıldı: diskte bulunamadı (klipler {clips})",
-        "video_online_event": "etkinlikte {total} çevrimiçi"
+        "video_online_event": "etkinlikte {total} çevrimiçi",
+        "video_folder": "Bu çekimin klasörü: {folder}"
     },
     "watcher": {
         "detected": "Tespit edildi ({size} MB)",
@@ -163,7 +173,8 @@
         "throttled": "Sunucu aşırı yüklü ({code}): {delay} sn duraklama, paralel yükleme: {parallel}",
         "success_server": "{duration} sn'de OK (sunucu {server} sn)",
         "server_had_it": "sunucuda zaten vardı",
-        "already_online": "Zaten çevrimiçi — yeniden gönderilmedi"
+        "already_online": "Zaten çevrimiçi — yeniden gönderilmedi",
+        "missing_on_server": "Galeride yok — yeniden gönderildi"
     },
     "connection": {
         "restored": "Bağlantı yeniden kuruldu",
@@ -188,7 +199,14 @@
         "retry": "Başarısız olanları yeniden dene",
         "started_log": "HD kliplerin gönderimi başladı",
         "suspended_log": "HD kliplerin gönderimi duraklatıldı",
-        "hint": "HD aracıdan gönderilir, asla galeriden değil: galeriden gönderilirse kopya oluşturur. Fotoğraflar önceliğini korur."
+        "hint": "HD aracıdan gönderilir, asla galeriden değil: galeriden gönderilirse kopya oluşturur. Fotoğraflar önceliğini korur.",
+        "sent_missing": "{sent} gönderildi — {missing} diskte bulunamadı (hafif sürümde kalır)",
+        "rate": "{rate} Mb/s",
+        "time_left": "kalan ≈ {time}",
+        "duration_s": "{n} sn",
+        "duration_min": "{n} dk",
+        "duration_h": "{h} sa {m} dk",
+        "auto_notice": "HD otomatik gönderiliyor: tam kalite yarış sırasında yüklenir (4G paketinize dikkat edin)."
     },
     "nav": {
         "banner_title": "Oturum sürüyor: {event}",

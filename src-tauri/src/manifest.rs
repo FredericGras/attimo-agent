@@ -116,6 +116,11 @@ pub struct AnalyseInfo {
     pub largeur_pixels: u32,
     #[serde(rename = "imagesProduites")]
     pub images_produites: u64,
+
+    /// Pourquoi l'analyse est coupée (0.3.3), par exemple « galerie sans
+    /// identification ». Absent tant qu'elle est active.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub motif: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -195,6 +200,7 @@ impl ManifestWriter {
                 intervalle_secondes: intervalle_analyse,
                 largeur_pixels: crate::frames::LARGEUR_ANALYSE,
                 images_produites: 0,
+                motif: None,
             },
             clips: Vec::new(),
         };
@@ -270,6 +276,19 @@ impl ManifestWriter {
         }
 
         self.manifeste.analyse.images_produites += images.len() as u64;
+
+        self.ecrire()
+    }
+
+    /// L'analyse est coupée pour cette captation (0.3.3) : galerie sans
+    /// identification, aucune image n'est envoyée. Le manifeste le dit.
+    pub fn desactiver_analyse(&mut self, motif: &str) -> Result<(), String> {
+        if !self.manifeste.analyse.actif && self.manifeste.analyse.motif.as_deref() == Some(motif) {
+            return Ok(());
+        }
+
+        self.manifeste.analyse.actif = false;
+        self.manifeste.analyse.motif = Some(motif.to_string());
 
         self.ecrire()
     }
@@ -525,6 +544,28 @@ mod tests {
             writer.manifeste().session.fin.as_deref(),
             Some("2026-01-01T13:00:00.000Z")
         );
+
+        let _ = std::fs::remove_dir_all(&dossier);
+    }
+
+    #[test]
+    fn une_galerie_sans_identification_coupe_lanalyse_au_manifeste() {
+        let dossier = std::env::temp_dir().join("attimo_manifeste_sans_analyse");
+        let _ = std::fs::remove_dir_all(&dossier);
+
+        let mut writer = writer_de_test(&dossier);
+
+        // Active par défaut, sans motif écrit.
+        let avant = std::fs::read_to_string(dossier.join("manifest.json")).unwrap();
+        assert!(!avant.contains("motif"));
+
+        writer.desactiver_analyse("galerie sans identification").unwrap();
+
+        let json: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(dossier.join("manifest.json")).unwrap()).unwrap();
+
+        assert_eq!(json["analyse"]["actif"], serde_json::json!(false));
+        assert_eq!(json["analyse"]["motif"], serde_json::json!("galerie sans identification"));
 
         let _ = std::fs::remove_dir_all(&dossier);
     }

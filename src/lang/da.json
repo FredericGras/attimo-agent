@@ -21,7 +21,16 @@
         "no_photos": "Ingen fotos endnu",
         "checkpoints_one": "{count} checkpoint",
         "checkpoints_other": "{count} checkpoints",
-        "logout_title": "Log ud"
+        "logout_title": "Log ud",
+        "videos_one": "{count} video online",
+        "videos_other": "{count} videoer online",
+        "mode": "Identifikation: {mode}",
+        "mode_bib": "startnumre (OCR)",
+        "mode_face": "ansigter",
+        "mode_mixed": "blandet startnummer + ansigt",
+        "mode_roster": "deltagerliste",
+        "mode_vehicle": "køretøjer",
+        "mode_none": "ingen"
     },
     "config": {
         "back_title": "Tilbage",
@@ -145,7 +154,8 @@
         "video_frames_label": "Analysebilleder",
         "video_missing": "{count} videofil(er) fjernet fra køen: ikke fundet på disken",
         "video_missing_clips": "{count} videofil(er) fjernet fra køen: ikke fundet på disken (klip {clips})",
-        "video_online_event": "{total} online for eventet"
+        "video_online_event": "{total} online for eventet",
+        "video_folder": "Mappe for denne optagelse: {folder}"
     },
     "watcher": {
         "detected": "Opdaget ({size} MB)",
@@ -163,7 +173,8 @@
         "throttled": "Serveren er overbelastet ({code}): pause i {delay} s, {parallel} parallelle upload(s)",
         "success_server": "OK på {duration} s (server {server} s)",
         "server_had_it": "serveren havde det allerede",
-        "already_online": "Allerede online — ikke sendt igen"
+        "already_online": "Allerede online — ikke sendt igen",
+        "missing_on_server": "Mangler i galleriet — sendt igen"
     },
     "connection": {
         "restored": "Forbindelse genoprettet",
@@ -188,7 +199,14 @@
         "retry": "Prøv de mislykkede igen",
         "started_log": "Afsendelse af HD-klip startet",
         "suspended_log": "Afsendelse af HD-klip sat på pause",
-        "hint": "HD sendes fra agenten, aldrig fra galleriet: sendt fra galleriet opstår der en dublet. Fotos har fortsat forrang."
+        "hint": "HD sendes fra agenten, aldrig fra galleriet: sendt fra galleriet opstår der en dublet. Fotos har fortsat forrang.",
+        "sent_missing": "{sent} sendt — {missing} ikke fundet på disken (forbliver som letversion)",
+        "rate": "{rate} Mb/s",
+        "time_left": "≈ {time} tilbage",
+        "duration_s": "{n} s",
+        "duration_min": "{n} min",
+        "duration_h": "{h} t {m} min",
+        "auto_notice": "HD sendes automatisk: fuld kvalitet uploades under løbet (pas på dit 4G-abonnement)."
     },
     "nav": {
         "banner_title": "Session i gang: {event}",

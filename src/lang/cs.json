@@ -21,7 +21,16 @@
         "no_photos": "Zatím žádné fotografie",
         "checkpoints_one": "{count} kontrolní bod",
         "checkpoints_other": "{count} kontrolních bodů",
-        "logout_title": "Odhlásit se"
+        "logout_title": "Odhlásit se",
+        "videos_one": "{count} video online",
+        "videos_other": "Videí online: {count}",
+        "mode": "Identifikace: {mode}",
+        "mode_bib": "startovní čísla (OCR)",
+        "mode_face": "obličeje",
+        "mode_mixed": "smíšená číslo + obličej",
+        "mode_roster": "seznam přihlášených",
+        "mode_vehicle": "vozidla",
+        "mode_none": "žádná"
     },
     "config": {
         "back_title": "Zpět",
@@ -145,7 +154,8 @@
         "video_frames_label": "Snímky k analýze",
         "video_missing": "Odebráno z fronty video souborů: {count} — nenalezeny na disku",
         "video_missing_clips": "Odebráno z fronty video souborů: {count} — nenalezeny na disku (klipy {clips})",
-        "video_online_event": "{total} online v události"
+        "video_online_event": "{total} online v události",
+        "video_folder": "Složka tohoto natáčení: {folder}"
     },
     "watcher": {
         "detected": "Detekováno ({size} MB)",
@@ -163,7 +173,8 @@
         "throttled": "Server je přetížen ({code}): pauza {delay} s, paralelní nahrávání: {parallel}",
         "success_server": "OK za {duration} s (server {server} s)",
         "server_had_it": "server ji už měl",
-        "already_online": "Už online — znovu neodesláno"
+        "already_online": "Už online — znovu neodesláno",
+        "missing_on_server": "Chybí v galerii — odesláno znovu"
     },
     "connection": {
         "restored": "Spojení obnoveno",
@@ -188,7 +199,14 @@
         "retry": "Zopakovat neúspěšné",
         "started_log": "Odesílání klipů HD zahájeno",
         "suspended_log": "Odesílání klipů HD pozastaveno",
-        "hint": "HD se odesílá z agenta, nikdy z galerie: odesláno z galerie vytvoří duplikát. Fotografie mají stále přednost."
+        "hint": "HD se odesílá z agenta, nikdy z galerie: odesláno z galerie vytvoří duplikát. Fotografie mají stále přednost.",
+        "sent_missing": "Odesláno: {sent} — nenalezeno na disku: {missing} (zůstávají v odlehčené verzi)",
+        "rate": "{rate} Mb/s",
+        "time_left": "zbývá ≈ {time}",
+        "duration_s": "{n} s",
+        "duration_min": "{n} min",
+        "duration_h": "{h} h {m} min",
+        "auto_notice": "HD se odesílá automaticky: plná kvalita odchází během závodu (pozor na datový tarif 4G)."
     },
     "nav": {
         "banner_title": "Probíhá relace: {event}",

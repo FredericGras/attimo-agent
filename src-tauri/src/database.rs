@@ -347,6 +347,16 @@ pub fn empreinte_connue(conn: &Connection, event_id: i64, empreinte: &str) -> Re
     }
 }
 
+/// Oublie une photo que la mémoire locale croyait en ligne (0.3.3) : le
+/// serveur dit ne pas l'avoir — supprimée de la galerie.
+pub fn oublier_empreinte(conn: &Connection, event_id: i64, empreinte: &str) -> Result<()> {
+    conn.execute(
+        "DELETE FROM photos_envoyees WHERE event_id = ?1 AND empreinte = ?2",
+        params![event_id, empreinte],
+    )?;
+    Ok(())
+}
+
 /// Retient qu'une photo est en ligne pour l'épreuve.
 pub fn retenir_empreinte(
     conn: &Connection,
@@ -402,6 +412,10 @@ mod tests {
 
         // Une autre épreuve n'en sait rien : la photo doit y partir.
         assert_eq!(empreinte_connue(&conn, 8, "abc").unwrap(), None);
+
+        // Le serveur dit ne plus l'avoir : la mémoire est corrigée.
+        oublier_empreinte(&conn, 7, "abc").unwrap();
+        assert_eq!(empreinte_connue(&conn, 7, "abc").unwrap(), None);
     }
 
     #[test]
