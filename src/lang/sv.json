@@ -71,7 +71,8 @@
         "disk_detail": "{free} GB ledigt, {reserved} GB reserverat för systemet",
         "nothing_enabled": "Slå på minst foton eller video.",
         "hd_pending_title": "HD-klipp som väntar",
-        "hd_pending_text": "{count} HD-klipp från det här evenemanget väntar på att skickas ({size} GB)."
+        "hd_pending_text": "{count} HD-klipp från det här evenemanget väntar på att skickas ({size} GB).",
+        "video_folder_same_as_photos": "Den här mappen är också den bevakade fotomappen (eller den ena innehåller den andra). Inget skickas två gånger, men en separat mapp är bättre."
     },
     "dashboard": {
         "status_active": "Aktiv",
@@ -131,7 +132,20 @@
         "video_paused_log": "Inspelning pausad — det pågående klippet har stängts och skickas med de andra",
         "video_resumed_log": "Inspelning återupptagen",
         "video_send_failed": "Videouppladdning avbruten efter 3 försök: {error}",
-        "video_throttled": "Servern är överbelastad: videouppladdning pausad i {delay} s"
+        "video_throttled": "Servern är överbelastad: videouppladdning pausad i {delay} s",
+        "video_stop_confirm": "Stoppa videoinspelningen? Redan inspelade klipp fortsätter att skickas, och inspelningen kan startas igen.",
+        "video_restart": "Starta inspelningen igen",
+        "video_restarted_log": "Inspelning startad igen — klippnumreringen fortsätter",
+        "video_numbering": "Klippnumreringen för evenemanget fortsätter från klipp {index}",
+        "video_analysis_disabled": "Galleri utan identifiering: analysbilder skickas inte. Klipp skickas som vanligt.",
+        "video_frames_disabled": "analysbilder — skickas inte (galleri utan identifiering)",
+        "video_waiting_failed": "klipp väntar på att skickas — {failed} misslyckades",
+        "video_send_refused": "Avvisat av servern, försöks inte igen: {error}",
+        "video_clip_label": "Klipp {index}",
+        "video_frames_label": "Analysbilder",
+        "video_missing": "{count} videofil(er) borttagna från kön: hittades inte på disken",
+        "video_missing_clips": "{count} videofil(er) borttagna från kön: hittades inte på disken (klipp {clips})",
+        "video_online_event": "{total} online för evenemanget"
     },
     "watcher": {
         "detected": "Upptäckt ({size} MB)",
@@ -146,7 +160,10 @@
         "retry_scheduled": "Nytt försök om {delay}s (försök {attempt}/3)",
         "success_timing": "OK på {duration} s — nät {network} s + server {server} s",
         "success_total": "OK på {duration} s",
-        "throttled": "Servern är överbelastad ({code}): paus i {delay} s, {parallel} parallella uppladdning(ar)"
+        "throttled": "Servern är överbelastad ({code}): paus i {delay} s, {parallel} parallella uppladdning(ar)",
+        "success_server": "OK på {duration} s (server {server} s)",
+        "server_had_it": "servern hade det redan",
+        "already_online": "Redan online — skickas inte igen"
     },
     "connection": {
         "restored": "Anslutning återställd",
@@ -155,7 +172,8 @@
     },
     "complete": {
         "with_errors": "Klart: {sent} skickade, {failed} misslyckade",
-        "success": "Klart: {count} foton uppladdade!"
+        "success": "Klart: {count} foton uppladdade!",
+        "already": "(varav {count} redan online, skickades inte igen)"
     },
     "hd": {
         "title": "HD-video",
@@ -182,5 +200,10 @@
         "event_running": "● Session pågår",
         "confirm_replace": "En session pågår för ”{event}”. Avsluta den för att starta den här?",
         "confirm_logout": "En session pågår. Avsluta den och logga ut?"
+    },
+    "journal": {
+        "export": "Exportera logg",
+        "export_dialog": "Spara agentens logg",
+        "exported": "Logg exporterad: {path}"
     }
 }

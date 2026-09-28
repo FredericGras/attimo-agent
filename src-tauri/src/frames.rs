@@ -63,6 +63,16 @@ use tauri_plugin_shell::ShellExt;
 ///
 /// NE PAS DESCENDRE sous cette valeur sans refaire les mesures : toute
 /// réduction réintroduit des lectures erronées.
+///
+/// 0.3.2 — Le passage à 1280 px a été demandé pour alléger la 4G, sous
+/// réserve de vérifier côté serveur que la lecture des dossards n'en
+/// souffre pas. Vérifié dans le code serveur : il ne redimensionne pas les
+/// images d'analyse (`SportClipFrameService::processFrame` transmet les
+/// octets bruts à Rekognition), et sa propre documentation tient 1920 px
+/// pour « non négociable », avec la même mesure qu'ici (720p, soit 1280 px
+/// de large : une lecture ERRONÉE). La largeur reste donc à 1920 px. Sur une
+/// galerie sans identification, aucune image n'est plus ni extraite ni
+/// envoyée : c'est là que le volume était gaspillé.
 pub const LARGEUR_ANALYSE: u32 = 1920;
 
 /// Qualité JPEG, sur l'échelle inversée de FFmpeg où 2 est le meilleur et

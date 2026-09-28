@@ -30,6 +30,21 @@
 // L'ordre d'envoi suit cette logique. Un clip HD n'a aucune raison de passer
 // devant une image d'analyse : il pèse vingt-cinq fois plus pour un besoin
 // qui n'est pas urgent.
+//
+// ─── DEUX VOIES (0.3.2) ────────────────────────────────────────────────
+//
+// Jusqu'en 0.3.1, la priorité était stricte : tant qu'il restait une image
+// d'analyse en file, aucun clip ne partait. Or pendant la captation les
+// images arrivent sans cesse (une toutes les deux secondes), le serveur les
+// analyse une à une avant de répondre, et sur une galerie sans
+// identification il les refusait trois fois chacune. La file d'images ne se
+// vidait donc jamais tant que la caméra tournait : aucun clip ne partait
+// avant « Arrêter la vidéo ».
+//
+// Chaque envoi vidéo a maintenant sa voie : l'un sert d'abord les clips
+// (version légère, puis HD si elle est autorisée), l'autre d'abord les
+// images. Une voie sans travail prend celui de l'autre. Les clips légers
+// partent ainsi au fil de la captation, quel que soit le retard des images.
 
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
@@ -110,6 +125,38 @@ pub struct QueueStats {
 
     /// Poids des clips HD restant à envoyer (en attente ou en cours).
     pub hd_bytes_pending: i64,
+
+    // ─── 0.3.2 ───
+    /// Clips en ligne : version légère ou HD reçue par le serveur, un clip
+    /// compté une fois.
+    pub clips_online: i64,
+
+    /// Versions légères abandonnées (comprises dans `failed`).
+    pub proxy_failed: i64,
+
+    /// Images d'analyse écartées sans envoi : galerie sans identification.
+    pub frames_skipped: i64,
+
+    /// Fichiers sortis de la file parce qu'ils n'existent plus sur le disque.
+    pub missing: i64,
+}
+
+/// Voie d'un envoi vidéo (0.3.2) : ce qu'il sert en premier.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Voie {
+    /// Clips d'abord (légers, puis HD), images s'il n'y a pas de clip.
+    Clips,
+    /// Images d'abord, clips s'il n'y a pas d'image.
+    Images,
+}
+
+impl Voie {
+    pub fn depuis_texte(texte: Option<&str>) -> Self {
+        match texte {
+            Some("clips") => Voie::Clips,
+            _ => Voie::Images,
+        }
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -263,21 +310,7 @@ pub fn prochains(
         .map_err(|e| format!("Lecture de la file impossible : {}", e))?;
 
     let lignes = requete
-        .query_map(params![event_id, limite as i64], |ligne| {
-            Ok(QueueItem {
-                id: ligne.get(0)?,
-                session_id: ligne.get(1)?,
-                kind: QueueKind::from_str(&ligne.get::<_, String>(2)?),
-                file_path: ligne.get(3)?,
-                clip_index: ligne.get::<_, Option<i64>>(4)?.map(|v| v as u32),
-                started_at: ligne.get(5)?,
-                ended_at: ligne.get(6)?,
-                instant_at: ligne.get(7)?,
-                size_bytes: ligne.get(8)?,
-                attempts: ligne.get(9)?,
-                last_error: ligne.get(10)?,
-            })
-        })
+        .query_map(params![event_id, limite as i64], ligne_vers_element)
         .map_err(|e| format!("Lecture de la file impossible : {}", e))?;
 
     let mut elements = Vec::new();
@@ -287,6 +320,23 @@ pub fn prochains(
     }
 
     Ok(elements)
+}
+
+/// Lit une ligne de la file (colonnes dans l'ordre des requêtes de lecture).
+fn ligne_vers_element(ligne: &rusqlite::Row) -> rusqlite::Result<QueueItem> {
+    Ok(QueueItem {
+        id: ligne.get(0)?,
+        session_id: ligne.get(1)?,
+        kind: QueueKind::from_str(&ligne.get::<_, String>(2)?),
+        file_path: ligne.get(3)?,
+        clip_index: ligne.get::<_, Option<i64>>(4)?.map(|v| v as u32),
+        started_at: ligne.get(5)?,
+        ended_at: ligne.get(6)?,
+        instant_at: ligne.get(7)?,
+        size_bytes: ligne.get(8)?,
+        attempts: ligne.get(9)?,
+        last_error: ligne.get(10)?,
+    })
 }
 
 /// Ce qui attend, par nature.
@@ -380,10 +430,35 @@ pub fn statistiques_filtrees(
                 if nature == QueueKind::ClipHd {
                     stats.hd_failed = nombre;
                 }
+
+                if nature == QueueKind::ClipProxy {
+                    stats.proxy_failed = nombre;
+                }
             }
+            "skipped" => {
+                if nature == QueueKind::Frames {
+                    stats.frames_skipped = nombre;
+                }
+            }
+            "missing" => stats.missing += nombre,
             _ => {}
         }
     }
+
+    // Un clip est en ligne dès qu'une de ses variantes est reçue. Compté
+    // une fois, qu'il ait sa version légère, sa HD, ou les deux.
+    stats.clips_online = conn
+        .query_row(
+            &format!(
+                "SELECT COUNT(DISTINCT session_id || '#' || clip_index)
+                 FROM video_queue
+                 WHERE {} AND kind IN ('clip_proxy', 'clip_hd') AND status = 'sent'",
+                filtre
+            ),
+            rusqlite::params_from_iter(valeurs.iter()),
+            |ligne| ligne.get(0),
+        )
+        .map_err(|e| format!("Statistiques impossibles : {}", e))?;
 
     Ok(stats)
 }
@@ -414,12 +489,37 @@ pub fn reserver(conn: &Connection, id: i64) -> Result<bool, String> {
     Ok(modifiees == 1)
 }
 
-/// Choisit et réserve le prochain envoi (0.3.1).
+/// Une autre variante du même clip est-elle en cours d'envoi ? (0.3.2)
+///
+/// Le serveur apparie la version légère et la HD sur (session, numéro), et
+/// crée la fiche du clip à l'arrivée de la première. Deux finalisations
+/// simultanées du même clip pourraient en créer deux : son index n'est pas
+/// unique. L'agent n'envoie donc jamais les deux variantes en même temps.
+fn variante_en_cours(conn: &Connection, element: &QueueItem) -> Result<bool, String> {
+    let Some(index) = element.clip_index else {
+        return Ok(false);
+    };
+
+    let nombre: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM video_queue
+             WHERE session_id = ?1 AND clip_index = ?2 AND kind IN ('clip_proxy', 'clip_hd')
+               AND id != ?3 AND status = 'sending'",
+            params![element.session_id, index, element.id],
+            |l| l.get(0),
+        )
+        .map_err(|e| format!("Lecture de la file impossible : {}", e))?;
+
+    Ok(nombre > 0)
+}
+
+/// Choisit et réserve le prochain envoi.
 ///
 /// Soit un lot d'au plus `lot_images` images d'analyse d'une même session —
-/// elles partent en une seule requête —, soit un seul clip. L'ordre de
-/// priorité de `prochains` est respecté : tant qu'il reste des images, aucun
-/// clip n'est choisi.
+/// elles partent en une seule requête —, soit un seul clip.
+///
+/// 0.3.2 — La voie décide de ce qui passe d'abord (voir l'en-tête du
+/// module) ; une voie sans travail prend celui de l'autre.
 ///
 /// Chaque réservation est atomique : deux envois simultanés ne prennent
 /// jamais le même élément, et le second complète son lot plus loin dans la
@@ -429,47 +529,122 @@ pub fn reserver_prochain_envoi(
     event_id: i64,
     inclure_hd: bool,
     lot_images: usize,
+    voie: Voie,
 ) -> Result<Vec<QueueItem>, String> {
     let lot_images = lot_images.max(1);
 
-    // Assez de candidats pour compléter un lot même si un autre envoi vient
-    // d'en réserver une partie.
-    let candidats = prochains(conn, event_id, inclure_hd, lot_images * 4 + 4)?;
+    let ordre = match voie {
+        Voie::Clips => [true, false],
+        Voie::Images => [false, true],
+    };
+
+    for clips in ordre {
+        let trouve = if clips {
+            reserver_un_clip(conn, event_id, inclure_hd)?
+        } else {
+            reserver_lot_images(conn, event_id, lot_images)?
+        };
+
+        if !trouve.is_empty() {
+            return Ok(trouve);
+        }
+    }
+
+    Ok(Vec::new())
+}
+
+/// Réserve le prochain clip : versions légères d'abord, HD ensuite.
+fn reserver_un_clip(
+    conn: &Connection,
+    event_id: i64,
+    inclure_hd: bool,
+) -> Result<Vec<QueueItem>, String> {
+    // Assez de candidats pour passer ceux qu'un autre envoi vient de prendre.
+    for candidat in prochains_de_nature(conn, event_id, inclure_hd, true, 16)? {
+        if variante_en_cours(conn, &candidat)? {
+            continue;
+        }
+
+        if reserver(conn, candidat.id)? {
+            return Ok(vec![candidat]);
+        }
+    }
+
+    Ok(Vec::new())
+}
+
+/// Réserve un lot d'images d'une même session.
+fn reserver_lot_images(
+    conn: &Connection,
+    event_id: i64,
+    lot_images: usize,
+) -> Result<Vec<QueueItem>, String> {
+    let candidats = prochains_de_nature(conn, event_id, false, false, lot_images * 4 + 4)?;
 
     let mut images: Vec<QueueItem> = Vec::new();
 
-    for candidat in &candidats {
-        match candidat.kind {
-            QueueKind::Frames => {
-                // Un lot = une requête = une session.
-                if let Some(premiere) = images.first() {
-                    if premiere.session_id != candidat.session_id {
-                        continue;
-                    }
-                }
-
-                if reserver(conn, candidat.id)? {
-                    images.push(candidat.clone());
-
-                    if images.len() >= lot_images {
-                        break;
-                    }
-                }
+    for candidat in candidats {
+        // Un lot = une requête = une session.
+        if let Some(premiere) = images.first() {
+            if premiere.session_id != candidat.session_id {
+                continue;
             }
-            QueueKind::ClipProxy | QueueKind::ClipHd => {
-                // Les images passent avant : on envoie ce qu'on a déjà.
-                if !images.is_empty() {
-                    break;
-                }
+        }
 
-                if reserver(conn, candidat.id)? {
-                    return Ok(vec![candidat.clone()]);
-                }
+        if reserver(conn, candidat.id)? {
+            images.push(candidat);
+
+            if images.len() >= lot_images {
+                break;
             }
         }
     }
 
     Ok(images)
+}
+
+/// Éléments en attente d'une seule famille : les clips (légers puis HD, dans
+/// l'ordre de `prochains`), ou les images d'analyse.
+fn prochains_de_nature(
+    conn: &Connection,
+    event_id: i64,
+    inclure_hd: bool,
+    clips: bool,
+    limite: usize,
+) -> Result<Vec<QueueItem>, String> {
+    let filtre_nature = if clips {
+        if inclure_hd {
+            "kind IN ('clip_proxy', 'clip_hd')"
+        } else {
+            "kind = 'clip_proxy'"
+        }
+    } else {
+        "kind = 'frames'"
+    };
+
+    let mut requete = conn
+        .prepare(&format!(
+            "SELECT id, session_id, kind, file_path, clip_index, started_at, ended_at,
+                    instant_at, size_bytes, attempts, last_error
+             FROM video_queue
+             WHERE status = 'pending' AND {} AND (event_id = ?1 OR event_id IS NULL)
+             ORDER BY CASE kind WHEN 'clip_proxy' THEN 1 ELSE 2 END, id
+             LIMIT ?2",
+            filtre_nature
+        ))
+        .map_err(|e| format!("Lecture de la file impossible : {}", e))?;
+
+    let lignes = requete
+        .query_map(params![event_id, limite as i64], ligne_vers_element)
+        .map_err(|e| format!("Lecture de la file impossible : {}", e))?;
+
+    let mut elements = Vec::new();
+
+    for ligne in lignes {
+        elements.push(ligne.map_err(|e| format!("Lecture d'une ligne impossible : {}", e))?);
+    }
+
+    Ok(elements)
 }
 
 /// Remet en file un élément réservé dont l'envoi a échoué.
@@ -550,6 +725,117 @@ pub fn marquer_echec(conn: &Connection, id: i64, erreur: &str) -> Result<bool, S
     }
 
     Ok(false)
+}
+
+/// Échec définitif (0.3.2) : l'élément sort de la file tout de suite.
+///
+/// Une erreur que le serveur répétera à l'identique — requête refusée,
+/// fichier invalide — ne se relance pas : trois essais ne feraient que
+/// consommer la liaison et répéter la même ligne au journal.
+pub fn marquer_echec_definitif(conn: &Connection, id: i64, erreur: &str) -> Result<(), String> {
+    conn.execute(
+        "UPDATE video_queue
+         SET attempts = MAX(attempts, 3), last_error = ?2, status = 'failed'
+         WHERE id = ?1",
+        params![id, erreur],
+    )
+    .map_err(|e| format!("Mise à jour impossible : {}", e))?;
+
+    Ok(())
+}
+
+/// Écarte les images d'analyse d'une épreuve sans identification (0.3.2).
+///
+/// Le serveur refuse les images d'une galerie « Aucune » : elles sortent de
+/// la file sans être envoyées. Les éléments en cours d'envoi sont laissés à
+/// l'envoi qui les tient, qui conclura lui-même.
+pub fn ecarter_images(conn: &Connection, event_id: i64) -> Result<usize, String> {
+    conn.execute(
+        "UPDATE video_queue
+         SET status = 'skipped', last_error = 'ANALYSE_DESACTIVEE'
+         WHERE kind = 'frames' AND status IN ('pending', 'failed')
+           AND (event_id = ?1 OR event_id IS NULL)",
+        params![event_id],
+    )
+    .map_err(|e| format!("Mise à jour impossible : {}", e))
+}
+
+/// Écarte un élément précis sans l'envoyer (images d'un lot refusé).
+pub fn ecarter_element(conn: &Connection, id: i64, raison: &str) -> Result<(), String> {
+    conn.execute(
+        "UPDATE video_queue SET status = 'skipped', last_error = ?2 WHERE id = ?1",
+        params![id, raison],
+    )
+    .map_err(|e| format!("Mise à jour impossible : {}", e))?;
+
+    Ok(())
+}
+
+/// Sort de la file les fichiers qui n'existent plus sur le disque (0.3.2).
+///
+/// Des clips HD supprimés à la main restaient « en attente » pour toujours,
+/// et le bouton « Envoyer les HD » aurait échoué sur chacun. Ils sortent de
+/// la file, marqués `missing`, et sont renvoyés à l'appelant pour qu'il le
+/// dise au journal. Les éléments en cours d'envoi ne sont pas touchés.
+pub fn purger_absents(conn: &Connection, event_id: i64) -> Result<Vec<QueueItem>, String> {
+    let mut requete = conn
+        .prepare(
+            "SELECT id, session_id, kind, file_path, clip_index, started_at, ended_at,
+                    instant_at, size_bytes, attempts, last_error
+             FROM video_queue
+             WHERE status IN ('pending', 'failed') AND (event_id = ?1 OR event_id IS NULL)",
+        )
+        .map_err(|e| format!("Lecture de la file impossible : {}", e))?;
+
+    let lignes = requete
+        .query_map(params![event_id], ligne_vers_element)
+        .map_err(|e| format!("Lecture de la file impossible : {}", e))?;
+
+    let mut absents = Vec::new();
+
+    for ligne in lignes {
+        let element = ligne.map_err(|e| format!("Lecture d'une ligne impossible : {}", e))?;
+
+        if !std::path::Path::new(&element.file_path).exists() {
+            absents.push(element);
+        }
+    }
+
+    for element in &absents {
+        marquer_absent(conn, element.id)?;
+    }
+
+    Ok(absents)
+}
+
+/// Marque un élément dont le fichier a disparu.
+pub fn marquer_absent(conn: &Connection, id: i64) -> Result<(), String> {
+    conn.execute(
+        "UPDATE video_queue SET status = 'missing', last_error = 'Fichier introuvable'
+         WHERE id = ?1",
+        params![id],
+    )
+    .map_err(|e| format!("Mise à jour impossible : {}", e))?;
+
+    Ok(())
+}
+
+/// Premier numéro de clip libre pour une épreuve (0.3.2).
+///
+/// La numérotation continue d'une captation à l'autre — pause, reprise,
+/// relance, nouvelle session sur la même épreuve : le serveur ne reçoit plus
+/// deux « clip_0001 » dans le même événement.
+pub fn prochain_numero_clip(conn: &Connection, event_id: i64) -> Result<u32, String> {
+    let max: Option<i64> = conn
+        .query_row(
+            "SELECT MAX(clip_index) FROM video_queue
+             WHERE event_id = ?1 AND kind IN ('clip_proxy', 'clip_hd')",
+            params![event_id],
+            |l| l.get(0),
+        )
+        .map_err(|e| format!("Lecture de la file impossible : {}", e))?;
+
+    Ok(max.map(|m| m.max(0) as u32 + 1).unwrap_or(1))
 }
 
 /// Remet les éléments en échec dans la file.
@@ -804,27 +1090,27 @@ mod tests {
         enfiler(&conn, "session_2", EVT, QueueKind::Frames, "b.jpg", None, None, None, None).unwrap();
         enfiler_simple(&conn, QueueKind::ClipProxy, "p.mp4");
 
-        let lot = reserver_prochain_envoi(&conn, EVT, true, 10).unwrap();
+        let lot = reserver_prochain_envoi(&conn, EVT, true, 10, Voie::Images).unwrap();
 
         assert_eq!(lot.len(), 10);
         assert!(lot.iter().all(|e| e.kind == QueueKind::Frames && e.session_id == "session_1"));
 
         // Le second envoi complète avec ce qui reste de la même session,
         // sans mélanger les sessions ni passer au clip.
-        let suite = reserver_prochain_envoi(&conn, EVT, true, 10).unwrap();
+        let suite = reserver_prochain_envoi(&conn, EVT, true, 10, Voie::Images).unwrap();
         assert_eq!(suite.len(), 2);
         assert!(suite.iter().all(|e| e.session_id == "session_1"));
 
-        let autre = reserver_prochain_envoi(&conn, EVT, true, 10).unwrap();
+        let autre = reserver_prochain_envoi(&conn, EVT, true, 10, Voie::Images).unwrap();
         assert_eq!(autre.len(), 1);
         assert_eq!(autre[0].session_id, "session_2");
 
         // Plus d'images : un clip, seul.
-        let clip = reserver_prochain_envoi(&conn, EVT, true, 10).unwrap();
+        let clip = reserver_prochain_envoi(&conn, EVT, true, 10, Voie::Images).unwrap();
         assert_eq!(clip.len(), 1);
         assert_eq!(clip[0].kind, QueueKind::ClipProxy);
 
-        assert!(reserver_prochain_envoi(&conn, EVT, true, 10).unwrap().is_empty());
+        assert!(reserver_prochain_envoi(&conn, EVT, true, 10, Voie::Images).unwrap().is_empty());
     }
 
     #[test]
@@ -834,8 +1120,8 @@ mod tests {
         enfiler_simple(&conn, QueueKind::ClipProxy, "p1.mp4");
         enfiler(&conn, "session_1", EVT, QueueKind::ClipProxy, "p2.mp4", Some(2), None, None, None).unwrap();
 
-        let premier = reserver_prochain_envoi(&conn, EVT, true, 10).unwrap();
-        let second = reserver_prochain_envoi(&conn, EVT, true, 10).unwrap();
+        let premier = reserver_prochain_envoi(&conn, EVT, true, 10, Voie::Images).unwrap();
+        let second = reserver_prochain_envoi(&conn, EVT, true, 10, Voie::Images).unwrap();
 
         assert_eq!(premier.len(), 1);
         assert_eq!(second.len(), 1);
@@ -848,8 +1134,8 @@ mod tests {
 
         enfiler_simple(&conn, QueueKind::ClipHd, "hd.mp4");
 
-        assert!(reserver_prochain_envoi(&conn, EVT, false, 10).unwrap().is_empty());
-        assert_eq!(reserver_prochain_envoi(&conn, EVT, true, 10).unwrap().len(), 1);
+        assert!(reserver_prochain_envoi(&conn, EVT, false, 10, Voie::Images).unwrap().is_empty());
+        assert_eq!(reserver_prochain_envoi(&conn, EVT, true, 10, Voie::Images).unwrap().len(), 1);
     }
 
     #[test]
@@ -1045,5 +1331,172 @@ mod tests {
         assert_eq!(file[0].session_id, "session_ancienne");
 
         assert_eq!(statistiques(&conn, EVT).unwrap().hd_pending, 1);
+    }
+
+    // ─── 0.3.2 ───
+
+    #[test]
+    fn la_voie_des_clips_passe_devant_les_images() {
+        let conn = base_de_test();
+
+        // Des images en retard, et un clip léger qui attend derrière elles.
+        for i in 0..30 {
+            enfiler(&conn, "session_1", EVT, QueueKind::Frames, &format!("a{}.jpg", i),
+                    None, None, None, None).unwrap();
+        }
+        enfiler_simple(&conn, QueueKind::ClipProxy, "p.mp4");
+
+        // La voie des clips le prend tout de suite, sans attendre les images.
+        let clip = reserver_prochain_envoi(&conn, EVT, false, 10, Voie::Clips).unwrap();
+        assert_eq!(clip.len(), 1);
+        assert_eq!(clip[0].kind, QueueKind::ClipProxy);
+
+        // La voie des images, elle, sert les images.
+        let lot = reserver_prochain_envoi(&conn, EVT, false, 10, Voie::Images).unwrap();
+        assert_eq!(lot.len(), 10);
+        assert!(lot.iter().all(|e| e.kind == QueueKind::Frames));
+    }
+
+    #[test]
+    fn une_voie_sans_travail_prend_celui_de_lautre() {
+        let conn = base_de_test();
+
+        enfiler_simple(&conn, QueueKind::Frames, "a.jpg");
+
+        let lot = reserver_prochain_envoi(&conn, EVT, false, 10, Voie::Clips).unwrap();
+        assert_eq!(lot.len(), 1);
+        assert_eq!(lot[0].kind, QueueKind::Frames);
+
+        enfiler_simple(&conn, QueueKind::ClipProxy, "p.mp4");
+
+        let clip = reserver_prochain_envoi(&conn, EVT, false, 10, Voie::Images).unwrap();
+        assert_eq!(clip[0].kind, QueueKind::ClipProxy);
+    }
+
+    #[test]
+    fn la_version_legere_passe_avant_la_hd() {
+        let conn = base_de_test();
+
+        enfiler(&conn, "session_1", EVT, QueueKind::ClipHd, "h1.mp4", Some(1), None, None, None).unwrap();
+        enfiler(&conn, "session_1", EVT, QueueKind::ClipProxy, "p2.mp4", Some(2), None, None, None).unwrap();
+
+        let premier = reserver_prochain_envoi(&conn, EVT, true, 10, Voie::Clips).unwrap();
+        assert_eq!(premier[0].kind, QueueKind::ClipProxy);
+    }
+
+    #[test]
+    fn les_deux_variantes_dun_clip_ne_partent_jamais_ensemble() {
+        let conn = base_de_test();
+
+        enfiler_simple(&conn, QueueKind::ClipProxy, "p1.mp4");
+        enfiler_simple(&conn, QueueKind::ClipHd, "h1.mp4");
+        enfiler(&conn, "session_1", EVT, QueueKind::ClipHd, "h2.mp4", Some(2), None, None, None).unwrap();
+
+        let premier = reserver_prochain_envoi(&conn, EVT, true, 10, Voie::Clips).unwrap();
+        assert_eq!(premier[0].file_path, "p1.mp4");
+
+        // La HD du clip 1 attend que sa version légère soit conclue : le
+        // second envoi passe au clip 2.
+        let second = reserver_prochain_envoi(&conn, EVT, true, 10, Voie::Clips).unwrap();
+        assert_eq!(second[0].file_path, "h2.mp4");
+
+        marquer_envoye(&conn, premier[0].id).unwrap();
+
+        let troisieme = reserver_prochain_envoi(&conn, EVT, true, 10, Voie::Clips).unwrap();
+        assert_eq!(troisieme[0].file_path, "h1.mp4");
+    }
+
+    #[test]
+    fn un_echec_definitif_nest_pas_relance() {
+        let conn = base_de_test();
+
+        let id = enfiler_simple(&conn, QueueKind::ClipProxy, "p.mp4");
+
+        marquer_echec_definitif(&conn, id, "refusé").unwrap();
+
+        assert!(prochains(&conn, EVT, true, 10).unwrap().is_empty());
+        assert_eq!(statistiques(&conn, EVT).unwrap().proxy_failed, 1);
+    }
+
+    #[test]
+    fn les_images_dune_galerie_sans_identification_sortent_de_la_file() {
+        let conn = base_de_test();
+
+        enfiler_simple(&conn, QueueKind::Frames, "a.jpg");
+        enfiler_simple(&conn, QueueKind::Frames, "b.jpg");
+        enfiler_simple(&conn, QueueKind::ClipProxy, "p.mp4");
+
+        assert_eq!(ecarter_images(&conn, EVT).unwrap(), 2);
+
+        let reste = prochains(&conn, EVT, true, 10).unwrap();
+        assert_eq!(reste.len(), 1);
+        assert_eq!(reste[0].kind, QueueKind::ClipProxy);
+
+        let stats = statistiques(&conn, EVT).unwrap();
+        assert_eq!(stats.frames_skipped, 2);
+        assert_eq!(stats.failed, 0);
+    }
+
+    #[test]
+    fn un_fichier_supprime_du_disque_sort_de_la_file() {
+        let conn = base_de_test();
+
+        let present = std::env::temp_dir().join("attimo_vq_present.mp4");
+        std::fs::write(&present, b"x").unwrap();
+
+        enfiler(&conn, "session_1", EVT, QueueKind::ClipHd, present.to_str().unwrap(),
+                Some(1), None, None, None).unwrap();
+        enfiler(&conn, "session_1", EVT, QueueKind::ClipHd, "C:/nulle/part/clip_0002.mp4",
+                Some(2), None, None, None).unwrap();
+
+        let absents = purger_absents(&conn, EVT).unwrap();
+
+        assert_eq!(absents.len(), 1);
+        assert_eq!(absents[0].clip_index, Some(2));
+
+        let stats = statistiques(&conn, EVT).unwrap();
+        assert_eq!(stats.hd_pending, 1);
+        assert_eq!(stats.missing, 1);
+
+        // Déjà sorti : une seconde purge ne le signale plus.
+        assert!(purger_absents(&conn, EVT).unwrap().is_empty());
+
+        let _ = std::fs::remove_file(&present);
+    }
+
+    #[test]
+    fn un_clip_est_en_ligne_une_fois_quelle_que_soit_sa_variante() {
+        let conn = base_de_test();
+
+        let p1 = enfiler_simple(&conn, QueueKind::ClipProxy, "p1.mp4");
+        let h1 = enfiler_simple(&conn, QueueKind::ClipHd, "h1.mp4");
+        let h2 = enfiler(&conn, "session_1", EVT, QueueKind::ClipHd, "h2.mp4", Some(2), None, None, None).unwrap();
+        enfiler(&conn, "session_1", EVT, QueueKind::ClipProxy, "p2.mp4", Some(2), None, None, None).unwrap();
+
+        marquer_envoye(&conn, p1).unwrap();
+        marquer_envoye(&conn, h1).unwrap();
+        marquer_envoye(&conn, h2).unwrap();
+
+        let stats = statistiques(&conn, EVT).unwrap();
+
+        // Clip 1 : deux variantes, un seul clip. Clip 2 : en ligne par sa HD.
+        assert_eq!(stats.clips_online, 2);
+        assert_eq!(stats.proxy_sent, 1);
+    }
+
+    #[test]
+    fn la_numerotation_continue_sur_toute_lepreuve() {
+        let conn = base_de_test();
+
+        assert_eq!(prochain_numero_clip(&conn, EVT).unwrap(), 1);
+
+        enfiler(&conn, "video_1", EVT, QueueKind::ClipProxy, "a/p7.mp4", Some(7), None, None, None).unwrap();
+        enfiler(&conn, "video_1", EVT, QueueKind::ClipHd, "a/h7.mp4", Some(7), None, None, None).unwrap();
+
+        // Une autre épreuve garde sa propre numérotation.
+        enfiler(&conn, "video_9", 99, QueueKind::ClipHd, "b/h40.mp4", Some(40), None, None, None).unwrap();
+
+        assert_eq!(prochain_numero_clip(&conn, EVT).unwrap(), 8);
+        assert_eq!(prochain_numero_clip(&conn, 99).unwrap(), 41);
     }
 }

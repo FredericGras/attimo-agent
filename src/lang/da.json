@@ -71,7 +71,8 @@
         "disk_detail": "{free} GB ledige, {reserved} GB reserveret til systemet",
         "nothing_enabled": "Slå mindst fotos eller video til.",
         "hd_pending_title": "Ventende HD-klip",
-        "hd_pending_text": "{count} HD-klip fra dette event venter på at blive sendt ({size} GB)."
+        "hd_pending_text": "{count} HD-klip fra dette event venter på at blive sendt ({size} GB).",
+        "video_folder_same_as_photos": "Denne mappe er også den overvågede fotomappe (eller den ene indeholder den anden). Intet sendes to gange, men en separat mappe er bedre."
     },
     "dashboard": {
         "status_active": "Aktiv",
@@ -131,7 +132,20 @@
         "video_paused_log": "Optagelse på pause — det igangværende klip er lukket og sendes med de andre",
         "video_resumed_log": "Optagelse genoptaget",
         "video_send_failed": "Videoafsendelse opgivet efter 3 forsøg: {error}",
-        "video_throttled": "Serveren er overbelastet: videoafsendelse på pause i {delay} s"
+        "video_throttled": "Serveren er overbelastet: videoafsendelse på pause i {delay} s",
+        "video_stop_confirm": "Stop videooptagelsen? Allerede optagne klip sendes fortsat, og optagelsen kan startes igen.",
+        "video_restart": "Start optagelsen igen",
+        "video_restarted_log": "Optagelse startet igen — nummereringen af klip fortsætter",
+        "video_numbering": "Nummereringen af eventets klip fortsætter fra klip {index}",
+        "video_analysis_disabled": "Galleri uden identifikation: analysebilleder sendes ikke. Klip sendes som normalt.",
+        "video_frames_disabled": "analysebilleder — ikke sendt (galleri uden identifikation)",
+        "video_waiting_failed": "klip venter på afsendelse — {failed} mislykkedes",
+        "video_send_refused": "Afvist af serveren, prøves ikke igen: {error}",
+        "video_clip_label": "Klip {index}",
+        "video_frames_label": "Analysebilleder",
+        "video_missing": "{count} videofil(er) fjernet fra køen: ikke fundet på disken",
+        "video_missing_clips": "{count} videofil(er) fjernet fra køen: ikke fundet på disken (klip {clips})",
+        "video_online_event": "{total} online for eventet"
     },
     "watcher": {
         "detected": "Opdaget ({size} MB)",
@@ -146,7 +160,10 @@
         "retry_scheduled": "Nyt forsøg om {delay}s (forsøg {attempt}/3)",
         "success_timing": "OK på {duration} s — netværk {network} s + server {server} s",
         "success_total": "OK på {duration} s",
-        "throttled": "Serveren er overbelastet ({code}): pause i {delay} s, {parallel} parallelle upload(s)"
+        "throttled": "Serveren er overbelastet ({code}): pause i {delay} s, {parallel} parallelle upload(s)",
+        "success_server": "OK på {duration} s (server {server} s)",
+        "server_had_it": "serveren havde det allerede",
+        "already_online": "Allerede online — ikke sendt igen"
     },
     "connection": {
         "restored": "Forbindelse genoprettet",
@@ -155,7 +172,8 @@
     },
     "complete": {
         "with_errors": "Færdig: {sent} sendt, {failed} fejlet",
-        "success": "Færdig: {count} fotos uploadet med succes!"
+        "success": "Færdig: {count} fotos uploadet med succes!",
+        "already": "(heraf {count} allerede online, ikke sendt igen)"
     },
     "hd": {
         "title": "HD-video",
@@ -182,5 +200,10 @@
         "event_running": "● Session i gang",
         "confirm_replace": "Der kører en session for »{event}«. Afslut den for at starte denne?",
         "confirm_logout": "En session er i gang. Afslut den og log ud?"
+    },
+    "journal": {
+        "export": "Eksportér log",
+        "export_dialog": "Gem agentens log",
+        "exported": "Log eksporteret: {path}"
     }
 }

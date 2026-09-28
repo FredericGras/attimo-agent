@@ -331,6 +331,10 @@ fn inscrire_fichier(
         Ok(()) => crate::uploader::photo_ajoutee(),
         Err(e) => warn!("Erreur envoi vers uploader: {}", e),
     }
+
+    // Les compteurs suivent la détection, sans attendre le premier envoi
+    // (0.3.2).
+    crate::uploader::signaler_stats(session_id, app_handle, false);
 }
 
 // ─── Scan des fichiers existants ────────────────────────────
@@ -399,6 +403,8 @@ pub async fn scan_existing_files(
                 None => debug!("Fichier instable ou trop petit, ignoré: {}", path.display()),
             }
         }
+
+        crate::uploader::signaler_stats(session_id, app_handle, true);
     }
 
     let _ = app_handle.emit("scan_complete", serde_json::json!({}));

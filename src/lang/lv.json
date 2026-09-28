@@ -71,7 +71,8 @@
         "disk_detail": "{free} GB brīvi, {reserved} GB rezervēti sistēmai",
         "nothing_enabled": "Ieslēdziet vismaz fotoattēlus vai video.",
         "hd_pending_title": "Gaidošie HD klipi",
-        "hd_pending_text": "Šī pasākuma HD klipi, kas gaida nosūtīšanu: {count} ({size} GB)."
+        "hd_pending_text": "Šī pasākuma HD klipi, kas gaida nosūtīšanu: {count} ({size} GB).",
+        "video_folder_same_as_photos": "Šī mape ir arī uzraudzītā fotoattēlu mape (vai viena satur otru). Nekas netiks nosūtīts divreiz, taču labāk izmantot atsevišķu mapi."
     },
     "dashboard": {
         "status_active": "Aktīvs",
@@ -131,7 +132,20 @@
         "video_paused_log": "Ierakstīšana pauzēta — iesāktais klips ir aizvērts un tiks nosūtīts kopā ar pārējiem",
         "video_resumed_log": "Ierakstīšana atsākta",
         "video_send_failed": "Video sūtīšana pārtraukta pēc 3 mēģinājumiem: {error}",
-        "video_throttled": "Serveris ir pārslogots: video sūtīšana pauzēta uz {delay} s"
+        "video_throttled": "Serveris ir pārslogots: video sūtīšana pauzēta uz {delay} s",
+        "video_stop_confirm": "Apturēt video ierakstīšanu? Jau ierakstītie klipi joprojām tiek sūtīti, un ierakstīšanu varēs sākt no jauna.",
+        "video_restart": "Sākt ierakstīšanu no jauna",
+        "video_restarted_log": "Ierakstīšana sākta no jauna — klipu numerācija turpinās",
+        "video_numbering": "Pasākuma klipu numerācija turpinās no klipa {index}",
+        "video_analysis_disabled": "Galerija bez identifikācijas: analīzes attēli netiek sūtīti. Klipi tiek sūtīti kā parasti.",
+        "video_frames_disabled": "analīzes attēli — netiek sūtīti (galerija bez identifikācijas)",
+        "video_waiting_failed": "klipi gaida nosūtīšanu — {failed} neizdevās",
+        "video_send_refused": "Serveris noraidīja, atkārtots mēģinājums netiks veikts: {error}",
+        "video_clip_label": "Klips {index}",
+        "video_frames_label": "Analīzes attēli",
+        "video_missing": "No rindas izņemti video faili: {count} — diskā nav atrasti",
+        "video_missing_clips": "No rindas izņemti video faili: {count} — diskā nav atrasti (klipi {clips})",
+        "video_online_event": "{total} tiešsaistē pasākumā"
     },
     "watcher": {
         "detected": "Atklāts ({size} MB)",
@@ -146,7 +160,10 @@
         "retry_scheduled": "Atkārtots mēģinājums pēc {delay}s (mēģinājums {attempt}/3)",
         "success_timing": "OK {duration} s — tīkls {network} s + serveris {server} s",
         "success_total": "OK {duration} s",
-        "throttled": "Serveris ir pārslogots ({code}): pauze {delay} s, paralēlās augšupielādes: {parallel}"
+        "throttled": "Serveris ir pārslogots ({code}): pauze {delay} s, paralēlās augšupielādes: {parallel}",
+        "success_server": "OK {duration} s (serveris {server} s)",
+        "server_had_it": "serverim tas jau bija",
+        "already_online": "Jau tiešsaistē — atkārtoti netika sūtīts"
     },
     "connection": {
         "restored": "Savienojums atjaunots",
@@ -155,7 +172,8 @@
     },
     "complete": {
         "with_errors": "Gatavs: {sent} nosūtīti, {failed} neizdevušies",
-        "success": "Gatavs: {count} fotoattēli veiksmīgi augšupielādēti!"
+        "success": "Gatavs: {count} fotoattēli veiksmīgi augšupielādēti!",
+        "already": "(no tiem {count} jau tiešsaistē, atkārtoti netika sūtīti)"
     },
     "hd": {
         "title": "HD video",
@@ -182,5 +200,10 @@
         "event_running": "● Notiek sesija",
         "confirm_replace": "Pasākumam “{event}” notiek sesija. Vai beigt to, lai sāktu šo?",
         "confirm_logout": "Notiek sesija. Vai beigt to un izrakstīties?"
+    },
+    "journal": {
+        "export": "Eksportēt žurnālu",
+        "export_dialog": "Saglabāt aģenta žurnālu",
+        "exported": "Žurnāls eksportēts: {path}"
     }
 }

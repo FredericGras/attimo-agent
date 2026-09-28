@@ -71,7 +71,8 @@
         "disk_detail": "{free} GB livres, {reserved} GB reservados para o sistema",
         "nothing_enabled": "Ative pelo menos as fotos ou o vídeo.",
         "hd_pending_title": "Clips HD em espera",
-        "hd_pending_text": "{count} clip(s) HD deste evento aguardam envio ({size} GB)."
+        "hd_pending_text": "{count} clip(s) HD deste evento aguardam envio ({size} GB).",
+        "video_folder_same_as_photos": "Esta pasta é também a pasta de fotos monitorizada (ou uma contém a outra). Nada será enviado duas vezes, mas é preferível uma pasta distinta."
     },
     "dashboard": {
         "status_active": "Ativo",
@@ -131,7 +132,20 @@
         "video_paused_log": "Gravação em pausa — o clip em curso foi fechado e segue com os outros",
         "video_resumed_log": "Gravação retomada",
         "video_send_failed": "Envio de vídeo abandonado após 3 tentativas: {error}",
-        "video_throttled": "Servidor saturado: envio de vídeo em pausa durante {delay} s"
+        "video_throttled": "Servidor saturado: envio de vídeo em pausa durante {delay} s",
+        "video_stop_confirm": "Parar a gravação de vídeo? Os clips já gravados continuam a ser enviados e a gravação poderá ser reiniciada.",
+        "video_restart": "Reiniciar a gravação",
+        "video_restarted_log": "Gravação reiniciada — a numeração dos clips continua",
+        "video_numbering": "A numeração dos clips do evento continua, a partir do clip {index}",
+        "video_analysis_disabled": "Galeria sem identificação: as imagens de análise não são enviadas. Os clips são enviados normalmente.",
+        "video_frames_disabled": "imagens de análise — não enviadas (galeria sem identificação)",
+        "video_waiting_failed": "clips à espera de envio — {failed} falhados",
+        "video_send_refused": "Recusado pelo servidor, sem nova tentativa: {error}",
+        "video_clip_label": "Clip {index}",
+        "video_frames_label": "Imagens de análise",
+        "video_missing": "{count} ficheiro(s) de vídeo retirado(s) da fila: não encontrado(s) no disco",
+        "video_missing_clips": "{count} ficheiro(s) de vídeo retirado(s) da fila: não encontrado(s) no disco (clips {clips})",
+        "video_online_event": "{total} online no evento"
     },
     "watcher": {
         "detected": "Detetado ({size} MB)",
@@ -146,7 +160,10 @@
         "retry_scheduled": "Nova tentativa em {delay}s (tentativa {attempt}/3)",
         "success_timing": "OK em {duration} s — rede {network} s + servidor {server} s",
         "success_total": "OK em {duration} s",
-        "throttled": "Servidor saturado ({code}): pausa de {delay} s, {parallel} envio(s) em paralelo"
+        "throttled": "Servidor saturado ({code}): pausa de {delay} s, {parallel} envio(s) em paralelo",
+        "success_server": "OK em {duration} s (servidor {server} s)",
+        "server_had_it": "o servidor já a tinha",
+        "already_online": "Já online — não reenviada"
     },
     "connection": {
         "restored": "Ligação restabelecida",
@@ -155,7 +172,8 @@
     },
     "complete": {
         "with_errors": "Concluído: {sent} enviadas, {failed} falhadas",
-        "success": "Concluído: {count} fotos carregadas com sucesso!"
+        "success": "Concluído: {count} fotos carregadas com sucesso!",
+        "already": "(das quais {count} já online, não reenviadas)"
     },
     "hd": {
         "title": "Vídeo HD",
@@ -182,5 +200,10 @@
         "event_running": "● Sessão em curso",
         "confirm_replace": "Há uma sessão em curso para «{event}». Terminá-la para iniciar esta?",
         "confirm_logout": "Há uma sessão em curso. Terminá-la e terminar sessão?"
+    },
+    "journal": {
+        "export": "Exportar o registo",
+        "export_dialog": "Guardar o registo do agente",
+        "exported": "Registo exportado: {path}"
     }
 }

@@ -74,7 +74,8 @@
         "disk_detail": "{free} Go libres, {reserved} Go réservés au système",
         "nothing_enabled": "Activez au moins les photos ou la vidéo.",
         "hd_pending_title": "Clips HD en attente",
-        "hd_pending_text": "{count} clip(s) HD de cette épreuve attendent d'être envoyés ({size} Go)."
+        "hd_pending_text": "{count} clip(s) HD de cette épreuve attendent d'être envoyés ({size} Go).",
+        "video_folder_same_as_photos": "Ce dossier est aussi le dossier photos surveillé (ou l'un contient l'autre). Rien ne partira en double, mais un dossier distinct est préférable."
     },
 
     "dashboard": {
@@ -135,7 +136,20 @@
         "video_paused_log": "Captation en pause — le clip en cours a été refermé et part avec les autres",
         "video_resumed_log": "Captation reprise",
         "video_send_failed": "Envoi vidéo abandonné après 3 essais : {error}",
-        "video_throttled": "Serveur saturé : envoi vidéo suspendu {delay} s"
+        "video_throttled": "Serveur saturé : envoi vidéo suspendu {delay} s",
+        "video_stop_confirm": "Arrêter la captation vidéo ? Les clips déjà filmés continuent de partir, et la captation pourra être relancée.",
+        "video_restart": "Relancer la captation",
+        "video_restarted_log": "Captation relancée — la numérotation des clips continue",
+        "video_numbering": "Numérotation des clips : suite de l'épreuve, à partir du clip {index}",
+        "video_analysis_disabled": "Galerie sans identification : les images d'analyse ne sont pas envoyées. Les clips partent normalement.",
+        "video_frames_disabled": "images d'analyse — non envoyées (galerie sans identification)",
+        "video_waiting_failed": "clips en attente d'envoi — {failed} en échec",
+        "video_send_refused": "Refusé par le serveur, non relancé : {error}",
+        "video_clip_label": "Clip {index}",
+        "video_frames_label": "Images d'analyse",
+        "video_missing": "{count} fichier(s) vidéo retiré(s) de la file : introuvable(s) sur le disque",
+        "video_missing_clips": "{count} fichier(s) vidéo retiré(s) de la file : introuvable(s) sur le disque (clips {clips})",
+        "video_online_event": "{total} en ligne sur l'épreuve"
     },
 
     "watcher": {
@@ -152,7 +166,10 @@
         "retry_scheduled": "Retry dans {delay}s (tentative {attempt}/3)",
         "success_timing": "OK en {duration} s — réseau {network} s + serveur {server} s",
         "success_total": "OK en {duration} s",
-        "throttled": "Serveur saturé ({code}) : pause de {delay} s, {parallel} envoi(s) simultané(s)"
+        "throttled": "Serveur saturé ({code}) : pause de {delay} s, {parallel} envoi(s) simultané(s)",
+        "success_server": "OK en {duration} s (serveur {server} s)",
+        "server_had_it": "le serveur l'avait déjà",
+        "already_online": "Déjà en ligne — non renvoyée"
     },
 
     "connection": {
@@ -163,7 +180,8 @@
 
     "complete": {
         "with_errors": "Terminé : {sent} envoyées, {failed} en échec",
-        "success": "Terminé : {count} photos envoyées avec succès !"
+        "success": "Terminé : {count} photos envoyées avec succès !",
+        "already": "(dont {count} déjà en ligne, non renvoyées)"
     },
 
     "hd": {
@@ -192,5 +210,11 @@
         "event_running": "● Session en cours",
         "confirm_replace": "Une session tourne sur « {event} ». La terminer pour démarrer celle-ci ?",
         "confirm_logout": "Une session est en cours. La terminer et se déconnecter ?"
+    },
+
+    "journal": {
+        "export": "Exporter le journal",
+        "export_dialog": "Enregistrer le journal de l'agent",
+        "exported": "Journal exporté : {path}"
     }
 }

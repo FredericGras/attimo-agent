@@ -71,7 +71,8 @@
         "disk_detail": "{free} GB boş, {reserved} GB sistem için ayrıldı",
         "nothing_enabled": "En az fotoğrafları ya da videoyu açın.",
         "hd_pending_title": "Bekleyen HD klipler",
-        "hd_pending_text": "Bu etkinliğin gönderilmeyi bekleyen HD klipleri: {count} ({size} GB)."
+        "hd_pending_text": "Bu etkinliğin gönderilmeyi bekleyen HD klipleri: {count} ({size} GB).",
+        "video_folder_same_as_photos": "Bu klasör aynı zamanda izlenen fotoğraf klasörü (veya biri diğerini içeriyor). Hiçbir şey iki kez gönderilmez, ancak ayrı bir klasör daha iyidir."
     },
     "dashboard": {
         "status_active": "Aktif",
@@ -131,7 +132,20 @@
         "video_paused_log": "Çekim duraklatıldı — süren klip kapatıldı ve diğerleriyle birlikte gönderiliyor",
         "video_resumed_log": "Çekime devam edildi",
         "video_send_failed": "Video gönderimi 3 denemeden sonra bırakıldı: {error}",
-        "video_throttled": "Sunucu aşırı yüklü: video gönderimi {delay} sn duraklatıldı"
+        "video_throttled": "Sunucu aşırı yüklü: video gönderimi {delay} sn duraklatıldı",
+        "video_stop_confirm": "Video çekimi durdurulsun mu? Çekilmiş klipler gönderilmeye devam eder ve çekim yeniden başlatılabilir.",
+        "video_restart": "Çekimi yeniden başlat",
+        "video_restarted_log": "Çekim yeniden başlatıldı — klip numaralandırması devam ediyor",
+        "video_numbering": "Etkinliğin klip numaralandırması {index}. klipten devam ediyor",
+        "video_analysis_disabled": "Kimlik tespiti olmayan galeri: analiz kareleri gönderilmez. Klipler normal şekilde gönderilir.",
+        "video_frames_disabled": "analiz karesi — gönderilmedi (kimlik tespiti olmayan galeri)",
+        "video_waiting_failed": "gönderilmeyi bekleyen klip — {failed} başarısız",
+        "video_send_refused": "Sunucu tarafından reddedildi, yeniden denenmeyecek: {error}",
+        "video_clip_label": "Klip {index}",
+        "video_frames_label": "Analiz kareleri",
+        "video_missing": "{count} video dosyası kuyruktan kaldırıldı: diskte bulunamadı",
+        "video_missing_clips": "{count} video dosyası kuyruktan kaldırıldı: diskte bulunamadı (klipler {clips})",
+        "video_online_event": "etkinlikte {total} çevrimiçi"
     },
     "watcher": {
         "detected": "Tespit edildi ({size} MB)",
@@ -146,7 +160,10 @@
         "retry_scheduled": "{delay}s sonra tekrar deneme (deneme {attempt}/3)",
         "success_timing": "{duration} sn'de OK — ağ {network} sn + sunucu {server} sn",
         "success_total": "{duration} sn'de OK",
-        "throttled": "Sunucu aşırı yüklü ({code}): {delay} sn duraklama, paralel yükleme: {parallel}"
+        "throttled": "Sunucu aşırı yüklü ({code}): {delay} sn duraklama, paralel yükleme: {parallel}",
+        "success_server": "{duration} sn'de OK (sunucu {server} sn)",
+        "server_had_it": "sunucuda zaten vardı",
+        "already_online": "Zaten çevrimiçi — yeniden gönderilmedi"
     },
     "connection": {
         "restored": "Bağlantı yeniden kuruldu",
@@ -155,7 +172,8 @@
     },
     "complete": {
         "with_errors": "Tamamlandı: {sent} gönderildi, {failed} başarısız",
-        "success": "Tamamlandı: {count} fotoğraf başarıyla yüklendi!"
+        "success": "Tamamlandı: {count} fotoğraf başarıyla yüklendi!",
+        "already": "(bunlardan {count} tanesi zaten çevrimiçiydi, yeniden gönderilmedi)"
     },
     "hd": {
         "title": "HD video",
@@ -182,5 +200,10 @@
         "event_running": "● Oturum sürüyor",
         "confirm_replace": "\"{event}\" için bir oturum sürüyor. Bunu başlatmak için o oturum bitirilsin mi?",
         "confirm_logout": "Bir oturum sürüyor. Bitirilip çıkış yapılsın mı?"
+    },
+    "journal": {
+        "export": "Günlüğü dışa aktar",
+        "export_dialog": "Aracının günlüğünü kaydet",
+        "exported": "Günlük dışa aktarıldı: {path}"
     }
 }

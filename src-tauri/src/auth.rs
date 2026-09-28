@@ -100,6 +100,14 @@ struct CheckpointsApiResponse {
 }
 
 // ─── Stockage du token (fichier JSON dans AppData) ───
+//
+// 0.3.2 — Le jeton n'est plus écrit en clair. auth.json garde le nom et
+// l'adresse du photographe (affichage) et :
+//   - sous Windows, le jeton chiffré par DPAPI (`token_chiffre`) ;
+//   - sous macOS, rien : le jeton est dans le trousseau (`coffre`).
+// Un auth.json d'une version antérieure (jeton en clair) est relu une
+// dernière fois puis réécrit chiffré : la connexion est reprise sans
+// redemander le mot de passe d'application.
 
 fn token_file_path() -> PathBuf {
     // Même dossier que la base locale : propre à chaque édition (0.3.1), pour
@@ -111,7 +119,25 @@ fn token_file_path() -> PathBuf {
 
 /// Sauvegarde les données d'authentification sur le disque
 pub fn save_auth(auth: &AuthData) -> Result<(), String> {
-    let json = serde_json::to_string_pretty(auth)
+    let contenu = match crate::secret::proteger(&auth.token)? {
+        crate::secret::Rangement::Chiffre(octets) => serde_json::json!({
+            "version": 2,
+            "user": auth.user,
+            "token_chiffre": crate::secret::en_hexa(&octets),
+        }),
+        crate::secret::Rangement::Coffre => serde_json::json!({
+            "version": 2,
+            "user": auth.user,
+            "coffre": true,
+        }),
+        // Aucun coffre sur ce système : comme avant.
+        crate::secret::Rangement::Clair => serde_json::json!({
+            "token": auth.token,
+            "user": auth.user,
+        }),
+    };
+
+    let json = serde_json::to_string_pretty(&contenu)
         .map_err(|e| format!("Erreur sérialisation: {}", e))?;
     fs::write(token_file_path(), json)
         .map_err(|e| format!("Erreur écriture token: {}", e))?;
@@ -125,7 +151,38 @@ pub fn load_auth() -> Option<AuthData> {
         return None;
     }
     let content = fs::read_to_string(path).ok()?;
-    serde_json::from_str(&content).ok()
+    let valeur: serde_json::Value = serde_json::from_str(&content).ok()?;
+
+    let user: UserInfo = serde_json::from_value(valeur.get("user")?.clone()).ok()?;
+
+    if let Some(hexa) = valeur.get("token_chiffre").and_then(|v| v.as_str()) {
+        let octets = crate::secret::depuis_hexa(hexa)?;
+
+        return match crate::secret::dechiffrer(&octets) {
+            Ok(token) => Some(AuthData { token, user }),
+            Err(e) => {
+                log::warn!("Jeton enregistré illisible : {}", e);
+                None
+            }
+        };
+    }
+
+    if valeur.get("coffre").and_then(|v| v.as_bool()) == Some(true) {
+        let token = crate::secret::lire_coffre()?;
+        return Some(AuthData { token, user });
+    }
+
+    // Ancien format : jeton en clair. On le reprend, puis on le range à
+    // l'abri tout de suite.
+    let token = valeur.get("token")?.as_str()?.to_string();
+    let auth = AuthData { token, user };
+
+    match save_auth(&auth) {
+        Ok(()) => log::info!("Jeton enregistré déplacé vers le stockage sécurisé du système"),
+        Err(e) => log::warn!("Stockage sécurisé indisponible, jeton laissé tel quel : {}", e),
+    }
+
+    Some(auth)
 }
 
 /// Supprime les données d'authentification du disque
@@ -134,6 +191,7 @@ pub fn clear_auth() {
     if path.exists() {
         fs::remove_file(path).ok();
     }
+    crate::secret::oublier_coffre();
 }
 
 // ─── Validation du format de token côté client ───

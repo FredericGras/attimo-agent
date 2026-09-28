@@ -71,7 +71,8 @@
         "disk_detail": "{free} GB wolnych, {reserved} GB zarezerwowanych dla systemu",
         "nothing_enabled": "Włącz przynajmniej zdjęcia albo wideo.",
         "hd_pending_title": "Klipy HD w oczekiwaniu",
-        "hd_pending_text": "Klipy HD z tego wydarzenia czekające na wysłanie: {count} ({size} GB)."
+        "hd_pending_text": "Klipy HD z tego wydarzenia czekające na wysłanie: {count} ({size} GB).",
+        "video_folder_same_as_photos": "Ten folder jest też obserwowanym folderem zdjęć (lub jeden zawiera drugi). Nic nie zostanie wysłane dwa razy, ale lepszy jest osobny folder."
     },
     "dashboard": {
         "status_active": "Aktywny",
@@ -131,7 +132,20 @@
         "video_paused_log": "Nagrywanie wstrzymane — bieżący klip został zamknięty i zostanie wysłany z pozostałymi",
         "video_resumed_log": "Nagrywanie wznowione",
         "video_send_failed": "Wysyłanie wideo przerwane po 3 próbach: {error}",
-        "video_throttled": "Serwer przeciążony: wysyłanie wideo wstrzymane na {delay} s"
+        "video_throttled": "Serwer przeciążony: wysyłanie wideo wstrzymane na {delay} s",
+        "video_stop_confirm": "Zatrzymać nagrywanie wideo? Nagrane już klipy są nadal wysyłane, a nagrywanie można uruchomić ponownie.",
+        "video_restart": "Uruchom nagrywanie ponownie",
+        "video_restarted_log": "Nagrywanie uruchomione ponownie — numeracja klipów jest kontynuowana",
+        "video_numbering": "Numeracja klipów wydarzenia jest kontynuowana od klipu {index}",
+        "video_analysis_disabled": "Galeria bez identyfikacji: klatki do analizy nie są wysyłane. Klipy są wysyłane normalnie.",
+        "video_frames_disabled": "klatek do analizy — nie wysłano (galeria bez identyfikacji)",
+        "video_waiting_failed": "klipów czeka na wysłanie — {failed} nieudanych",
+        "video_send_refused": "Odrzucone przez serwer, bez ponownej próby: {error}",
+        "video_clip_label": "Klip {index}",
+        "video_frames_label": "Klatki do analizy",
+        "video_missing": "Usunięto z kolejki plików wideo: {count} — nie znaleziono na dysku",
+        "video_missing_clips": "Usunięto z kolejki plików wideo: {count} — nie znaleziono na dysku (klipy {clips})",
+        "video_online_event": "{total} online w wydarzeniu"
     },
     "watcher": {
         "detected": "Wykryto ({size} MB)",
@@ -146,7 +160,10 @@
         "retry_scheduled": "Ponowna próba za {delay}s (próba {attempt}/3)",
         "success_timing": "OK w {duration} s — sieć {network} s + serwer {server} s",
         "success_total": "OK w {duration} s",
-        "throttled": "Serwer przeciążony ({code}): przerwa {delay} s, równoległe przesyłanie: {parallel}"
+        "throttled": "Serwer przeciążony ({code}): przerwa {delay} s, równoległe przesyłanie: {parallel}",
+        "success_server": "OK w {duration} s (serwer {server} s)",
+        "server_had_it": "serwer już je miał",
+        "already_online": "Już online — nie wysłano ponownie"
     },
     "connection": {
         "restored": "Połączenie przywrócone",
@@ -155,7 +172,8 @@
     },
     "complete": {
         "with_errors": "Gotowe: {sent} wysłanych, {failed} nieudanych",
-        "success": "Gotowe: {count} zdjęć przesłanych pomyślnie!"
+        "success": "Gotowe: {count} zdjęć przesłanych pomyślnie!",
+        "already": "(w tym {count} już online, nie wysłano ponownie)"
     },
     "hd": {
         "title": "Wideo HD",
@@ -182,5 +200,10 @@
         "event_running": "● Trwa sesja",
         "confirm_replace": "Trwa sesja dla „{event}”. Zakończyć ją, aby rozpocząć tę?",
         "confirm_logout": "Trwa sesja. Zakończyć ją i się wylogować?"
+    },
+    "journal": {
+        "export": "Eksportuj dziennik",
+        "export_dialog": "Zapisz dziennik agenta",
+        "exported": "Dziennik wyeksportowany: {path}"
     }
 }

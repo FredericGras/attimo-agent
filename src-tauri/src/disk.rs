@@ -374,6 +374,10 @@ pub struct DiskStatus {
 
     /// Temps écoulé depuis le démarrage, en secondes.
     pub elapsed_secs: u64,
+
+    /// Captation mesurée (0.3.2). Chaque reprise a son propre dossier, donc
+    /// son propre compteur : l'interface additionne ceux de la session.
+    pub session_id: String,
 }
 
 /// Lance la surveillance de l'espace disque pour une captation.
@@ -390,6 +394,7 @@ pub fn surveiller(
     dossier: PathBuf,
     flux: FluxParams,
     running: Arc<AtomicBool>,
+    session_id: String,
 ) {
     tauri::async_runtime::spawn(async move {
         // Le dossier peut déjà contenir des fichiers d'une session
@@ -457,6 +462,7 @@ pub fn surveiller(
                 rate_measured: mesure_fiable,
                 autonomy_secs: if autonomie == u64::MAX { 0 } else { autonomie },
                 elapsed_secs: ecoule,
+                session_id: session_id.clone(),
             };
 
             let _ = app.emit("disk-status", &etat);

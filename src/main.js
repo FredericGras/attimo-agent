@@ -85,6 +85,27 @@ function dormir(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+/**
+ * Demande une confirmation au photographe (0.3.2).
+ *
+ * Le module de dialogue de Tauri remplace window.confirm par une version
+ * ASYNCHRONE, qui rend une promesse. Écrit « if (!confirm(...)) », le test
+ * ne valait rien : une promesse est toujours « vraie », la suite partait
+ * sans attendre la réponse, et sans en tenir compte. D'où « Surveillance
+ * démarrée » au journal avant même le oui — et un non qui n'arrêtait rien.
+ *
+ * Attendre la réponse fonctionne dans les deux cas : un booléen attendu
+ * reste un booléen.
+ */
+async function confirmer(message) {
+    try {
+        return (await window.confirm(message)) === true;
+    } catch (e) {
+        console.error('Confirm error:', e);
+        return false;
+    }
+}
+
 // ─── Initialisation au lancement ───
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -204,10 +225,14 @@ function initLogin() {
 // ═══════════════════════════════════════════════════════
 
 function initEvents() {
+    // Le journal s'exporte aussi hors session (0.3.2) : après une course,
+    // la surveillance n'est plus accessible, le diagnostic doit l'être.
+    document.getElementById('events-export-log-btn').addEventListener('click', exporterJournal);
+
     document.getElementById('logout-btn').addEventListener('click', async () => {
         // Se déconnecter coupe les envois : on le dit, et on ferme proprement.
         if (sessionEnCours()) {
-            if (!confirm(t('nav.confirm_logout'))) {
+            if (!(await confirmer(t('nav.confirm_logout')))) {
                 return;
             }
 
@@ -316,6 +341,7 @@ function selectEvent(event) {
     // Reset du dossier
     document.getElementById('config-folder').value = '';
     AppState.watchFolder = null;
+    majAlerteDossiers();
 
     majHdEnAttenteConfig(event);
 
@@ -351,6 +377,7 @@ function ouvrirReglagesSession() {
         document.getElementById('config-hd-card').style.display = 'none';
     }
 
+    majAlerteDossiers();
     navigateTo('config');
 }
 
@@ -407,6 +434,7 @@ function initConfig() {
             if (selected) {
                 document.getElementById('config-folder').value = selected;
                 AppState.watchFolder = selected;
+                majAlerteDossiers();
             }
         } catch (e) {
             console.error('Folder dialog error:', e);
@@ -434,6 +462,7 @@ function initConfig() {
         AppState.photoEnabled = e.target.checked;
         document.getElementById('config-photo-body')
                 .classList.toggle('config-disabled', !e.target.checked);
+        majAlerteDossiers();
     });
 
     initConfigVideo();
@@ -453,6 +482,41 @@ function initConfig() {
         afficherErreurConfig(null);
         startSession();
     });
+}
+
+/**
+ * Deux dossiers se recouvrent-ils ? Identiques, ou l'un dans l'autre
+ * (0.3.2). Windows ne distingue pas les majuscules, ni / de \.
+ */
+function dossiersSeRecouvrent(a, b) {
+    if (!a || !b) {
+        return false;
+    }
+
+    const normal = (chemin) => String(chemin).replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase() + '/';
+    const na = normal(a);
+    const nb = normal(b);
+
+    return na.startsWith(nb) || nb.startsWith(na);
+}
+
+/**
+ * Avertit, sous le dossier d'enregistrement vidéo, s'il se confond avec le
+ * dossier photos surveillé (0.3.2).
+ */
+function majAlerteDossiers() {
+    const indice = document.getElementById('config-video-folder-hint');
+
+    if (AppState.photoEnabled && AppState.videoEnabled
+        && dossiersSeRecouvrent(AppState.watchFolder, AppState.videoFolder)) {
+        indice.textContent = t('config.video_folder_same_as_photos');
+        indice.classList.add('is-warning');
+        indice.style.display = '';
+    } else {
+        indice.textContent = '';
+        indice.classList.remove('is-warning');
+        indice.style.display = 'none';
+    }
 }
 
 function afficherErreurConfig(message) {
@@ -507,6 +571,10 @@ async function majHdEnAttenteConfig(event) {
     const carte = document.getElementById('config-hd-card');
     carte.style.display = 'none';
 
+    // Un clip supprimé du disque ne doit pas être annoncé « en attente »
+    // (0.3.2) : il sort de la file d'abord.
+    await purgerFichiersVideoAbsents(event.id);
+
     try {
         const stats = await invoke('video_queue_stats', { eventId: event.id, sessions: null });
         const restant = stats.hd_pending + stats.hd_sending;
@@ -558,6 +626,7 @@ function initConfigVideo() {
     interrupteur.addEventListener('change', async () => {
         AppState.videoEnabled = interrupteur.checked;
         corps.classList.toggle('config-disabled', !interrupteur.checked);
+        majAlerteDossiers();
 
         // Les périphériques ne sont cherchés qu'à la première activation :
         // l'énumération lance FFmpeg, autant ne pas la faire pour rien.
@@ -599,6 +668,7 @@ function initConfigVideo() {
             if (selected) {
                 document.getElementById('config-video-folder').value = selected;
                 AppState.videoFolder = selected;
+                majAlerteDossiers();
                 await rafraichirEstimationDisque();
             }
         } catch (e) {
@@ -960,6 +1030,12 @@ function preparerTableauDeBord(event) {
     document.getElementById('progress-text').textContent = '0 / 0';
     document.getElementById('dash-retry-btn').style.display = 'none';
     document.getElementById('upload-log').innerHTML = `<div class="log-empty">${escapeHtml(t('dashboard.log_empty'))}</div>`;
+
+    // Lignes écrites avant la session (fichiers vidéo retirés à
+    // l'ouverture de l'épreuve) : reprises ici, déjà copiées sur le disque.
+    for (const ligne of journalAvantSession.splice(0)) {
+        ajouterLigneEcran(ligne.heure, '—', 'retry', ligne.message);
+    }
     debitFenetre.length = 0;
 
     // Reset de l'état pause
@@ -973,6 +1049,22 @@ function preparerTableauDeBord(event) {
     videoActivite = false;
     videoStatsEvenement = null;
     videoStatsSession = null;
+
+    // 0.3.2 — Chrono et espace disque repartent de zéro : ils affichaient
+    // ceux de la session précédente (« 00:09:25 », « 1,3 Go écrits ») au
+    // démarrage d'une nouvelle. Les reprises d'une même session, elles,
+    // cumulent.
+    videoCumulMs = 0;
+    videoDebutMs = 0;
+    videoDisqueParCaptation = {};
+    videoAnalyseDesactivee = false;
+    videoAnalyseAnnoncee = false;
+    document.getElementById('dash-video-elapsed').textContent = '00:00:00';
+    document.getElementById('dash-video-disk-autonomy').textContent = '';
+    document.getElementById('dash-video-disk-detail').textContent = '';
+    document.getElementById('dash-video-disk-fill').style.width = '0%';
+    document.getElementById('dash-video-disk').classList.remove('is-warning', 'is-critical');
+
     majPanneauVideo();
 }
 
@@ -985,7 +1077,7 @@ async function startSession() {
     // Une autre épreuve tourne : on ne la coupe que si le photographe le
     // demande explicitement.
     if (sessionEnCours() && AppState.activeEvent.id !== event.id) {
-        if (!confirm(t('nav.confirm_replace', { event: AppState.activeEvent.name }))) {
+        if (!(await confirmer(t('nav.confirm_replace', { event: AppState.activeEvent.name })))) {
             return;
         }
 
@@ -1017,6 +1109,17 @@ async function startSession() {
     // captation : elle peut avoir des clips d'une sortie précédente à
     // écouler, et elle ne traite que l'événement ouvert.
     demarrerFileVideo();
+
+    // Clips dont le fichier a disparu du disque : hors de la file (0.3.2).
+    purgerFichiersVideoAbsents(event.id);
+
+    // Même dossier pour la vidéo et les photos (0.3.2) : sans danger, mais à
+    // signaler — on s'y retrouve mal, et le photographe ne l'a peut-être pas
+    // voulu.
+    if (AppState.photoEnabled && AppState.videoEnabled
+        && dossiersSeRecouvrent(AppState.watchFolder, AppState.videoFolder)) {
+        addLogEntry(timeNow(), '—', 'retry', t('config.video_folder_same_as_photos'));
+    }
 
     // ── Captation vidéo (SAAS 431) ──
     if (AppState.videoEnabled) {
@@ -1138,7 +1241,7 @@ async function demarrerEnvoiHdSeul() {
     const event = AppState.selectedEvent;
 
     if (sessionEnCours() && AppState.activeEvent.id !== event.id) {
-        if (!confirm(t('nav.confirm_replace', { event: AppState.activeEvent.name }))) {
+        if (!(await confirmer(t('nav.confirm_replace', { event: AppState.activeEvent.name })))) {
             return;
         }
 
@@ -1153,6 +1256,10 @@ async function demarrerEnvoiHdSeul() {
         document.getElementById('dash-checkpoint-name').style.display = 'none';
         document.getElementById('dash-folder').textContent = '';
     }
+
+    // Les clips supprimés du disque sortent de la file avant l'envoi : aucun
+    // ne doit échouer au clic (0.3.2).
+    await purgerFichiersVideoAbsents(event.id);
 
     await activerEnvoiHd(true);
 
@@ -1208,7 +1315,7 @@ function initDashboard() {
 
     // ── Bouton Arrêter ──
     document.getElementById('dash-stop-btn').addEventListener('click', async () => {
-        if (!confirm(t('dashboard.confirm_stop'))) {
+        if (!(await confirmer(t('dashboard.confirm_stop')))) {
             return;
         }
 
@@ -1224,6 +1331,9 @@ function initDashboard() {
         navigateTo('events');
         loadEvents();
     });
+
+    // ── Exporter le journal (0.3.2) ──
+    document.getElementById('dash-export-log-btn').addEventListener('click', exporterJournal);
 
     // ── Bouton Relancer les échecs ──
     document.getElementById('dash-retry-btn').addEventListener('click', async () => {
@@ -1367,21 +1477,29 @@ async function initRustEventListeners() {
     // le temps total, traitement serveur et attentes compris. On affiche la
     // part du réseau et celle du serveur (en-tête Server-Timing), mesurées
     // sur la seule tentative réussie.
+    //
+    // 0.3.2 : « réseau » est l'envoi du fichier, mesuré par l'agent (du
+    // premier au dernier octet remis au réseau) ; « serveur » est la valeur
+    // annoncée par le serveur (Server-Timing). Si les deux se recouvrent —
+    // le chrono du serveur démarre avant la fin de la réception, il compte
+    // alors le transfert —, la répartition n'a pas de sens : on affiche le
+    // total et la valeur du serveur, sans rien en déduire.
     await listen('upload_success', (event) => {
-        const { filename, size, duration_ms, server_ms, network_ms } = event.payload;
-        const secondes = (ms) => (ms / 1000).toFixed(1);
+        const { filename, size, duration_ms, server_ms, network_ms, duplicate } = event.payload;
+        let message = messageEnvoiPhoto(duration_ms, network_ms, server_ms);
 
-        const message = (server_ms !== null && server_ms !== undefined
-                         && network_ms !== null && network_ms !== undefined)
-            ? t('upload.success_timing', {
-                duration: secondes(duration_ms),
-                network: secondes(network_ms),
-                server: secondes(server_ms)
-            })
-            : t('upload.success_total', { duration: secondes(duration_ms) });
+        if (duplicate) {
+            message += ' — ' + t('upload.server_had_it');
+        }
 
         addLogEntry(timeNow(), filename, 'success', message);
         noterEnvoi(size || 0, duration_ms || 0);
+    });
+
+    // ── Photo déjà en ligne : non renvoyée (0.3.2) ──
+    await listen('upload_already', (event) => {
+        const { filename } = event.payload;
+        addLogEntry(timeNow(), filename, 'success', t('upload.already_online'));
     });
 
     // ── Upload échoué ──
@@ -1411,10 +1529,15 @@ async function initRustEventListeners() {
 
     // ── Tous les fichiers traités ──
     await listen('all_complete', (event) => {
-        const { total_sent, total_failed } = event.payload;
-        const msg = total_failed > 0
+        const { total_sent, total_failed, total_already } = event.payload;
+        let msg = total_failed > 0
             ? t('complete.with_errors', { sent: total_sent, failed: total_failed })
             : t('complete.success', { count: total_sent });
+
+        if (total_already > 0) {
+            msg += ' ' + t('complete.already', { count: total_already });
+        }
+
         addLogEntry(timeNow(), '—', 'success', msg);
     });
 
@@ -1483,6 +1606,16 @@ function timeNow() {
 // ─── Journal du dashboard ───
 
 function addLogEntry(time, filename, status, message) {
+    ajouterLigneEcran(time, filename, status, message);
+
+    // Recopie sur le disque, par paquets (voir journaliserSurDisque).
+    journalEnAttente.push({ heure: String(time), fichier: String(filename), statut: status, message: String(message) });
+}
+
+/**
+ * Affiche une ligne au journal de l'écran, sans la recopier sur le disque.
+ */
+function ajouterLigneEcran(time, filename, status, message) {
     const log = document.getElementById('upload-log');
     if (!log) return;
 
@@ -1514,9 +1647,69 @@ function addLogEntry(time, filename, status, message) {
     // Insérer en haut (les plus récents d'abord)
     log.insertBefore(entry, log.firstChild);
 
-    // Limiter à 200 entrées
-    while (log.children.length > 200) {
+    // 0.3.2 : 5 000 lignes au lieu de 200. Une manche de 215 photos en
+    // produit près de 700 : avec 200, son début était déjà perdu à la fin.
+    while (log.children.length > JOURNAL_ECRAN_MAX) {
         log.removeChild(log.lastChild);
+    }
+}
+
+// ─── Journal sur le disque (0.3.2) ───
+//
+// Chaque ligne affichée part aussi dans le journal de l'agent, sur le disque
+// (dossier de données de l'agent, journaux\agent.log), avec le journal
+// technique. Envoi groupé une fois par seconde : une rafale de photos ne
+// coûte pas un appel par ligne.
+
+const JOURNAL_ECRAN_MAX = 5000;
+const journalEnAttente = [];
+
+async function journaliserSurDisque() {
+    if (journalEnAttente.length === 0) {
+        return;
+    }
+
+    const lignes = journalEnAttente.splice(0, journalEnAttente.length);
+
+    try {
+        await invoke('journal_append', { lignes });
+    } catch (e) {
+        console.error('Journal error:', e);
+    }
+}
+
+setInterval(journaliserSurDisque, 1000);
+
+/**
+ * « Exporter le journal » : un seul fichier, du plus ancien au plus récent,
+ * à joindre à un compte rendu de test ou à un signalement.
+ */
+async function exporterJournal() {
+    try {
+        await journaliserSurDisque();
+
+        const { save } = window.__TAURI__.dialog;
+        const d = new Date();
+        const deux = (n) => String(n).padStart(2, '0');
+        const nom = `attimo-agent-journal-${d.getFullYear()}${deux(d.getMonth() + 1)}${deux(d.getDate())}-${deux(d.getHours())}${deux(d.getMinutes())}.log`;
+
+        const destination = await save({
+            title: t('journal.export_dialog'),
+            defaultPath: nom,
+            filters: [{ name: 'Journal', extensions: ['log', 'txt'] }],
+        });
+
+        if (!destination) {
+            return;
+        }
+
+        await invoke('export_journal', { destination });
+
+        addLogEntry(timeNow(), '—', 'success', t('journal.exported', { path: destination }));
+        alert(t('journal.exported', { path: destination }));
+    } catch (e) {
+        addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: e }));
+        alert(t('dashboard.msg_error', { error: e }));
     }
 }
 
@@ -1538,6 +1731,36 @@ function updateStats(sent, pending, failed) {
     document.getElementById('dash-retry-btn').style.display = failed > 0 ? 'inline-flex' : 'none';
 
     majBandeauSession();
+}
+
+/**
+ * Libellé d'un envoi de photo réussi (0.3.2).
+ *
+ * Trois cas : envoi et serveur distincts ; temps serveur seul, quand il
+ * recouvre l'envoi ; total seul, sans en-tête Server-Timing.
+ */
+function messageEnvoiPhoto(totalMs, envoiMs, serveurMs) {
+    const secondes = (ms) => (ms / 1000).toFixed(1);
+    const connu = (v) => v !== null && v !== undefined;
+
+    // Les deux parts tiennent dans le total (tolérance de mesure : 5 % et
+    // 150 ms) : elles ne se recouvrent pas, la répartition est juste.
+    if (connu(envoiMs) && connu(serveurMs) && envoiMs + serveurMs <= totalMs * 1.05 + 150) {
+        return t('upload.success_timing', {
+            duration: secondes(totalMs),
+            network: secondes(envoiMs),
+            server: secondes(serveurMs)
+        });
+    }
+
+    if (connu(serveurMs)) {
+        return t('upload.success_server', {
+            duration: secondes(totalMs),
+            server: secondes(serveurMs)
+        });
+    }
+
+    return t('upload.success_total', { duration: secondes(totalMs) });
 }
 
 // ─── Débit réel des photos (0.3.1) ───
@@ -1597,7 +1820,18 @@ function majDebit() {
 // clip final plus court, et tout part avec les autres. « Reprendre » ouvre
 // une nouvelle captation avec les mêmes réglages, dans son propre
 // sous-dossier : chaque reprise est une session de captation à part pour le
-// serveur, numérotée depuis le clip 1. Rien n'est filmé pendant la pause.
+// serveur. Rien n'est filmé pendant la pause.
+//
+// 0.3.2 — NUMÉROTATION. Les clips ne repartent plus de 1 à chaque reprise :
+// la numérotation continue sur toute l'épreuve (clip_0008 après clip_0007),
+// le serveur ne reçoit plus deux « clip_0001 » dans le même événement.
+// L'appariement HD ↔ version légère reste sûr : il se fait sur le couple
+// (session de captation, numéro), et les deux variantes d'un clip portent
+// toujours le même.
+//
+// 0.3.2 — RELANCE. Après « Arrêter la vidéo », « Relancer la captation »
+// rouvre une captation dans la même session, avec les mêmes réglages, et la
+// numérotation continue. L'arrêt demande confirmation.
 
 let videoSessionId = null;       // captation qui tourne (FFmpeg actif)
 let videoEnPause = false;
@@ -1640,6 +1874,23 @@ let videoVidageEventId = null;
 // un clip peut encore entrer en file : la déclarer vide serait prématuré.
 let videoTraitementsEnCours = 0;
 
+// ─── 0.3.2 ───
+
+// Octets écrits par chaque captation de la session : chaque reprise a son
+// propre dossier, donc son propre compteur ; l'écran les additionne.
+let videoDisqueParCaptation = {};
+
+// L'épreuve est sans identification : les images d'analyse ne sont ni
+// extraites ni envoyées. Dit une seule fois au journal.
+let videoAnalyseDesactivee = false;
+let videoAnalyseAnnoncee = false;
+
+// Prochain numéro de clip, par épreuve. Tenu ici en plus de la file : le
+// dernier clip d'une captation n'entre en file qu'après sa version légère,
+// plusieurs secondes après l'arrêt — une reprise immédiate ne doit pas
+// reprendre son numéro.
+const videoNumeroParEvenement = {};
+
 /**
  * Une captation est ouverte : elle tourne, ou elle est en pause.
  */
@@ -1654,8 +1905,22 @@ function captationOuverte() {
  * successives, et en créer un par session les empilerait.
  */
 async function initVideo() {
-    document.getElementById('dash-video-stop-btn').addEventListener('click', () => {
+    // L'arrêt demande confirmation (0.3.2) : un clic malheureux en course
+    // ne doit pas couper la vidéo. Elle se relance ensuite d'un clic.
+    document.getElementById('dash-video-stop-btn').addEventListener('click', async () => {
+        if (!captationOuverte() || videoTransition) {
+            return;
+        }
+
+        if (!(await confirmer(t('dashboard.video_stop_confirm')))) {
+            return;
+        }
+
         arreterCaptation();
+    });
+
+    document.getElementById('dash-video-restart-btn').addEventListener('click', () => {
+        relancerCaptation();
     });
 
     document.getElementById('dash-video-pause-btn').addEventListener('click', () => {
@@ -1688,7 +1953,10 @@ async function initVideo() {
 /**
  * Lance une captation avec les réglages de l'écran.
  *
- * `reprise` : après une pause, mêmes réglages que la première captation.
+ * `reprise` : après une pause ou un arrêt, mêmes réglages que la première
+ * captation. Le chrono ne repart jamais de zéro ici : il cumule toutes les
+ * captations de la session, et seule une nouvelle session le remet à zéro
+ * (preparerTableauDeBord).
  */
 async function demarrerCaptation(reprise) {
     const evenement = AppState.activeEvent;
@@ -1697,7 +1965,6 @@ async function demarrerCaptation(reprise) {
         const selectCp = document.getElementById('config-video-checkpoint');
         videoCheckpointId = selectCp.value ? parseInt(selectCp.value, 10) : null;
         videoConfigCaptation = construireConfigVideo();
-        videoCumulMs = 0;
     }
 
     const sessionId = 'video_' + Date.now();
@@ -1714,7 +1981,8 @@ async function demarrerCaptation(reprise) {
             attimoEventId: evenement.id,
             attimoCheckpointId: videoCheckpointId,
             intervalSecs: VIDEO_FRAME_INTERVAL,
-            config: videoConfigCaptation
+            config: videoConfigCaptation,
+            firstClipIndex: videoNumeroParEvenement[evenement.id] || null
         });
 
         videoSessionId = sessionId;
@@ -1739,6 +2007,15 @@ async function demarrerCaptation(reprise) {
         addLogEntry(timeNow(), '—', 'success', reprise
             ? t('dashboard.video_resumed_log')
             : t('dashboard.video_started', { step: plan.step_secs }));
+
+        if (plan.premier_numero > 1) {
+            addLogEntry(timeNow(), '—', 'success',
+                t('dashboard.video_numbering', { index: plan.premier_numero }));
+        }
+
+        // L'épreuve accepte-t-elle les images d'analyse ? Demandé sans
+        // retarder la captation ; dit une seule fois, en clair (0.3.2).
+        sonderAnalyseVideo(evenement.id, sessionId);
 
         majPanneauVideo();
         majBandeauSession();
@@ -1868,6 +2145,75 @@ async function reprendreCaptation() {
 }
 
 /**
+ * « Relancer la captation » après un arrêt (0.3.2).
+ *
+ * Même session, mêmes réglages que la première captation ; le chrono
+ * reprend son cumul et la numérotation des clips continue.
+ */
+async function relancerCaptation() {
+    if (captationOuverte() || videoTransition || !videoConfigCaptation || !sessionEnCours()) {
+        return;
+    }
+
+    videoTransition = 'resuming';
+    majBoutonsVideo();
+
+    let ok = false;
+
+    try {
+        ok = await demarrerCaptation(true);
+    } finally {
+        if (videoTransition === 'resuming') {
+            videoTransition = null;
+        }
+    }
+
+    if (ok) {
+        addLogEntry(timeNow(), '—', 'success', t('dashboard.video_restarted_log'));
+    }
+
+    majPanneauVideo();
+    majBandeauSession();
+}
+
+/**
+ * Demande au serveur si l'épreuve analyse les images (0.3.2).
+ *
+ * Sur une galerie « Aucune », le serveur refuse les images d'analyse :
+ * l'agent n'en extrait plus, n'en envoie plus, et le dit une fois.
+ */
+async function sonderAnalyseVideo(eventId, sessionId) {
+    if (videoAnalyseDesactivee) {
+        return;
+    }
+
+    try {
+        const active = await invoke('video_analysis_probe', {
+            token: AppState.token,
+            eventId: eventId,
+            sessionId: sessionId
+        });
+
+        if (active === false) {
+            signalerAnalyseDesactivee();
+        }
+    } catch (e) {
+        console.error('Analysis probe error:', e);
+    }
+}
+
+function signalerAnalyseDesactivee() {
+    videoAnalyseDesactivee = true;
+
+    if (!videoAnalyseAnnoncee) {
+        videoAnalyseAnnoncee = true;
+        addLogEntry(timeNow(), '—', 'retry', t('dashboard.video_analysis_disabled'));
+    }
+
+    majPanneauVideo();
+}
+
+/**
  * Arrête la captation sans toucher à la surveillance des photos.
  *
  * Les fichiers déjà produits restent en file : couper la caméra ne doit
@@ -1970,15 +2316,20 @@ async function surMorceauPret(evt) {
     // Les clips se chevauchent : extraire depuis eux traiterait deux fois
     // les mêmes instants, et ferait payer deux fois la reconnaissance pour
     // un résultat identique.
-    try {
-        const res = await invoke('extract_frames', {
-            segmentIndex: morceau.index,
-            intervalSecs: VIDEO_FRAME_INTERVAL
-        });
+    //
+    // Galerie sans identification (0.3.2) : aucune image, ni extraite ni
+    // envoyée — le serveur les refuserait.
+    if (!videoAnalyseDesactivee) {
+        try {
+            const res = await invoke('extract_frames', {
+                segmentIndex: morceau.index,
+                intervalSecs: VIDEO_FRAME_INTERVAL
+            });
 
-        await mettreImagesEnFile(res.frames, sessionEnCours);
-    } catch (e) {
-        addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: e }));
+            await mettreImagesEnFile(res.frames, sessionEnCours);
+        } catch (e) {
+            addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: e }));
+        }
     }
 
     // Chaque morceau peut compléter un clip. On demande à l'assembleur.
@@ -2044,8 +2395,13 @@ async function traiterFinDeCaptation(fin, sessionEnCours) {
             t('dashboard.msg_error', { error: fin.avertissement }));
     }
 
+    // La captation suivante — reprise, relance — continue la numérotation.
+    retenirNumeroClip(evenementDeCaptation(sessionEnCours), fin.prochain_numero);
+
     try {
-        await mettreImagesEnFile(fin.frames, sessionEnCours);
+        if (!videoAnalyseDesactivee) {
+            await mettreImagesEnFile(fin.frames, sessionEnCours);
+        }
 
         for (const clip of fin.clips) {
             await mettreClipEnFile(clip, sessionEnCours);
@@ -2135,6 +2491,8 @@ async function mettreClipEnFile(clip, sessionEnCours) {
         captation.filmes = Math.max(captation.filmes, captation.assembles);
     }
 
+    retenirNumeroClip(eventId, clip.index + 1);
+
     majPanneauVideo();
 
     addLogEntry(timeNow(), clip.filename, 'success',
@@ -2187,6 +2545,17 @@ async function mettreClipEnFile(clip, sessionEnCours) {
 }
 
 /**
+ * Retient le prochain numéro de clip libre pour une épreuve (0.3.2).
+ */
+function retenirNumeroClip(eventId, prochain) {
+    if (!eventId || !prochain) {
+        return;
+    }
+
+    videoNumeroParEvenement[eventId] = Math.max(videoNumeroParEvenement[eventId] || 1, prochain);
+}
+
+/**
  * La surveillance disque a parlé.
  *
  * Elle tourne côté Rust toutes les quinze secondes et arrête la captation
@@ -2207,7 +2576,16 @@ function surEtatDisque(evt) {
         ? t('dashboard.video_disk_autonomy', { hours: heures })
         : t('dashboard.video_disk_minutes', { minutes: minutes });
 
-    const ecrits = (etat.written_bytes / 1073741824).toFixed(1);
+    // Cumul de toutes les captations de la session (0.3.2) : chaque reprise
+    // écrit dans son propre dossier, et la surveillance repartait de zéro.
+    if (etat.session_id) {
+        videoDisqueParCaptation[etat.session_id] = etat.written_bytes;
+    }
+
+    const cumul = videoSessionsCourantes.reduce(
+        (somme, id) => somme + (videoDisqueParCaptation[id] || 0), 0);
+
+    const ecrits = (Math.max(cumul, etat.written_bytes) / 1073741824).toFixed(1);
     const debit = (etat.rate_bytes_per_sec * 3600 / 1073741824).toFixed(1);
 
     detail.textContent = etat.rate_measured
@@ -2298,14 +2676,34 @@ function majPanneauVideo() {
     // ── Compteurs de la session (B4) ──
     const ses = videoStatsSession;
 
+    //
+    // 0.3.2 — « envoyés » compte les clips que le serveur a confirmés (sa
+    // réponse, ou le recoupement de reprise), un clip compté une fois même
+    // s'il a ses deux variantes. « En attente » : versions légères pas
+    // encore reçues, en file ou en cours d'envoi ; les abandons sont dits à
+    // part au lieu de rester comptés comme en attente.
     document.getElementById('dash-video-filmed').textContent = videoTotal('filmes');
     document.getElementById('dash-video-clips').textContent = videoTotal('assembles');
-    document.getElementById('dash-video-sent').textContent = ses ? ses.proxy_sent : 0;
+    document.getElementById('dash-video-sent').textContent = ses ? ses.clips_online : 0;
+
+    // Le compteur est celui de la session. Si l'épreuve compte d'autres
+    // clips en ligne (session précédente, autre sortie), on le dit : sans
+    // cela, « 7 envoyés » se lisait comme faux face aux 19 de la galerie.
+    const enLigneEpreuve = evt ? evt.clips_online : 0;
+    const enLigneSession = ses ? ses.clips_online : 0;
+
+    document.getElementById('dash-video-sent-label').textContent = enLigneEpreuve > enLigneSession
+        ? t('dashboard.video_sent') + ' — ' + t('dashboard.video_online_event', { total: enLigneEpreuve })
+        : t('dashboard.video_sent');
     document.getElementById('dash-video-queue').textContent =
         ses ? ses.proxy_pending + ses.proxy_sending : 0;
+    document.getElementById('dash-video-waiting-label').textContent = ses && ses.proxy_failed > 0
+        ? t('dashboard.video_waiting_failed', { failed: ses.proxy_failed })
+        : t('dashboard.video_waiting');
     document.getElementById('dash-video-frames').textContent = videoImages;
-    document.getElementById('dash-video-frames-label').textContent =
-        t('dashboard.video_frames_detail', { sent: ses ? ses.frames_sent : 0 });
+    document.getElementById('dash-video-frames-label').textContent = videoAnalyseDesactivee
+        ? t('dashboard.video_frames_disabled')
+        : t('dashboard.video_frames_detail', { sent: ses ? ses.frames_sent : 0 });
 
     // Sans captation dans cette session, seuls l'envoi et le bloc HD ont
     // un sens.
@@ -2325,6 +2723,7 @@ function majBoutonsVideo() {
     const chrono = document.getElementById('dash-video-elapsed');
     const pause = document.getElementById('dash-video-pause-btn');
     const stop = document.getElementById('dash-video-stop-btn');
+    const relance = document.getElementById('dash-video-restart-btn');
 
     const ouverte = captationOuverte() || videoTransition !== null;
 
@@ -2332,8 +2731,14 @@ function majBoutonsVideo() {
     stop.style.display = ouverte ? 'inline-flex' : 'none';
     chrono.style.display = videoActivite ? '' : 'none';
 
+    // « Relancer la captation » (0.3.2) : après un arrêt, tant que la
+    // session est ouverte et qu'une captation a déjà eu lieu.
+    relance.style.display = (!ouverte && videoActivite && videoConfigCaptation
+        && sessionEnCours() && !AppState.envoiSeul) ? 'inline-flex' : 'none';
+
     pause.disabled = videoTransition !== null;
     stop.disabled = videoTransition !== null;
+    relance.disabled = videoTransition !== null;
 
     let titreTexte;
     let pointClasse;
@@ -2440,6 +2845,11 @@ function majBlocHd(evt) {
  * les réglages : les deux restent d'accord.
  */
 async function activerEnvoiHd(activer) {
+    // Un clip HD supprimé du disque sort de la file avant l'envoi (0.3.2).
+    if (activer && AppState.activeEvent) {
+        await purgerFichiersVideoAbsents(AppState.activeEvent.id);
+    }
+
     try {
         await invoke('set_hd_upload', { allow: activer });
     } catch (e) {
@@ -2472,22 +2882,32 @@ async function activerEnvoiHd(activer) {
 // liaison aux photos. Le backend refuse de toute façon un troisième envoi
 // simultané, et fait passer les photos d'abord.
 
-const VIDEO_OUVRIERS = 2;
+// 0.3.2 — Une voie par ouvrier : l'un sert d'abord les clips, l'autre
+// d'abord les images d'analyse ; une voie sans travail prend celui de
+// l'autre. Avant, les images passaient toujours devant : pendant la
+// captation leur file ne se vidait jamais, et aucun clip ne partait avant
+// « Arrêter la vidéo ».
+const VIDEO_VOIES = ['clips', 'images'];
 
 let videoFileActive = false;
-let videoOuvriersActifs = 0;
+const videoVoiesActives = new Set();
 let videoStatsTimer = null;
 let videoRafraichissementEnCours = false;
+let videoRafraichissements = 0;
 let videoDerniereSaturation = 0;
 
 function demarrerFileVideo() {
     videoFileActive = true;
 
-    while (videoOuvriersActifs < VIDEO_OUVRIERS) {
-        videoOuvriersActifs++;
+    for (const voie of VIDEO_VOIES) {
+        if (videoVoiesActives.has(voie)) {
+            continue;
+        }
 
-        ouvrierFileVideo().finally(() => {
-            videoOuvriersActifs--;
+        videoVoiesActives.add(voie);
+
+        ouvrierFileVideo(voie).finally(() => {
+            videoVoiesActives.delete(voie);
         });
     }
 
@@ -2545,9 +2965,9 @@ function evenementsFileVideo() {
     return ids;
 }
 
-async function ouvrierFileVideo() {
+async function ouvrierFileVideo(voie) {
     while (videoFileActive) {
-        const attente = await traiterUnEnvoiVideo();
+        const attente = await traiterUnEnvoiVideo(voie);
 
         if (attente > 0) {
             await dormir(attente);
@@ -2560,7 +2980,7 @@ async function ouvrierFileVideo() {
  *
  * Renvoie le temps à attendre avant le suivant, en millisecondes.
  */
-async function traiterUnEnvoiVideo() {
+async function traiterUnEnvoiVideo(voie) {
     const ids = evenementsFileVideo();
 
     if (ids.length === 0 || !AppState.token) {
@@ -2574,7 +2994,8 @@ async function traiterUnEnvoiVideo() {
             resultat = await invoke('process_video_queue', {
                 token: AppState.token,
                 eventId: eventId,
-                checkpointId: null
+                checkpointId: null,
+                voie: voie
             });
         } catch (e) {
             if (e === 'SESSION_EXPIRED') {
@@ -2611,12 +3032,29 @@ async function traiterUnEnvoiVideo() {
             return 0;
         }
 
+        // Fichiers disparus du disque : sortis de la file (0.3.2).
+        if (resultat.missing) {
+            journaliserAbsents(resultat.missing);
+            rafraichirFileVideo();
+            return 0;
+        }
+
+        // Galerie sans identification (0.3.2) : dit une fois, puis plus
+        // aucune image ne part.
+        if (resultat.analysis_disabled) {
+            signalerAnalyseDesactivee();
+            rafraichirFileVideo();
+            return 0;
+        }
+
         if (resultat.error) {
-            if (resultat.abandoned) {
-                addLogEntry(timeNow(), '—', 'failed',
-                    t('dashboard.video_send_failed', { error: resultat.error }));
+            if (resultat.definitive) {
+                addLogEntry(timeNow(), '—', 'failed', libelleEchecVideo('dashboard.video_send_refused', resultat));
+            } else if (resultat.abandoned) {
+                addLogEntry(timeNow(), '—', 'failed', libelleEchecVideo('dashboard.video_send_failed', resultat));
             }
 
+            rafraichirFileVideo();
             return 2000;
         }
 
@@ -2624,6 +3062,65 @@ async function traiterUnEnvoiVideo() {
     }
 
     return 2000;
+}
+
+/**
+ * Ligne de journal d'un envoi vidéo abandonné : le clip concerné, s'il y en
+ * a un, et le message du serveur.
+ */
+function libelleEchecVideo(cle, resultat) {
+    const quoi = resultat.clip_index
+        ? t('dashboard.video_clip_label', { index: resultat.clip_index })
+        : t('dashboard.video_frames_label');
+
+    return t(cle, { error: `${quoi} — ${resultat.error}` });
+}
+
+/**
+ * Fichiers vidéo sortis de la file parce qu'ils ont disparu du disque.
+ */
+function journaliserAbsents(absents) {
+    if (!absents || absents.length === 0) {
+        return;
+    }
+
+    const clips = [...new Set(absents
+        .filter(a => a.clip_index)
+        .map(a => a.clip_index))]
+        .sort((a, b) => a - b);
+
+    const message = clips.length > 0
+        ? t('dashboard.video_missing_clips', { count: absents.length, clips: clips.join(', ') })
+        : t('dashboard.video_missing', { count: absents.length });
+
+    const heure = timeNow();
+
+    addLogEntry(heure, '—', 'retry', message);
+
+    // Purge faite à l'ouverture de l'épreuve, hors session : la ligne est
+    // reprise au journal de la session qui démarre, qui repart à blanc.
+    if (!sessionEnCours()) {
+        journalAvantSession.push({ heure, message });
+    }
+}
+
+// Lignes à reprendre au journal de la prochaine session (0.3.2).
+const journalAvantSession = [];
+
+/**
+ * Sort de la file les fichiers vidéo disparus du disque (0.3.2), avec une
+ * ligne au journal. Sans erreur au clic sur « Envoyer les HD ».
+ */
+async function purgerFichiersVideoAbsents(eventId) {
+    if (!eventId) {
+        return;
+    }
+
+    try {
+        journaliserAbsents(await invoke('purge_missing_video_files', { eventId }));
+    } catch (e) {
+        console.error('Purge error:', e);
+    }
 }
 
 function journaliserEnvoiVideo(detail) {
@@ -2687,6 +3184,14 @@ async function rafraichirFileVideo() {
         }
 
         const eventId = AppState.activeEvent.id;
+
+        // Toutes les 30 s environ : un fichier supprimé du disque pendant
+        // la session sort de la file (0.3.2).
+        videoRafraichissements++;
+
+        if (videoRafraichissements % 15 === 0) {
+            await purgerFichiersVideoAbsents(eventId);
+        }
 
         try {
             videoStatsEvenement = await invoke('video_queue_stats', {

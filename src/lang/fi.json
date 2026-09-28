@@ -71,7 +71,8 @@
         "disk_detail": "{free} Gt vapaana, {reserved} Gt varattu järjestelmälle",
         "nothing_enabled": "Kytke päälle vähintään kuvat tai video.",
         "hd_pending_title": "Odottavat HD-klipit",
-        "hd_pending_text": "{count} tämän tapahtuman HD-klippiä odottaa lähetystä ({size} Gt)."
+        "hd_pending_text": "{count} tämän tapahtuman HD-klippiä odottaa lähetystä ({size} Gt).",
+        "video_folder_same_as_photos": "Tämä kansio on myös valvottu kuvakansio (tai toinen sisältää toisen). Mitään ei lähetetä kahdesti, mutta erillinen kansio on parempi."
     },
     "dashboard": {
         "status_active": "Aktiivinen",
@@ -131,7 +132,20 @@
         "video_paused_log": "Kuvaus tauolla — käynnissä ollut klippi suljettiin ja lähtee muiden mukana",
         "video_resumed_log": "Kuvaus jatkuu",
         "video_send_failed": "Videon lähetys keskeytetty 3 yrityksen jälkeen: {error}",
-        "video_throttled": "Palvelin ylikuormittunut: videon lähetys tauolla {delay} s"
+        "video_throttled": "Palvelin ylikuormittunut: videon lähetys tauolla {delay} s",
+        "video_stop_confirm": "Pysäytetäänkö videokuvaus? Jo kuvatut klipit lähetetään edelleen, ja kuvauksen voi käynnistää uudelleen.",
+        "video_restart": "Käynnistä kuvaus uudelleen",
+        "video_restarted_log": "Kuvaus käynnistetty uudelleen — klippien numerointi jatkuu",
+        "video_numbering": "Tapahtuman klippien numerointi jatkuu klipistä {index}",
+        "video_analysis_disabled": "Galleria ilman tunnistusta: analyysikuvia ei lähetetä. Klipit lähetetään normaalisti.",
+        "video_frames_disabled": "analyysikuvaa — ei lähetetä (galleria ilman tunnistusta)",
+        "video_waiting_failed": "klippiä odottaa lähetystä — {failed} epäonnistui",
+        "video_send_refused": "Palvelin hylkäsi, ei uutta yritystä: {error}",
+        "video_clip_label": "Klippi {index}",
+        "video_frames_label": "Analyysikuvat",
+        "video_missing": "{count} videotiedosto(a) poistettu jonosta: ei löydy levyltä",
+        "video_missing_clips": "{count} videotiedosto(a) poistettu jonosta: ei löydy levyltä (klipit {clips})",
+        "video_online_event": "{total} verkossa tapahtumassa"
     },
     "watcher": {
         "detected": "Havaittu ({size} Mt)",
@@ -146,7 +160,10 @@
         "retry_scheduled": "Uusi yritys {delay}s:n kuluttua (yritys {attempt}/3)",
         "success_timing": "OK {duration} s:ssa — verkko {network} s + palvelin {server} s",
         "success_total": "OK {duration} s:ssa",
-        "throttled": "Palvelin ylikuormittunut ({code}): tauko {delay} s, {parallel} rinnakkaista latausta"
+        "throttled": "Palvelin ylikuormittunut ({code}): tauko {delay} s, {parallel} rinnakkaista latausta",
+        "success_server": "OK {duration} s:ssa (palvelin {server} s)",
+        "server_had_it": "palvelimella se oli jo",
+        "already_online": "Jo verkossa — ei lähetetty uudelleen"
     },
     "connection": {
         "restored": "Yhteys palautettu",
@@ -155,7 +172,8 @@
     },
     "complete": {
         "with_errors": "Valmis: {sent} lähetetty, {failed} epäonnistunut",
-        "success": "Valmis: {count} kuvaa ladattu onnistuneesti!"
+        "success": "Valmis: {count} kuvaa ladattu onnistuneesti!",
+        "already": "(joista {count} jo verkossa, ei lähetetty uudelleen)"
     },
     "hd": {
         "title": "HD-video",
@@ -182,5 +200,10 @@
         "event_running": "● Istunto käynnissä",
         "confirm_replace": "Tapahtumalla ”{event}” on käynnissä istunto. Päätetäänkö se, jotta tämä voidaan aloittaa?",
         "confirm_logout": "Istunto on käynnissä. Päätetäänkö se ja kirjaudutaan ulos?"
+    },
+    "journal": {
+        "export": "Vie loki",
+        "export_dialog": "Tallenna agentin loki",
+        "exported": "Loki viety: {path}"
     }
 }

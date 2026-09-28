@@ -71,7 +71,8 @@
         "disk_detail": "{free} GB liberi, {reserved} GB riżervati għas-sistema",
         "nothing_enabled": "Ixgħel mill-inqas ir-ritratti jew il-vidjo.",
         "hd_pending_title": "Clips HD jistennew",
-        "hd_pending_text": "Clips HD ta' dan l-avveniment li qed jistennew jintbagħtu: {count} ({size} GB)."
+        "hd_pending_text": "Clips HD ta' dan l-avveniment li qed jistennew jintbagħtu: {count} ({size} GB).",
+        "video_folder_same_as_photos": "Dan il-folder huwa wkoll il-folder tar-ritratti sorveljat (jew wieħed fih l-ieħor). Xejn ma jintbagħat darbtejn, iżda folder separat huwa aħjar."
     },
     "dashboard": {
         "status_active": "Attiv",
@@ -131,7 +132,20 @@
         "video_paused_log": "Reġistrazzjoni f'pawża — il-clip li kien għaddej ingħalaq u jintbagħat mal-oħrajn",
         "video_resumed_log": "Ir-reġistrazzjoni kompliet",
         "video_send_failed": "Il-bgħit tal-vidjo ġie abbandunat wara 3 tentattivi: {error}",
-        "video_throttled": "Server mgħobbi żżejjed: bgħit tal-vidjo f'pawża għal {delay} s"
+        "video_throttled": "Server mgħobbi żżejjed: bgħit tal-vidjo f'pawża għal {delay} s",
+        "video_stop_confirm": "Twaqqaf ir-reġistrazzjoni tal-vidjo? Il-clips diġà reġistrati jibqgħu jintbagħtu, u r-reġistrazzjoni tista' terġa' tinbeda.",
+        "video_restart": "Erġa' ibda r-reġistrazzjoni",
+        "video_restarted_log": "Ir-reġistrazzjoni reġgħet bdiet — in-numerazzjoni tal-clips tkompli",
+        "video_numbering": "In-numerazzjoni tal-clips tal-avveniment tkompli mill-clip {index}",
+        "video_analysis_disabled": "Gallerija mingħajr identifikazzjoni: il-frejms tal-analiżi ma jintbagħtux. Il-clips jintbagħtu bħas-soltu.",
+        "video_frames_disabled": "frejms tal-analiżi — ma ntbagħtux (gallerija mingħajr identifikazzjoni)",
+        "video_waiting_failed": "clips jistennew jintbagħtu — {failed} fallew",
+        "video_send_refused": "Miċħud mis-server, mhux se jerġa' jiġi ppruvat: {error}",
+        "video_clip_label": "Clip {index}",
+        "video_frames_label": "Frejms tal-analiżi",
+        "video_missing": "{count} fajl(s) tal-vidjo tneħħew mill-kju: ma nstabux fuq id-diska",
+        "video_missing_clips": "{count} fajl(s) tal-vidjo tneħħew mill-kju: ma nstabux fuq id-diska (clips {clips})",
+        "video_online_event": "{total} online għall-avveniment"
     },
     "watcher": {
         "detected": "Misjub ({size} MB)",
@@ -146,7 +160,10 @@
         "retry_scheduled": "Tentattiv ġdid fi {delay}s (tentattiv {attempt}/3)",
         "success_timing": "OK fi {duration} s — netwerk {network} s + server {server} s",
         "success_total": "OK fi {duration} s",
-        "throttled": "Server mgħobbi żżejjed ({code}): pawża ta' {delay} s, uploads paralleli: {parallel}"
+        "throttled": "Server mgħobbi żżejjed ({code}): pawża ta' {delay} s, uploads paralleli: {parallel}",
+        "success_server": "OK fi {duration} s (server {server} s)",
+        "server_had_it": "is-server kien diġà għandu",
+        "already_online": "Diġà online — ma ntbagħatx mill-ġdid"
     },
     "connection": {
         "restored": "Konnessjoni reġgħet lura",
@@ -155,7 +172,8 @@
     },
     "complete": {
         "with_errors": "Lest: {sent} mibgħuta, {failed} fallew",
-        "success": "Lest: {count} ritratti ttellgħu b'suċċess!"
+        "success": "Lest: {count} ritratti ttellgħu b'suċċess!",
+        "already": "(li minnhom {count} diġà online, ma ntbagħtux mill-ġdid)"
     },
     "hd": {
         "title": "Vidjo HD",
@@ -182,5 +200,10 @@
         "event_running": "● Sessjoni għaddejja",
         "confirm_replace": "Hemm sessjoni għaddejja għal \"{event}\". Ttemmha biex tibda din?",
         "confirm_logout": "Hemm sessjoni għaddejja. Ttemmha u toħroġ?"
+    },
+    "journal": {
+        "export": "Esporta l-ġurnal",
+        "export_dialog": "Issejvja l-ġurnal tal-aġent",
+        "exported": "Ġurnal esportat: {path}"
     }
 }

@@ -57,7 +57,8 @@ use crate::recorder::SegmentPlan;
 /// Un clip assemblé, prêt à être envoyé.
 #[derive(Debug, Clone, Serialize)]
 pub struct AssembledClip {
-    /// Numéro du clip dans la session, à partir de 1.
+    /// Numéro du clip dans l'épreuve (0.3.2) : il continue d'une captation
+    /// à l'autre — pause, reprise, relance —, il ne repart plus à 1.
     pub index: u32,
 
     pub filename: String,
@@ -87,12 +88,23 @@ pub struct ClipTracker {
     /// Morceaux clos, dans l'ordre d'arrivée.
     morceaux_prets: Vec<u32>,
 
-    /// Numéro du prochain clip à produire, à partir de 1.
+    /// Rang du prochain clip DANS CETTE CAPTATION, à partir de 1. Sert à
+    /// placer le clip dans le temps : ses horodatages partent du début de sa
+    /// propre captation.
     prochain_clip: u32,
+
+    /// Clips numérotés avant cette captation (0.3.2).
+    ///
+    /// Le numéro d'un clip — celui de son fichier, celui que reçoit le
+    /// serveur — est `decalage + prochain_clip`. Après une pause, les clips
+    /// continuent donc à 8, 9, 10… au lieu de repartir à clip_0001 : le
+    /// serveur ne reçoit plus deux « clip_0001 » dans la même épreuve.
+    decalage: u32,
 }
 
 impl ClipTracker {
-    pub fn new(plan: SegmentPlan, dossier_travail: &Path) -> Result<Self, String> {
+    /// `premier_numero` : numéro du premier clip de cette captation.
+    pub fn new(plan: SegmentPlan, dossier_travail: &Path, premier_numero: u32) -> Result<Self, String> {
         let dossier_clips = dossier_travail.join("clips");
 
         std::fs::create_dir_all(&dossier_clips)
@@ -104,6 +116,7 @@ impl ClipTracker {
             dossier_clips,
             morceaux_prets: Vec::new(),
             prochain_clip: 1,
+            decalage: premier_numero.max(1) - 1,
         })
     }
 
@@ -163,8 +176,10 @@ impl ClipTracker {
         self.morceaux_prets.retain(|index| *index >= premier_utile);
     }
 
+    /// Numéro du prochain clip à produire, dans la numérotation de
+    /// l'épreuve.
     pub fn clip_courant(&self) -> u32 {
-        self.prochain_clip
+        self.decalage + self.prochain_clip
     }
 
     /// Morceaux disponibles pour un DERNIER clip, forcément plus court.
@@ -541,6 +556,7 @@ mod tests {
             dossier_clips: PathBuf::from("/tmp/c"),
             morceaux_prets: Vec::new(),
             prochain_clip: 1,
+            decalage: 0,
         }
     }
 
@@ -685,6 +701,35 @@ mod tests {
         t.segment_ready(3);
 
         assert_eq!(t.clip_final(), Some(vec![0, 1]));
+    }
+
+    #[test]
+    fn la_numerotation_continue_apres_une_pause() {
+        // Première captation : clips 1 à 7. La reprise commence à 8.
+        let mut t = tracker_de_test();
+        t.decalage = 7;
+
+        for i in 0..=4 {
+            t.segment_ready(i);
+        }
+
+        // Le numéro continue…
+        assert_eq!(t.clip_courant(), 8);
+
+        // …mais la position dans le temps part du début de CETTE captation.
+        assert_eq!(t.offset_du_clip_courant(), 0);
+
+        t.clip_termine();
+        assert_eq!(t.clip_courant(), 9);
+        assert_eq!(t.offset_du_clip_courant(), 120);
+    }
+
+    #[test]
+    fn un_premier_numero_nul_vaut_un() {
+        let t = ClipTracker::new(plan_reference(), &std::env::temp_dir().join("attimo_tracker_0"), 0).unwrap();
+        assert_eq!(t.clip_courant(), 1);
+
+        let _ = std::fs::remove_dir_all(std::env::temp_dir().join("attimo_tracker_0"));
     }
 
     #[test]

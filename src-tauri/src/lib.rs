@@ -11,9 +11,13 @@ mod capture;
 mod commands;
 mod database;
 mod disk;
+mod empreinte;
 mod frames;
+mod journal;
 mod manifest;
 mod recorder;
+mod secret;
+mod traductions;
 mod watcher;
 mod uploader;
 mod video_queue;
@@ -56,6 +60,9 @@ pub struct AppState {
     /// son réseau. Éteint, les clips lourds s'accumulent sans saturer la 4G ;
     /// allumé, tout ce qui attendait part.
     pub allow_hd_upload: Mutex<bool>,
+    /// Épreuves sans identification, vues depuis ce lancement (0.3.2) : leurs
+    /// images d'analyse ne partent plus.
+    pub analyse_desactivee: Mutex<std::collections::HashSet<i64>>,
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -64,19 +71,17 @@ pub struct AppState {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // Journal. Déclaré dans Cargo.toml de longue date mais jamais initialisé :
-    // sans cet appel, tous les `info!` et `log::error!` de l'agent partent dans
-    // le vide — y compris ceux qui expliqueraient un échec sur le terrain.
+    // Journal. `info` par défaut, surchargeable par la variable RUST_LOG pour
+    // un diagnostic plus bavard sans recompiler.
     //
-    // `info` par défaut, surchargeable par la variable RUST_LOG pour un
-    // diagnostic plus bavard sans recompiler.
-    env_logger::Builder::from_env(
-        env_logger::Env::default().default_filter_or("info"),
-    )
-    .init();
+    // 0.3.2 — Il s'écrit aussi sur le disque, dans le dossier de données de
+    // l'agent (journauxgent.log, avec rotation), avec les lignes affichées
+    // au photographe : un diagnostic terrain ne dépend plus de ce qui reste à
+    // l'écran.
+    journal::initialiser();
 
     if let Err(e) = database::init_db() {
-        eprintln!("ERREUR: Impossible d'initialiser la base de données: {}", e);
+        log::error!("Impossible d'initialiser la base de données: {}", e);
     }
 
     // Table de la file vidéo (SAAS 430). Séparée de l'initialisation des
@@ -90,12 +95,12 @@ pub fn run() {
         let liberes = video_queue::liberer_orphelins(&c)?;
 
         if liberes > 0 {
-            eprintln!("File vidéo : {} élément(s) remis en attente", liberes);
+            log::info!("File vidéo : {} élément(s) remis en attente", liberes);
         }
 
         Ok(())
     }) {
-        eprintln!("ERREUR: Impossible d'initialiser la file vidéo: {}", e);
+        log::error!("Impossible d'initialiser la file vidéo: {}", e);
     }
 
     tauri::Builder::default()
@@ -116,6 +121,7 @@ pub fn run() {
             // Par défaut éteint : mieux vaut que le photographe active
             // sciemment 33 Mb/s que de les subir sans l'avoir voulu.
             allow_hd_upload: Mutex::new(false),
+            analyse_desactivee: Mutex::new(std::collections::HashSet::new()),
         })
         .invoke_handler(tauri::generate_handler![
             // Auth (SAAS 240 — Phase 6) : validate_app_password remplace login
@@ -159,6 +165,11 @@ pub fn run() {
             commands::set_hd_upload,
             commands::process_video_queue,
             commands::retry_video_queue,
+            // 0.3.2
+            commands::purge_missing_video_files,
+            commands::video_analysis_probe,
+            commands::journal_append,
+            commands::export_journal,
         ])
         .run(tauri::generate_context!())
         .expect("Erreur lors du lancement de l'application");

@@ -89,6 +89,20 @@ const ATTENTE_SATURATION_DEFAUT_SECS: u64 = 10;
 /// tentative, et l'envoi vidéo patiente le délai demandé.
 pub const PREFIXE_SATURE: &str = "SATURE:";
 
+/// Préfixe des erreurs définitives (0.3.2) : `DEFINITIF:<message>`.
+///
+/// Le serveur a refusé la requête elle-même (4xx) : la renvoyer telle quelle
+/// donnerait la même réponse. L'élément sort de la file sans nouvel essai.
+pub const PREFIXE_DEFINITIF: &str = "DEFINITIF:";
+
+/// Le serveur refuse les images : l'épreuve est sans identification
+/// (mode « Aucune »). Erreur définitive, propre à toute l'épreuve.
+pub const ANALYSE_DESACTIVEE: &str = "ANALYSE_DESACTIVEE";
+
+/// Message exact du serveur dans ce cas
+/// (`SportClipFrameController::resolveEvent`).
+const MESSAGE_ANALYSE_DESACTIVEE: &str = "Recognition is disabled";
+
 // ═══════════════════════════════════════════════════════════════════════
 // CONFIGURATION
 // ═══════════════════════════════════════════════════════════════════════
@@ -253,6 +267,41 @@ pub fn attente_si_sature(erreur: &str) -> Option<u64> {
     erreur.strip_prefix(PREFIXE_SATURE)?.parse().ok()
 }
 
+/// Une erreur que le serveur répéterait à l'identique ?
+pub fn est_definitive(erreur: &str) -> bool {
+    erreur.starts_with(PREFIXE_DEFINITIF) || erreur == ANALYSE_DESACTIVEE
+}
+
+/// Le message d'une erreur, sans son préfixe technique.
+pub fn message_lisible(erreur: &str) -> &str {
+    erreur.strip_prefix(PREFIXE_DEFINITIF).unwrap_or(erreur)
+}
+
+/// Ce que dit une réponse d'erreur : son message, et si elle détaille des
+/// champs refusés (erreur de validation Laravel).
+async fn lire_refus(reponse: reqwest::Response) -> (u16, String, bool) {
+    let code = reponse.status().as_u16();
+
+    let corps: serde_json::Value = reponse.json().await.unwrap_or(serde_json::Value::Null);
+
+    let message = corps
+        .get("message")
+        .and_then(|m| m.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    (code, message, corps.get("errors").is_some())
+}
+
+/// Traduit un refus du serveur (4xx) en erreur définitive.
+fn refus_definitif(code: u16, message: &str) -> String {
+    if message.is_empty() {
+        format!("{}Requête refusée par le serveur ({})", PREFIXE_DEFINITIF, code)
+    } else {
+        format!("{}{} ({})", PREFIXE_DEFINITIF, message, code)
+    }
+}
+
 /// Pose les en-têtes d'authentification.
 ///
 /// Les deux formes sont envoyées : l'agent photo utilise historiquement
@@ -323,12 +372,11 @@ pub async fn envoyer_clip(
         .unwrap_or_else(|| "clip.mp4".to_string());
 
     // Identifiant d'envoi : lie les morceaux entre eux côté serveur.
-    let upload_id = format!(
-        "{}_{}_{}",
-        config.session_id,
-        variant.as_str(),
-        clip_index
-    );
+    //
+    // 0.3.2 — Il porte l'épreuve : le serveur range les morceaux par
+    // identifiant seul, tous comptes confondus. Deux captations lancées à la
+    // même milliseconde sur deux épreuves ne mélangent plus leurs morceaux.
+    let upload_id = identifiant_envoi(config.event_id, &config.session_id, variant, clip_index);
 
     let total_morceaux = taille.div_ceil(CHUNK_SIZE);
 
@@ -343,9 +391,14 @@ pub async fn envoyer_clip(
             .await
             .map_err(|e| format!("Lecture du clip impossible : {}", e))?;
 
-        // Les photos d'abord, à chaque morceau : un clip de 500 Mo ne doit
-        // pas monopoliser la liaison pendant qu'une rafale attend.
-        ceder_aux_photos().await;
+        // Les photos d'abord : un clip HD de 500 Mo ne doit pas monopoliser
+        // la liaison pendant qu'une rafale attend, d'où une pause possible à
+        // chaque morceau. Une version légère (quelques Mo, 0.3.2) ne cède
+        // qu'une fois, avant son premier morceau : elle doit partir au fil
+        // de la captation.
+        if variant == ClipVariant::Hd || index == 0 {
+            ceder_aux_photos().await;
+        }
 
         let part = reqwest::multipart::Part::bytes(tranche)
             .file_name(nom_fichier.clone())
@@ -373,6 +426,12 @@ pub async fn envoyer_clip(
 
         if let Some(erreur) = statut_bloquant(&reponse) {
             return Err(erreur);
+        }
+
+        // Morceau refusé (validation) : le renvoyer n'y changerait rien.
+        if reponse.status().is_client_error() {
+            let (code, message, _) = lire_refus(reponse).await;
+            return Err(refus_definitif(code, &message));
         }
 
         let corps: ChunkResponse = reponse
@@ -419,6 +478,23 @@ pub async fn envoyer_clip(
 
     if let Some(erreur) = statut_bloquant(&reponse) {
         return Err(erreur);
+    }
+
+    // Finalisation refusée. Un 422 dit « envoi introuvable ou incomplet » :
+    // un nouvel essai renvoie tous les morceaux, il peut réussir. Les autres
+    // refus ne changeront pas.
+    if reponse.status().is_client_error() {
+        let (code, message, _) = lire_refus(reponse).await;
+
+        if code == 422 {
+            return Err(if message.is_empty() {
+                "Le serveur n'a pas pu assembler le clip.".to_string()
+            } else {
+                message
+            });
+        }
+
+        return Err(refus_definitif(code, &message));
     }
 
     let corps: FinalizeResponse = reponse
@@ -567,10 +643,20 @@ pub async fn envoyer_lot_images(
         return Err(erreur);
     }
 
-    // Le serveur refuse les images si l'épreuve tourne sans
-    // reconnaissance : inutile de continuer à en envoyer.
-    if reponse.status() == reqwest::StatusCode::UNPROCESSABLE_ENTITY {
-        return Err("ANALYSE_DESACTIVEE".to_string());
+    // Refus du serveur. Aucun ne se règle en renvoyant les mêmes images.
+    //
+    // 0.3.2 — Avant, tout 422 valait « analyse désactivée », et comptait
+    // pour une tentative ordinaire : chaque lot était renvoyé trois fois, et
+    // « Envoi vidéo abandonné après 3 essais : ANALYSE_DESACTIVEE » revenait
+    // en boucle. Le cas se reconnaît désormais au message exact du serveur.
+    if reponse.status().is_client_error() {
+        let (code, message, _) = lire_refus(reponse).await;
+
+        if message.contains(MESSAGE_ANALYSE_DESACTIVEE) {
+            return Err(ANALYSE_DESACTIVEE.to_string());
+        }
+
+        return Err(refus_definitif(code, &message));
     }
 
     let corps: FramesResponse = reponse
@@ -604,6 +690,61 @@ fn rangs_en_echec(resultats: &[FrameResult], taille_lot: usize) -> Vec<usize> {
     echecs.sort_unstable();
     echecs.dedup();
     echecs
+}
+
+/// L'épreuve accepte-t-elle les images d'analyse ? (0.3.2)
+///
+/// Interrogé au démarrage de la captation, pour le dire au photographe une
+/// fois, en clair, et ne pas extraire d'images pour rien. La sonde est une
+/// requête d'images VIDE : le serveur contrôle l'épreuve avant le contenu,
+/// il répond donc « analyse désactivée » s'il y a lieu, et sinon refuse la
+/// requête faute d'image. Rien n'est analysé, rien n'est facturé.
+///
+/// Réponses : `Some(false)` analyse désactivée, `Some(true)` analyse
+/// active, `None` impossible à savoir (réseau, réponse inattendue) — les
+/// envois diront alors ce qu'il en est.
+pub async fn sonder_analyse(config: &VideoUploadConfig) -> Result<Option<bool>, String> {
+    let client = client()?;
+
+    let url = format!(
+        "{}/api/sport/events/{}/frames",
+        API_BASE_URL, config.event_id
+    );
+
+    let formulaire = reqwest::multipart::Form::new().text("session_id", config.session_id.clone());
+
+    let reponse = authentifier(client.post(&url), &config.token)
+        .timeout(Duration::from_secs(TIMEOUT_FRAMES_SECS))
+        .multipart(formulaire)
+        .send()
+        .await
+        .map_err(|e| message_erreur(&e))?;
+
+    if let Some(erreur) = statut_bloquant(&reponse) {
+        return Err(erreur);
+    }
+
+    Ok(interpreter_sonde(lire_refus(reponse).await))
+}
+
+/// Lecture de la réponse à la sonde, isolée pour être testée.
+fn interpreter_sonde((code, message, champs_refuses): (u16, String, bool)) -> Option<bool> {
+    if code == 422 && message.contains(MESSAGE_ANALYSE_DESACTIVEE) {
+        return Some(false);
+    }
+
+    // Refus de validation (« frames » manquant) : l'épreuve accepte les
+    // images, seule la requête vide est refusée.
+    if code == 422 && champs_refuses {
+        return Some(true);
+    }
+
+    None
+}
+
+/// Identifiant d'envoi d'un clip.
+fn identifiant_envoi(event_id: i64, session_id: &str, variant: ClipVariant, clip_index: u32) -> String {
+    format!("e{}_{}_{}_{}", event_id, session_id, variant.as_str(), clip_index)
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -741,11 +882,43 @@ mod tests {
     fn lidentifiant_denvoi_distingue_les_variantes() {
         // Deux variantes du même clip ne doivent pas se mélanger côté
         // serveur : leurs morceaux portent des identifiants distincts.
-        let session = "test_123";
+        let session = "video_1727520000000";
 
-        let proxy = format!("{}_{}_{}", session, ClipVariant::Proxy.as_str(), 1);
-        let hd = format!("{}_{}_{}", session, ClipVariant::Hd.as_str(), 1);
+        let proxy = identifiant_envoi(42, session, ClipVariant::Proxy, 1);
+        let hd = identifiant_envoi(42, session, ClipVariant::Hd, 1);
 
         assert_ne!(proxy, hd);
+
+        // Ni deux épreuves, ni deux numéros.
+        assert_ne!(proxy, identifiant_envoi(43, session, ClipVariant::Proxy, 1));
+        assert_ne!(proxy, identifiant_envoi(42, session, ClipVariant::Proxy, 11));
+
+        // Le serveur limite l'identifiant à 64 caractères.
+        assert!(identifiant_envoi(9_999_999, session, ClipVariant::Proxy, 99_999).len() <= 64);
+    }
+
+    #[test]
+    fn la_sonde_reconnait_une_galerie_sans_identification() {
+        let desactivee = (422, "Recognition is disabled for this event.".to_string(), false);
+        let active = (422, "The frames field is required.".to_string(), true);
+        let sans_galerie = (422, "Event has no gallery.".to_string(), false);
+
+        assert_eq!(interpreter_sonde(desactivee), Some(false));
+        assert_eq!(interpreter_sonde(active), Some(true));
+        assert_eq!(interpreter_sonde(sans_galerie), None);
+        assert_eq!(interpreter_sonde((500, String::new(), false)), None);
+    }
+
+    #[test]
+    fn distingue_les_erreurs_definitives() {
+        assert!(est_definitive(&refus_definitif(404, "Event not found.")));
+        assert!(est_definitive(ANALYSE_DESACTIVEE));
+        assert!(!est_definitive("Délai dépassé — réseau trop lent ou saturé."));
+        assert!(!est_definitive("SATURE:30"));
+
+        assert_eq!(
+            message_lisible(&refus_definitif(404, "Event not found.")),
+            "Event not found. (404)"
+        );
     }
 }

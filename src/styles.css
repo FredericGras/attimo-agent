@@ -1133,3 +1133,24 @@ body.is-dev .app-version {
 .parallel-picker {
     flex-wrap: wrap;
 }
+
+/* --- 0.3.2 : en-tête du journal, avec « Exporter le journal » --- */
+.log-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.log-head .log-title {
+    margin-bottom: 0;
+}
+
+.log-head .btn-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    font-size: 12px;
+}

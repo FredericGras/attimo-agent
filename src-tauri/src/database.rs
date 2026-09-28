@@ -107,6 +107,19 @@ pub fn init_db() -> Result<()> {
 
         CREATE INDEX IF NOT EXISTS idx_upload_files_status
             ON upload_files(session_id, status);
+
+        -- 0.3.2 : empreinte des photos déjà en ligne, par épreuve. Une photo
+        -- dont l'empreinte est connue ne repart jamais, quelle que soit la
+        -- session ou le dossier d'où elle vient.
+        CREATE TABLE IF NOT EXISTS photos_envoyees (
+            event_id        INTEGER NOT NULL,
+            empreinte       TEXT NOT NULL,
+            taille          INTEGER NOT NULL DEFAULT 0,
+            nom             TEXT NOT NULL DEFAULT '',
+            server_photo_id INTEGER,
+            envoyee_le      TEXT NOT NULL DEFAULT (datetime('now')),
+            PRIMARY KEY (event_id, empreinte)
+        );
         "
     )?;
 
@@ -188,7 +201,7 @@ pub fn update_file_status(
     server_photo_id: Option<i64>,
 ) -> Result<()> {
     let conn = open_db()?;
-    let uploaded_at = if status == "success" {
+    let uploaded_at = if status == "success" || status == "already" {
         Some(chrono_now())
     } else {
         None
@@ -199,8 +212,9 @@ pub fn update_file_status(
         params![status, error, server_photo_id, uploaded_at, file_id],
     )?;
 
-    // Mettre à jour les compteurs de la session
-    if status == "success" {
+    // Mettre à jour les compteurs de la session. Une photo déjà en ligne
+    // (0.3.2) compte comme envoyée : elle est sur le serveur.
+    if status == "success" || status == "already" {
         conn.execute(
             "UPDATE upload_sessions SET photos_sent = photos_sent + 1 WHERE id = (SELECT session_id FROM upload_files WHERE id = ?1)",
             params![file_id],
@@ -219,10 +233,13 @@ pub fn update_file_status(
 #[derive(Debug, Serialize, Clone)]
 pub struct SessionStats {
     pub total: i64,
+    /// Sur le serveur : envoyées, ou déjà en ligne avant cette session.
     pub sent: i64,
     pub pending: i64,
     pub uploading: i64,
     pub failed: i64,
+    /// Dont déjà en ligne, écartées sans être renvoyées (0.3.2).
+    pub already: i64,
 }
 
 pub fn get_session_stats(session_id: i64) -> Result<SessionStats> {
@@ -233,7 +250,11 @@ pub fn get_session_stats(session_id: i64) -> Result<SessionStats> {
         params![session_id], |row| row.get(0),
     )?;
     let sent: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM upload_files WHERE session_id = ?1 AND status = 'success'",
+        "SELECT COUNT(*) FROM upload_files WHERE session_id = ?1 AND status IN ('success', 'already')",
+        params![session_id], |row| row.get(0),
+    )?;
+    let already: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM upload_files WHERE session_id = ?1 AND status = 'already'",
         params![session_id], |row| row.get(0),
     )?;
     let pending: i64 = conn.query_row(
@@ -249,7 +270,7 @@ pub fn get_session_stats(session_id: i64) -> Result<SessionStats> {
         params![session_id], |row| row.get(0),
     )?;
 
-    Ok(SessionStats { total, sent, pending, uploading, failed })
+    Ok(SessionStats { total, sent, pending, uploading, failed, already })
 }
 
 /// Marque la session comme arrêtée
@@ -308,6 +329,41 @@ pub fn get_failed_files(session_id: i64) -> Result<Vec<UploadFile>> {
     Ok(files)
 }
 
+// ─── Empreintes des photos en ligne (0.3.2) ───
+
+/// La photo de cette empreinte est-elle déjà en ligne pour l'épreuve ?
+///
+/// Renvoie l'identifiant serveur retenu, s'il est connu.
+pub fn empreinte_connue(conn: &Connection, event_id: i64, empreinte: &str) -> Result<Option<Option<i64>>> {
+    let mut requete = conn.prepare(
+        "SELECT server_photo_id FROM photos_envoyees WHERE event_id = ?1 AND empreinte = ?2",
+    )?;
+
+    let mut lignes = requete.query(params![event_id, empreinte])?;
+
+    match lignes.next()? {
+        Some(ligne) => Ok(Some(ligne.get(0)?)),
+        None => Ok(None),
+    }
+}
+
+/// Retient qu'une photo est en ligne pour l'épreuve.
+pub fn retenir_empreinte(
+    conn: &Connection,
+    event_id: i64,
+    empreinte: &str,
+    taille: i64,
+    nom: &str,
+    server_photo_id: Option<i64>,
+) -> Result<()> {
+    conn.execute(
+        "INSERT OR IGNORE INTO photos_envoyees (event_id, empreinte, taille, nom, server_photo_id)
+         VALUES (?1, ?2, ?3, ?4, ?5)",
+        params![event_id, empreinte, taille, nom, server_photo_id],
+    )?;
+    Ok(())
+}
+
 /// Génère un timestamp ISO 8601 courant
 fn chrono_now() -> String {
     // Format simplifié sans dépendance chrono
@@ -322,6 +378,31 @@ fn chrono_now() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn une_empreinte_retenue_est_reconnue_pour_la_meme_epreuve_seulement() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE photos_envoyees (
+                event_id INTEGER NOT NULL, empreinte TEXT NOT NULL,
+                taille INTEGER NOT NULL DEFAULT 0, nom TEXT NOT NULL DEFAULT '',
+                server_photo_id INTEGER, envoyee_le TEXT NOT NULL DEFAULT (datetime('now')),
+                PRIMARY KEY (event_id, empreinte));",
+        )
+        .unwrap();
+
+        assert_eq!(empreinte_connue(&conn, 7, "abc").unwrap(), None);
+
+        retenir_empreinte(&conn, 7, "abc", 100, "IMG_1.JPG", Some(42)).unwrap();
+
+        // Deux fois la même : sans erreur, sans doublon.
+        retenir_empreinte(&conn, 7, "abc", 100, "IMG_1.JPG", Some(42)).unwrap();
+
+        assert_eq!(empreinte_connue(&conn, 7, "abc").unwrap(), Some(Some(42)));
+
+        // Une autre épreuve n'en sait rien : la photo doit y partir.
+        assert_eq!(empreinte_connue(&conn, 8, "abc").unwrap(), None);
+    }
 
     #[test]
     fn la_production_garde_son_dossier_de_donnees() {

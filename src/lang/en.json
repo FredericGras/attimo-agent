@@ -74,7 +74,8 @@
         "disk_detail": "{free} GB free, {reserved} GB reserved for the system",
         "nothing_enabled": "Turn on photos or video, at least one.",
         "hd_pending_title": "HD clips waiting",
-        "hd_pending_text": "{count} HD clip(s) from this event are waiting to be sent ({size} GB)."
+        "hd_pending_text": "{count} HD clip(s) from this event are waiting to be sent ({size} GB).",
+        "video_folder_same_as_photos": "This folder is also the watched photo folder (or one contains the other). Nothing will be sent twice, but a separate folder is better."
     },
 
     "dashboard": {
@@ -135,7 +136,20 @@
         "video_paused_log": "Recording paused — the current clip was closed and is sent with the others",
         "video_resumed_log": "Recording resumed",
         "video_send_failed": "Video upload abandoned after 3 attempts: {error}",
-        "video_throttled": "Server overloaded: video upload paused for {delay} s"
+        "video_throttled": "Server overloaded: video upload paused for {delay} s",
+        "video_stop_confirm": "Stop video recording? Clips already recorded keep being sent, and recording can be restarted.",
+        "video_restart": "Restart recording",
+        "video_restarted_log": "Recording restarted — clip numbering continues",
+        "video_numbering": "Clip numbering continues for this event, starting at clip {index}",
+        "video_analysis_disabled": "Gallery without identification: analysis frames are not sent. Clips are sent as usual.",
+        "video_frames_disabled": "analysis frames — not sent (gallery without identification)",
+        "video_waiting_failed": "clips waiting to be sent — {failed} failed",
+        "video_send_refused": "Refused by the server, not retried: {error}",
+        "video_clip_label": "Clip {index}",
+        "video_frames_label": "Analysis frames",
+        "video_missing": "{count} video file(s) removed from the queue: not found on disk",
+        "video_missing_clips": "{count} video file(s) removed from the queue: not found on disk (clips {clips})",
+        "video_online_event": "{total} online for the event"
     },
 
     "watcher": {
@@ -152,7 +166,10 @@
         "retry_scheduled": "Retry in {delay}s (attempt {attempt}/3)",
         "success_timing": "OK in {duration} s — network {network} s + server {server} s",
         "success_total": "OK in {duration} s",
-        "throttled": "Server overloaded ({code}): pausing {delay} s, {parallel} parallel upload(s)"
+        "throttled": "Server overloaded ({code}): pausing {delay} s, {parallel} parallel upload(s)",
+        "success_server": "OK in {duration} s (server {server} s)",
+        "server_had_it": "the server already had it",
+        "already_online": "Already online — not sent again"
     },
 
     "connection": {
@@ -163,7 +180,8 @@
 
     "complete": {
         "with_errors": "Done: {sent} sent, {failed} failed",
-        "success": "Done: {count} photos uploaded successfully!"
+        "success": "Done: {count} photos uploaded successfully!",
+        "already": "(including {count} already online, not sent again)"
     },
 
     "hd": {
@@ -192,5 +210,11 @@
         "event_running": "● Session running",
         "confirm_replace": "A session is running for \"{event}\". End it to start this one?",
         "confirm_logout": "A session is running. End it and log out?"
+    },
+
+    "journal": {
+        "export": "Export log",
+        "export_dialog": "Save the agent log",
+        "exported": "Log exported: {path}"
     }
 }

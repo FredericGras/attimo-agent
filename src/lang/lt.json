@@ -71,7 +71,8 @@
         "disk_detail": "{free} GB laisva, {reserved} GB rezervuota sistemai",
         "nothing_enabled": "Įjunkite bent nuotraukas arba vaizdo įrašą.",
         "hd_pending_title": "Laukiantys HD klipai",
-        "hd_pending_text": "Šio renginio HD klipai, laukiantys siuntimo: {count} ({size} GB)."
+        "hd_pending_text": "Šio renginio HD klipai, laukiantys siuntimo: {count} ({size} GB).",
+        "video_folder_same_as_photos": "Šis aplankas taip pat yra stebimas nuotraukų aplankas (arba vienas yra kitame). Niekas nebus išsiųsta du kartus, bet geriau naudoti atskirą aplanką."
     },
     "dashboard": {
         "status_active": "Aktyvus",
@@ -131,7 +132,20 @@
         "video_paused_log": "Įrašymas pristabdytas — vykęs klipas uždarytas ir siunčiamas kartu su kitais",
         "video_resumed_log": "Įrašymas tęsiamas",
         "video_send_failed": "Vaizdo siuntimas nutrauktas po 3 bandymų: {error}",
-        "video_throttled": "Serveris perkrautas: vaizdo siuntimas pristabdytas {delay} s"
+        "video_throttled": "Serveris perkrautas: vaizdo siuntimas pristabdytas {delay} s",
+        "video_stop_confirm": "Stabdyti vaizdo įrašymą? Jau įrašyti klipai toliau siunčiami, o įrašymą bus galima paleisti iš naujo.",
+        "video_restart": "Paleisti įrašymą iš naujo",
+        "video_restarted_log": "Įrašymas paleistas iš naujo — klipų numeracija tęsiama",
+        "video_numbering": "Renginio klipų numeracija tęsiama nuo klipo {index}",
+        "video_analysis_disabled": "Galerija be identifikavimo: analizės kadrai nesiunčiami. Klipai siunčiami įprastai.",
+        "video_frames_disabled": "analizės kadrai — nesiunčiami (galerija be identifikavimo)",
+        "video_waiting_failed": "klipai laukia siuntimo — {failed} nepavyko",
+        "video_send_refused": "Serveris atmetė, pakartotinai nebandoma: {error}",
+        "video_clip_label": "Klipas {index}",
+        "video_frames_label": "Analizės kadrai",
+        "video_missing": "Iš eilės pašalinta vaizdo failų: {count} — nerasta diske",
+        "video_missing_clips": "Iš eilės pašalinta vaizdo failų: {count} — nerasta diske (klipai {clips})",
+        "video_online_event": "{total} internete renginyje"
     },
     "watcher": {
         "detected": "Aptikta ({size} MB)",
@@ -146,7 +160,10 @@
         "retry_scheduled": "Naujas bandymas po {delay}s (bandymas {attempt}/3)",
         "success_timing": "OK per {duration} s — tinklas {network} s + serveris {server} s",
         "success_total": "OK per {duration} s",
-        "throttled": "Serveris perkrautas ({code}): pauzė {delay} s, lygiagrečių įkėlimų: {parallel}"
+        "throttled": "Serveris perkrautas ({code}): pauzė {delay} s, lygiagrečių įkėlimų: {parallel}",
+        "success_server": "OK per {duration} s (serveris {server} s)",
+        "server_had_it": "serveris ją jau turėjo",
+        "already_online": "Jau internete — pakartotinai nesiųsta"
     },
     "connection": {
         "restored": "Ryšys atkurtas",
@@ -155,7 +172,8 @@
     },
     "complete": {
         "with_errors": "Baigta: {sent} išsiųsta, {failed} nepavyko",
-        "success": "Baigta: {count} nuotraukų sėkmingai įkelta!"
+        "success": "Baigta: {count} nuotraukų sėkmingai įkelta!",
+        "already": "(iš jų {count} jau internete, pakartotinai nesiųstos)"
     },
     "hd": {
         "title": "HD vaizdas",
@@ -182,5 +200,10 @@
         "event_running": "● Vyksta seansas",
         "confirm_replace": "Renginiui „{event}“ vyksta seansas. Baigti jį, kad pradėtumėte šį?",
         "confirm_logout": "Vyksta seansas. Baigti jį ir atsijungti?"
+    },
+    "journal": {
+        "export": "Eksportuoti žurnalą",
+        "export_dialog": "Išsaugoti agento žurnalą",
+        "exported": "Žurnalas eksportuotas: {path}"
     }
 }

@@ -196,6 +196,10 @@ pub struct RecordingHandle {
     /// parti, puis de rattraper une deuxième fois le même morceau.
     pub arret_demande: bool,
 
+    /// Numéro du premier clip de cette captation (0.3.2) : la numérotation
+    /// continue sur toute l'épreuve. Posé par la commande de démarrage.
+    pub premier_numero: u32,
+
     child: Option<CommandChild>,
 }
 
@@ -436,6 +440,7 @@ pub async fn start_recording(
         dernier_morceau,
         fin_ffmpeg,
         arret_demande: false,
+        premier_numero: 1,
         child: Some(enfant),
     })
 }

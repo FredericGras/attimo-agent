@@ -71,7 +71,8 @@
         "disk_detail": "{free} GB voľných, {reserved} GB vyhradených pre systém",
         "nothing_enabled": "Zapnite aspoň fotografie alebo video.",
         "hd_pending_title": "Čakajúce klipy HD",
-        "hd_pending_text": "Klipy HD tohto podujatia čakajúce na odoslanie: {count} ({size} GB)."
+        "hd_pending_text": "Klipy HD tohto podujatia čakajúce na odoslanie: {count} ({size} GB).",
+        "video_folder_same_as_photos": "Tento priečinok je zároveň sledovaným priečinkom fotografií (alebo jeden obsahuje druhý). Nič sa neodošle dvakrát, ale samostatný priečinok je lepší."
     },
     "dashboard": {
         "status_active": "Aktívny",
@@ -131,7 +132,20 @@
         "video_paused_log": "Natáčanie pozastavené — rozpracovaný klip bol uzavretý a odíde s ostatnými",
         "video_resumed_log": "Natáčanie obnovené",
         "video_send_failed": "Odosielanie videa ukončené po 3 pokusoch: {error}",
-        "video_throttled": "Server je preťažený: odosielanie videa pozastavené na {delay} s"
+        "video_throttled": "Server je preťažený: odosielanie videa pozastavené na {delay} s",
+        "video_stop_confirm": "Zastaviť natáčanie videa? Už natočené klipy sa naďalej odosielajú a natáčanie bude možné znova spustiť.",
+        "video_restart": "Znova spustiť natáčanie",
+        "video_restarted_log": "Natáčanie znova spustené — číslovanie klipov pokračuje",
+        "video_numbering": "Číslovanie klipov udalosti pokračuje od klipu {index}",
+        "video_analysis_disabled": "Galéria bez identifikácie: snímky na analýzu sa neodosielajú. Klipy sa odosielajú normálne.",
+        "video_frames_disabled": "snímok na analýzu — neodoslané (galéria bez identifikácie)",
+        "video_waiting_failed": "klipov čaká na odoslanie — {failed} neúspešných",
+        "video_send_refused": "Odmietnuté serverom, bez ďalšieho pokusu: {error}",
+        "video_clip_label": "Klip {index}",
+        "video_frames_label": "Snímky na analýzu",
+        "video_missing": "Odstránené z frontu video súborov: {count} — nenájdené na disku",
+        "video_missing_clips": "Odstránené z frontu video súborov: {count} — nenájdené na disku (klipy {clips})",
+        "video_online_event": "{total} online v udalosti"
     },
     "watcher": {
         "detected": "Detegované ({size} MB)",
@@ -146,7 +160,10 @@
         "retry_scheduled": "Nový pokus za {delay}s (pokus {attempt}/3)",
         "success_timing": "OK za {duration} s — sieť {network} s + server {server} s",
         "success_total": "OK za {duration} s",
-        "throttled": "Server je preťažený ({code}): pauza {delay} s, paralelné nahrávanie: {parallel}"
+        "throttled": "Server je preťažený ({code}): pauza {delay} s, paralelné nahrávanie: {parallel}",
+        "success_server": "OK za {duration} s (server {server} s)",
+        "server_had_it": "server ju už mal",
+        "already_online": "Už online — znova neodoslaná"
     },
     "connection": {
         "restored": "Pripojenie obnovené",
@@ -155,7 +172,8 @@
     },
     "complete": {
         "with_errors": "Hotovo: {sent} odoslaných, {failed} neúspešných",
-        "success": "Hotovo: {count} fotografií úspešne nahraných!"
+        "success": "Hotovo: {count} fotografií úspešne nahraných!",
+        "already": "(z toho {count} už online, znova neodoslané)"
     },
     "hd": {
         "title": "Video HD",
@@ -182,5 +200,10 @@
         "event_running": "● Prebieha relácia",
         "confirm_replace": "Pre „{event}“ prebieha relácia. Ukončiť ju a spustiť túto?",
         "confirm_logout": "Prebieha relácia. Ukončiť ju a odhlásiť sa?"
+    },
+    "journal": {
+        "export": "Exportovať protokol",
+        "export_dialog": "Uložiť protokol agenta",
+        "exported": "Protokol exportovaný: {path}"
     }
 }

@@ -71,7 +71,8 @@
         "disk_detail": "{free} GB vaba, {reserved} GB reserveeritud süsteemile",
         "nothing_enabled": "Lülitage sisse vähemalt fotod või video.",
         "hd_pending_title": "Ootel HD-klipid",
-        "hd_pending_text": "Selle ürituse saatmist ootavad HD-klipid: {count} ({size} GB)."
+        "hd_pending_text": "Selle ürituse saatmist ootavad HD-klipid: {count} ({size} GB).",
+        "video_folder_same_as_photos": "See kaust on ka jälgitav fotokaust (või üks sisaldab teist). Midagi ei saadeta kaks korda, kuid eraldi kaust on parem."
     },
     "dashboard": {
         "status_active": "Aktiivne",
@@ -131,7 +132,20 @@
         "video_paused_log": "Salvestamine peatatud — pooleli olnud klipp suleti ja see saadetakse koos teistega",
         "video_resumed_log": "Salvestamine jätkub",
         "video_send_failed": "Video saatmine katkestati pärast 3 katset: {error}",
-        "video_throttled": "Server on ülekoormatud: video saatmine peatatud {delay} s"
+        "video_throttled": "Server on ülekoormatud: video saatmine peatatud {delay} s",
+        "video_stop_confirm": "Kas peatada videosalvestus? Juba salvestatud klippe saadetakse edasi ja salvestuse saab uuesti käivitada.",
+        "video_restart": "Käivita salvestus uuesti",
+        "video_restarted_log": "Salvestus käivitati uuesti — klippide nummerdamine jätkub",
+        "video_numbering": "Ürituse klippide nummerdamine jätkub klipist {index}",
+        "video_analysis_disabled": "Tuvastamiseta galerii: analüüsikaadreid ei saadeta. Klipid saadetakse tavapäraselt.",
+        "video_frames_disabled": "analüüsikaadrit — ei saadeta (tuvastamiseta galerii)",
+        "video_waiting_failed": "klippi ootab saatmist — {failed} ebaõnnestus",
+        "video_send_refused": "Server keeldus, uut katset ei tehta: {error}",
+        "video_clip_label": "Klipp {index}",
+        "video_frames_label": "Analüüsikaadrid",
+        "video_missing": "Järjekorrast eemaldati videofaile: {count} — kettalt ei leitud",
+        "video_missing_clips": "Järjekorrast eemaldati videofaile: {count} — kettalt ei leitud (klipid {clips})",
+        "video_online_event": "{total} ürituse jaoks võrgus"
     },
     "watcher": {
         "detected": "Tuvastatud ({size} MB)",
@@ -146,7 +160,10 @@
         "retry_scheduled": "Uus katse {delay}s pärast (katse {attempt}/3)",
         "success_timing": "OK {duration} s — võrk {network} s + server {server} s",
         "success_total": "OK {duration} s",
-        "throttled": "Server on ülekoormatud ({code}): paus {delay} s, paralleelseid üleslaadimisi: {parallel}"
+        "throttled": "Server on ülekoormatud ({code}): paus {delay} s, paralleelseid üleslaadimisi: {parallel}",
+        "success_server": "OK {duration} s (server {server} s)",
+        "server_had_it": "serveris oli see juba olemas",
+        "already_online": "Juba võrgus — uuesti ei saadetud"
     },
     "connection": {
         "restored": "Ühendus taastatud",
@@ -155,7 +172,8 @@
     },
     "complete": {
         "with_errors": "Valmis: {sent} saadetud, {failed} ebaõnnestunud",
-        "success": "Valmis: {count} fotot edukalt üles laaditud!"
+        "success": "Valmis: {count} fotot edukalt üles laaditud!",
+        "already": "(neist {count} juba võrgus, uuesti ei saadetud)"
     },
     "hd": {
         "title": "HD-video",
@@ -182,5 +200,10 @@
         "event_running": "● Seanss käib",
         "confirm_replace": "Ürituse „{event}“ seanss käib. Kas lõpetada see, et alustada seda?",
         "confirm_logout": "Seanss käib. Kas lõpetada see ja logida välja?"
+    },
+    "journal": {
+        "export": "Ekspordi logi",
+        "export_dialog": "Salvesta agendi logi",
+        "exported": "Logi eksporditud: {path}"
     }
 }

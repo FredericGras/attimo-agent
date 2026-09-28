@@ -66,8 +66,12 @@ pub async fn validate_app_password(
 ) -> Result<LoginResponse, String> {
     let auth_data = auth::validate_app_password(&token).await?;
 
+    // Un coffre indisponible ne doit pas empêcher de travailler : la
+    // connexion vaut pour cette ouverture de l'agent, sans être retenue.
     if remember {
-        auth::save_auth(&auth_data)?;
+        if let Err(e) = auth::save_auth(&auth_data) {
+            log::error!("Mot de passe d'application non retenu : {}", e);
+        }
     }
 
     Ok(LoginResponse {
@@ -388,7 +392,22 @@ pub async fn plan_recording(
     config.plan()
 }
 
+/// Ce que le démarrage d'une captation renvoie à l'interface : le
+/// découpage, et le numéro du premier clip (0.3.2).
+#[derive(Debug, Clone, Serialize)]
+pub struct DemarrageCaptation {
+    #[serde(flatten)]
+    pub plan: crate::recorder::SegmentPlan,
+    pub premier_numero: u32,
+}
+
 /// Démarre la captation.
+///
+/// `first_clip_index` (0.3.2) : numéro du premier clip, tenu par
+/// l'interface pour la session en cours. L'agent retient le plus grand de
+/// celui-ci et du premier numéro libre de l'épreuve dans la file : la
+/// numérotation continue d'une captation à l'autre, sans jamais reprendre un
+/// numéro déjà donné.
 #[tauri::command]
 pub async fn start_recording(
     state: tauri::State<'_, AppState>,
@@ -399,7 +418,8 @@ pub async fn start_recording(
     attimo_event_id: i64,
     attimo_checkpoint_id: Option<i64>,
     interval_secs: f32,
-) -> Result<crate::recorder::SegmentPlan, String> {
+    first_clip_index: Option<u32>,
+) -> Result<DemarrageCaptation, String> {
     // Une seule captation à la fois : deux enregistrements simultanés sur le
     // même périphérique échoueraient, et sur deux périphériques ils se
     // disputeraient le disque.
@@ -462,13 +482,26 @@ pub async fn start_recording(
         estimation.autonomy_secs / 3600
     );
 
-    let poignee =
+    let premier_numero = {
+        let libre = database::connexion()
+            .map_err(|e| e.to_string())
+            .and_then(|c| crate::video_queue::prochain_numero_clip(&c, attimo_event_id))
+            .unwrap_or(1);
+
+        libre.max(first_clip_index.unwrap_or(1)).max(1)
+    };
+
+    info!("Captation {} : premier clip n° {}", session_id, premier_numero);
+
+    let mut poignee =
         crate::recorder::start_recording(&app, config, session_id.clone(), interval_secs).await?;
+    poignee.premier_numero = premier_numero;
     let debut = poignee.started_at;
 
     // Le drapeau est celui de la captation : la surveillance ne peut donc pas
     // lui survivre.
     let running = poignee.running.clone();
+    let session_id_disque = poignee.session_id.clone();
 
     // Le manifeste naît avec la session, pas à la fin : il doit être
     // exploitable pendant la course, car l'envoi peut démarrer alors que la
@@ -507,9 +540,9 @@ pub async fn start_recording(
     //
     // Lancée en dernier, une fois l'état complet : elle peut arrêter la
     // captation, ce qui suppose de trouver le manifeste en place.
-    crate::disk::surveiller(app.clone(), dossier, flux, running);
+    crate::disk::surveiller(app.clone(), dossier, flux, running, session_id_disque);
 
-    Ok(plan)
+    Ok(DemarrageCaptation { plan, premier_numero })
 }
 
 /// Assemble un clip si les morceaux nécessaires sont prêts.
@@ -551,6 +584,7 @@ async fn assembler_si_pret(
     let plan = enregistrement.plan.clone();
     let dossier = enregistrement.work_dir.clone();
     let session = enregistrement.session_id.clone();
+    let premier_numero = enregistrement.premier_numero;
 
     // Le verrou est relâché avant l'assemblage : celui-ci peut durer
     // plusieurs secondes, et le garder bloquerait l'arrêt de la captation.
@@ -559,7 +593,7 @@ async fn assembler_si_pret(
     let mut suivi = state.clip_tracker.lock().await;
 
     if suivi.is_none() {
-        *suivi = Some(crate::assembler::ClipTracker::new(plan, &dossier)?);
+        *suivi = Some(crate::assembler::ClipTracker::new(plan, &dossier, premier_numero)?);
     }
 
     let tracker = suivi.as_mut().unwrap();
@@ -889,20 +923,34 @@ fn places_envoi_video() -> &'static tokio::sync::Semaphore {
 ///   - `busy` : deux envois vidéo sont déjà en cours ;
 ///   - `throttled` : le serveur a demandé d'attendre (secondes) ;
 ///   - `detail` : envoi réussi ; `error` : envoi échoué.
+///
+/// 0.3.2 — `voie` : « clips » sert d'abord les clips, sinon les images
+/// d'abord (voir `video_queue`). Réponses en plus :
+///   - `missing` : fichiers disparus du disque, sortis de la file ;
+///   - `analysis_disabled` : l'épreuve est sans identification, ses images
+///     sont écartées.
 #[tauri::command]
 pub async fn process_video_queue(
     state: tauri::State<'_, AppState>,
     token: String,
     event_id: i64,
     checkpoint_id: Option<i64>,
+    voie: Option<String>,
 ) -> Result<Option<serde_json::Value>, String> {
     let Ok(_place) = places_envoi_video().try_acquire() else {
         return Ok(Some(serde_json::json!({ "busy": true })));
     };
 
     let autoriser_hd = *state.allow_hd_upload.lock().await;
+    let voie = crate::video_queue::Voie::depuis_texte(voie.as_deref());
 
     let conn = database::connexion().map_err(|e| format!("Base indisponible : {}", e))?;
+
+    // Épreuve sans identification : les images arrivées entre-temps sortent
+    // de la file sans partir.
+    if state.analyse_desactivee.lock().await.contains(&event_id) {
+        crate::video_queue::ecarter_images(&conn, event_id)?;
+    }
 
     let Some(tete) = crate::video_queue::prochains(&conn, event_id, autoriser_hd, 1)?
         .into_iter()
@@ -975,12 +1023,31 @@ pub async fn process_video_queue(
 
     // Réservation atomique : un clip, ou un lot d'images d'une même session.
     // Ce qu'un autre envoi a déjà pris n'est jamais repris.
-    let elements = crate::video_queue::reserver_prochain_envoi(
+    let reserves = crate::video_queue::reserver_prochain_envoi(
         &conn,
         event_id,
         autoriser_hd,
         crate::video_uploader::FRAMES_PAR_LOT,
+        voie,
     )?;
+
+    // Un fichier supprimé du disque depuis sa mise en file sort de la file
+    // ici, avec une ligne au journal : jamais d'erreur d'envoi pour lui.
+    let mut elements = Vec::new();
+    let mut absents = Vec::new();
+
+    for element in reserves {
+        if std::path::Path::new(&element.file_path).exists() {
+            elements.push(element);
+        } else {
+            crate::video_queue::marquer_absent(&conn, element.id)?;
+            absents.push(element);
+        }
+    }
+
+    if elements.is_empty() && !absents.is_empty() {
+        return Ok(Some(serde_json::json!({ "missing": decrire_absents(&absents) })));
+    }
 
     let Some(premier) = elements.first().cloned() else {
         return Ok(None);
@@ -1035,6 +1102,27 @@ pub async fn process_video_queue(
                         "failed": lot.echecs.len(),
                         "abandoned": abandonnes,
                     },
+                })))
+            }
+            Err(e) if e == crate::video_uploader::ANALYSE_DESACTIVEE => {
+                // Galerie sans identification : ce lot et toutes les images
+                // de l'épreuve sortent de la file, sans nouvel essai.
+                for element in &elements {
+                    crate::video_queue::ecarter_element(&conn, element.id, &e)?;
+                }
+
+                let ecartees = crate::video_queue::ecarter_images(&conn, event_id)? + elements.len();
+
+                state.analyse_desactivee.lock().await.insert(event_id);
+
+                info!(
+                    "Épreuve {} sans identification : {} image(s) d'analyse écartée(s)",
+                    event_id, ecartees
+                );
+
+                Ok(Some(serde_json::json!({
+                    "analysis_disabled": true,
+                    "skipped": ecartees,
                 })))
             }
             Err(e) => conclure_echec(&conn, &elements, e),
@@ -1107,6 +1195,27 @@ fn conclure_echec(
         return Ok(Some(serde_json::json!({ "throttled": attente })));
     }
 
+    // Refus définitif (0.3.2) : aucun nouvel essai, une seule ligne au
+    // journal.
+    if crate::video_uploader::est_definitive(&e) {
+        let message = crate::video_uploader::message_lisible(&e).to_string();
+
+        for element in elements {
+            crate::video_queue::marquer_echec_definitif(conn, element.id, &message)?;
+        }
+
+        log::warn!("File vidéo : refus définitif du serveur : {}", message);
+
+        return Ok(Some(serde_json::json!({
+            "id": elements.first().map(|el| el.id),
+            "file": elements.first().map(|el| el.file_path.clone()),
+            "clip_index": elements.first().and_then(|el| el.clip_index),
+            "error": message,
+            "abandoned": true,
+            "definitive": true,
+        })));
+    }
+
     let mut abandonne = false;
 
     for element in elements {
@@ -1116,9 +1225,109 @@ fn conclure_echec(
     Ok(Some(serde_json::json!({
         "id": elements.first().map(|el| el.id),
         "file": elements.first().map(|el| el.file_path.clone()),
+        "clip_index": elements.first().and_then(|el| el.clip_index),
         "error": e,
         "abandoned": abandonne,
     })))
+}
+
+/// Description courte des fichiers sortis de la file, pour le journal.
+fn decrire_absents(absents: &[crate::video_queue::QueueItem]) -> Vec<serde_json::Value> {
+    absents
+        .iter()
+        .map(|a| {
+            serde_json::json!({
+                "kind": match a.kind {
+                    crate::video_queue::QueueKind::Frames => "frames",
+                    crate::video_queue::QueueKind::ClipProxy => "clip_proxy",
+                    crate::video_queue::QueueKind::ClipHd => "clip_hd",
+                },
+                "clip_index": a.clip_index,
+                "file": a.file_path,
+            })
+        })
+        .collect()
+}
+
+/// Sort de la file les fichiers vidéo disparus du disque (0.3.2).
+///
+/// Appelée à l'ouverture d'une épreuve, au démarrage d'une session, avant
+/// « Envoyer les HD maintenant », puis régulièrement : un clip dont le
+/// fichier n'existe plus quitte la file avec une ligne au journal, au lieu de
+/// rester « en attente » et d'échouer au clic.
+#[tauri::command]
+pub async fn purge_missing_video_files(event_id: i64) -> Result<Vec<serde_json::Value>, String> {
+    let conn = database::connexion().map_err(|e| format!("Base indisponible : {}", e))?;
+
+    let absents = crate::video_queue::purger_absents(&conn, event_id)?;
+
+    for a in &absents {
+        info!("File vidéo : {} retiré, fichier introuvable", a.file_path);
+    }
+
+    Ok(decrire_absents(&absents))
+}
+
+/// L'épreuve accepte-t-elle les images d'analyse ? (0.3.2)
+///
+/// Interrogée au démarrage d'une captation. Une épreuve sans identification
+/// est retenue pour la durée du lancement : ses images ne sont plus
+/// extraites ni envoyées, et celles déjà en file en sortent.
+///
+/// `true` : analyse active ; `false` : désactivée ; rien : inconnu (réseau).
+#[tauri::command]
+pub async fn video_analysis_probe(
+    state: tauri::State<'_, AppState>,
+    token: String,
+    event_id: i64,
+    session_id: String,
+) -> Result<Option<bool>, String> {
+    if state.analyse_desactivee.lock().await.contains(&event_id) {
+        return Ok(Some(false));
+    }
+
+    let config = crate::video_uploader::VideoUploadConfig {
+        token,
+        event_id,
+        checkpoint_id: None,
+        session_id,
+    };
+
+    let reponse = match crate::video_uploader::sonder_analyse(&config).await {
+        Ok(r) => r,
+        Err(e) => {
+            log::warn!("Épreuve {} : état de l'analyse inconnu ({})", event_id, e);
+            None
+        }
+    };
+
+    if reponse == Some(false) {
+        state.analyse_desactivee.lock().await.insert(event_id);
+
+        if let Ok(conn) = database::connexion() {
+            let _ = crate::video_queue::ecarter_images(&conn, event_id);
+        }
+
+        info!("Épreuve {} sans identification : images d'analyse non envoyées", event_id);
+    }
+
+    Ok(reponse)
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// JOURNAL (0.3.2)
+// ═══════════════════════════════════════════════════════════════════════
+
+/// Recopie dans le fichier journal des lignes affichées à l'écran.
+#[tauri::command]
+pub async fn journal_append(lignes: Vec<crate::journal::LigneEcran>) {
+    crate::journal::ecrire_lignes_ecran(&lignes);
+}
+
+/// Exporte le journal complet dans le fichier choisi par le photographe.
+#[tauri::command]
+pub async fn export_journal(destination: String) -> Result<u64, String> {
+    crate::journal::exporter(std::path::Path::new(&destination))
 }
 
 /// Remet en file les éléments abandonnés.
@@ -1169,6 +1378,10 @@ pub struct FinDeCaptation {
 
     pub frames: Vec<crate::frames::ExtractedFrame>,
     pub clips: Vec<crate::assembler::AssembledClip>,
+
+    /// Numéro que prendra le premier clip de la captation suivante (0.3.2) :
+    /// une reprise ou une relance continue la numérotation.
+    pub prochain_numero: u32,
 }
 
 /// Arrête la captation en cours.
@@ -1215,7 +1428,7 @@ async fn arreter(
     // passe par les mêmes fonctions que pendant la course, et celles-ci
     // refusent de travailler sans captation active. C'était le verrou qui
     // faisait disparaître le dernier clip.
-    let (session, dernier, dossier_travail, interval) = {
+    let (session, dernier, dossier_travail, interval, premier_numero) = {
         let mut verrou = state.active_recording.lock().await;
 
         let Some(poignee) = verrou.as_mut() else {
@@ -1242,6 +1455,7 @@ async fn arreter(
             dernier,
             poignee.work_dir.clone(),
             poignee.interval_secs,
+            poignee.premier_numero,
         )
     };
 
@@ -1252,6 +1466,7 @@ async fn arreter(
         avertissement: None,
         frames: Vec::new(),
         clips: Vec::new(),
+        prochain_numero: premier_numero,
     };
 
     // ─── 2. Le morceau resté ouvert ───
@@ -1300,7 +1515,10 @@ async fn arreter(
     //
     // Maintenant seulement : plus rien n'a besoin de la captation.
     state.active_recording.lock().await.take();
-    state.clip_tracker.lock().await.take();
+
+    if let Some(tracker) = state.clip_tracker.lock().await.take() {
+        fin.prochain_numero = tracker.clip_courant();
+    }
 
     // Le manifeste reçoit son heure de fin, ce qui permet au serveur de
     // distinguer une session terminée d'une session interrompue.

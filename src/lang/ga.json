@@ -71,7 +71,8 @@
         "disk_detail": "{free} GB saor, {reserved} GB curtha i leataobh don chóras",
         "nothing_enabled": "Cuir na grianghraif nó an físeán ar siúl, ar a laghad.",
         "hd_pending_title": "Clipeanna HD ag fanacht",
-        "hd_pending_text": "Clipeanna HD ón imeacht seo atá ag fanacht le seoladh: {count} ({size} GB)."
+        "hd_pending_text": "Clipeanna HD ón imeacht seo atá ag fanacht le seoladh: {count} ({size} GB).",
+        "video_folder_same_as_photos": "Is é an fillteán seo an fillteán grianghraf faoi fhaire freisin (nó tá ceann acu laistigh den cheann eile). Ní sheolfar aon rud faoi dhó, ach is fearr fillteán ar leith."
     },
     "dashboard": {
         "status_active": "Gníomhach",
@@ -131,7 +132,20 @@
         "video_paused_log": "Taifeadadh ar sos — dúnadh an clip a bhí ar siúl agus seolfar é leis na cinn eile",
         "video_resumed_log": "Taifeadadh atosaithe",
         "video_send_failed": "Tréigeadh seoladh an fhíseáin tar éis 3 iarracht: {error}",
-        "video_throttled": "Freastalaí ró-ualaithe: seoladh físeáin ar sos ar feadh {delay} s"
+        "video_throttled": "Freastalaí ró-ualaithe: seoladh físeáin ar sos ar feadh {delay} s",
+        "video_stop_confirm": "Stop an taifeadadh físe? Leanfar ag seoladh na gclipeanna atá taifeadta cheana, agus is féidir an taifeadadh a thosú arís.",
+        "video_restart": "Tosaigh an taifeadadh arís",
+        "video_restarted_log": "Taifeadadh tosaithe arís — leanann uimhriú na gclipeanna ar aghaidh",
+        "video_numbering": "Leanann uimhriú clipeanna na hócáide ar aghaidh ó chlip {index}",
+        "video_analysis_disabled": "Gailearaí gan aitheantas: ní sheoltar frámaí anailíse. Seoltar na clipeanna mar is gnách.",
+        "video_frames_disabled": "frámaí anailíse — nár seoladh (gailearaí gan aitheantas)",
+        "video_waiting_failed": "clipeanna ag fanacht le seoladh — {failed} theip",
+        "video_send_refused": "Dhiúltaigh an freastalaí dó, ní dhéanfar iarracht eile: {error}",
+        "video_clip_label": "Clip {index}",
+        "video_frames_label": "Frámaí anailíse",
+        "video_missing": "{count} comhad físe bainte den scuaine: níor aimsíodh ar an diosca iad",
+        "video_missing_clips": "{count} comhad físe bainte den scuaine: níor aimsíodh ar an diosca iad (clipeanna {clips})",
+        "video_online_event": "{total} ar líne don ócáid"
     },
     "watcher": {
         "detected": "Aimsíodh ({size} MB)",
@@ -146,7 +160,10 @@
         "retry_scheduled": "Iarracht nua i {delay}s (iarracht {attempt}/3)",
         "success_timing": "OK i {duration} s — líonra {network} s + freastalaí {server} s",
         "success_total": "OK i {duration} s",
-        "throttled": "Freastalaí ró-ualaithe ({code}): sos {delay} s, uaslódálacha comhthráthacha: {parallel}"
+        "throttled": "Freastalaí ró-ualaithe ({code}): sos {delay} s, uaslódálacha comhthráthacha: {parallel}",
+        "success_server": "OK i {duration} s (freastalaí {server} s)",
+        "server_had_it": "bhí sé ag an bhfreastalaí cheana",
+        "already_online": "Ar líne cheana — níor seoladh arís é"
     },
     "connection": {
         "restored": "Ceangal athbhunaithe",
@@ -155,7 +172,8 @@
     },
     "complete": {
         "with_errors": "Críochnaithe: {sent} seolta, {failed} theip",
-        "success": "Críochnaithe: {count} grianghraf uaslódáilte go rathúil!"
+        "success": "Críochnaithe: {count} grianghraf uaslódáilte go rathúil!",
+        "already": "({count} díobh ar líne cheana, níor seoladh arís iad)"
     },
     "hd": {
         "title": "Físeán HD",
@@ -182,5 +200,10 @@
         "event_running": "● Seisiún ar siúl",
         "confirm_replace": "Tá seisiún ar siúl do \"{event}\". É a chríochnú chun an ceann seo a thosú?",
         "confirm_logout": "Tá seisiún ar siúl. É a chríochnú agus logáil amach?"
+    },
+    "journal": {
+        "export": "Easpórtáil an logáil",
+        "export_dialog": "Sábháil logáil an ghníomhaire",
+        "exported": "Logáil easpórtáilte: {path}"
     }
 }

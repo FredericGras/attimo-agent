@@ -71,7 +71,8 @@
         "disk_detail": "{free} GB vrij, {reserved} GB gereserveerd voor het systeem",
         "nothing_enabled": "Schakel minstens foto's of video in.",
         "hd_pending_title": "Wachtende HD-clips",
-        "hd_pending_text": "{count} HD-clip(s) van dit evenement wachten op verzending ({size} GB)."
+        "hd_pending_text": "{count} HD-clip(s) van dit evenement wachten op verzending ({size} GB).",
+        "video_folder_same_as_photos": "Deze map is ook de bewaakte fotomap (of de ene bevat de andere). Er wordt niets dubbel verzonden, maar een aparte map is beter."
     },
     "dashboard": {
         "status_active": "Actief",
@@ -131,7 +132,20 @@
         "video_paused_log": "Opname gepauzeerd — de lopende clip is afgesloten en gaat mee met de andere",
         "video_resumed_log": "Opname hervat",
         "video_send_failed": "Video-upload na 3 pogingen opgegeven: {error}",
-        "video_throttled": "Server overbelast: video-upload {delay} s gepauzeerd"
+        "video_throttled": "Server overbelast: video-upload {delay} s gepauzeerd",
+        "video_stop_confirm": "Video-opname stoppen? Al opgenomen clips worden verder verzonden en de opname kan opnieuw worden gestart.",
+        "video_restart": "Opname opnieuw starten",
+        "video_restarted_log": "Opname opnieuw gestart — de nummering van de clips loopt door",
+        "video_numbering": "De clipnummering van het evenement loopt door, vanaf clip {index}",
+        "video_analysis_disabled": "Galerij zonder identificatie: analysebeelden worden niet verzonden. Clips worden normaal verzonden.",
+        "video_frames_disabled": "analysebeelden — niet verzonden (galerij zonder identificatie)",
+        "video_waiting_failed": "clips wachten op verzending — {failed} mislukt",
+        "video_send_refused": "Geweigerd door de server, geen nieuwe poging: {error}",
+        "video_clip_label": "Clip {index}",
+        "video_frames_label": "Analysebeelden",
+        "video_missing": "{count} videobestand(en) uit de wachtrij verwijderd: niet gevonden op de schijf",
+        "video_missing_clips": "{count} videobestand(en) uit de wachtrij verwijderd: niet gevonden op de schijf (clips {clips})",
+        "video_online_event": "{total} online voor het evenement"
     },
     "watcher": {
         "detected": "Gedetecteerd ({size} MB)",
@@ -146,7 +160,10 @@
         "retry_scheduled": "Nieuwe poging over {delay}s (poging {attempt}/3)",
         "success_timing": "OK in {duration} s — netwerk {network} s + server {server} s",
         "success_total": "OK in {duration} s",
-        "throttled": "Server overbelast ({code}): {delay} s pauze, {parallel} parallelle upload(s)"
+        "throttled": "Server overbelast ({code}): {delay} s pauze, {parallel} parallelle upload(s)",
+        "success_server": "OK in {duration} s (server {server} s)",
+        "server_had_it": "de server had hem al",
+        "already_online": "Al online — niet opnieuw verzonden"
     },
     "connection": {
         "restored": "Verbinding hersteld",
@@ -155,7 +172,8 @@
     },
     "complete": {
         "with_errors": "Klaar: {sent} verzonden, {failed} mislukt",
-        "success": "Klaar: {count} foto's succesvol geüpload!"
+        "success": "Klaar: {count} foto's succesvol geüpload!",
+        "already": "(waarvan {count} al online, niet opnieuw verzonden)"
     },
     "hd": {
         "title": "HD-video",
@@ -182,5 +200,10 @@
         "event_running": "● Sessie loopt",
         "confirm_replace": "Er loopt een sessie voor '{event}'. Beëindigen om deze te starten?",
         "confirm_logout": "Er loopt een sessie. Beëindigen en afmelden?"
+    },
+    "journal": {
+        "export": "Logboek exporteren",
+        "export_dialog": "Logboek van de agent opslaan",
+        "exported": "Logboek geëxporteerd: {path}"
     }
 }

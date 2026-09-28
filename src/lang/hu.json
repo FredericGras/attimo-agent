@@ -71,7 +71,8 @@
         "disk_detail": "{free} GB szabad, {reserved} GB a rendszernek fenntartva",
         "nothing_enabled": "Kapcsolja be legalább a fényképeket vagy a videót.",
         "hd_pending_title": "Várakozó HD-klipek",
-        "hd_pending_text": "Az esemény {count} HD-klipje vár küldésre ({size} GB)."
+        "hd_pending_text": "Az esemény {count} HD-klipje vár küldésre ({size} GB).",
+        "video_folder_same_as_photos": "Ez a mappa egyben a figyelt fotómappa is (vagy az egyik tartalmazza a másikat). Semmi sem megy el kétszer, de jobb egy külön mappa."
     },
     "dashboard": {
         "status_active": "Aktív",
@@ -131,7 +132,20 @@
         "video_paused_log": "Felvétel szüneteltetve — a folyamatban lévő klip lezárult, és a többivel együtt megy",
         "video_resumed_log": "Felvétel folytatva",
         "video_send_failed": "Videóküldés 3 próbálkozás után feladva: {error}",
-        "video_throttled": "A szerver túlterhelt: videóküldés szüneteltetve {delay} mp-re"
+        "video_throttled": "A szerver túlterhelt: videóküldés szüneteltetve {delay} mp-re",
+        "video_stop_confirm": "Videófelvétel leállítása? A már rögzített klipek küldése folytatódik, és a felvétel újraindítható.",
+        "video_restart": "Felvétel újraindítása",
+        "video_restarted_log": "Felvétel újraindítva — a klipek számozása folytatódik",
+        "video_numbering": "Az esemény klipjeinek számozása folytatódik, a(z) {index}. kliptől",
+        "video_analysis_disabled": "Azonosítás nélküli galéria: az elemzési képkockák nem kerülnek elküldésre. A klipek a szokásos módon mennek.",
+        "video_frames_disabled": "elemzési képkocka — nem küldve (azonosítás nélküli galéria)",
+        "video_waiting_failed": "klip vár küldésre — {failed} sikertelen",
+        "video_send_refused": "A szerver elutasította, nincs újabb próbálkozás: {error}",
+        "video_clip_label": "{index}. klip",
+        "video_frames_label": "Elemzési képkockák",
+        "video_missing": "{count} videofájl eltávolítva a sorból: nem található a lemezen",
+        "video_missing_clips": "{count} videofájl eltávolítva a sorból: nem található a lemezen (klipek: {clips})",
+        "video_online_event": "{total} online az eseményben"
     },
     "watcher": {
         "detected": "Észlelve ({size} MB)",
@@ -146,7 +160,10 @@
         "retry_scheduled": "Újrapróbálás {delay} mp múlva ({attempt}. kísérlet/3)",
         "success_timing": "OK {duration} mp alatt — hálózat {network} mp + szerver {server} mp",
         "success_total": "OK {duration} mp alatt",
-        "throttled": "A szerver túlterhelt ({code}): {delay} mp szünet, {parallel} párhuzamos feltöltés"
+        "throttled": "A szerver túlterhelt ({code}): {delay} mp szünet, {parallel} párhuzamos feltöltés",
+        "success_server": "OK {duration} mp alatt (szerver {server} mp)",
+        "server_had_it": "a szervernek már megvolt",
+        "already_online": "Már online — nem küldtük újra"
     },
     "connection": {
         "restored": "Kapcsolat helyreállt",
@@ -155,7 +172,8 @@
     },
     "complete": {
         "with_errors": "Kész: {sent} elküldve, {failed} sikertelen",
-        "success": "Kész: {count} fotó sikeresen feltöltve!"
+        "success": "Kész: {count} fotó sikeresen feltöltve!",
+        "already": "(ebből {count} már online volt, nem küldtük újra)"
     },
     "hd": {
         "title": "HD-videó",
@@ -182,5 +200,10 @@
         "event_running": "● Munkamenet fut",
         "confirm_replace": "Munkamenet fut ehhez: „{event}”. Befejezi, hogy ezt indíthassa?",
         "confirm_logout": "Munkamenet fut. Befejezi és kijelentkezik?"
+    },
+    "journal": {
+        "export": "Napló exportálása",
+        "export_dialog": "Az ügynök naplójának mentése",
+        "exported": "Napló exportálva: {path}"
     }
 }

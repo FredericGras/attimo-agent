@@ -300,6 +300,10 @@ struct UploadApiResponse {
 #[derive(Debug, serde::Deserialize)]
 struct UploadedPhotoData {
     photo_id: Option<i64>,
+    /// Le serveur avait déjà cette photo (même empreinte) : il renvoie la
+    /// fiche existante au lieu d'en créer une.
+    #[serde(default)]
+    duplicate: bool,
 }
 
 /// Configuration d'une session d'upload
@@ -318,10 +322,15 @@ pub struct UploadConfig {
 /// Envoi réussi, avec ses temps mesurés.
 struct EnvoiReussi {
     photo_id: Option<i64>,
+    /// Le serveur l'avait déjà : elle est partie pour rien.
+    doublon_serveur: bool,
     /// Durée de la tentative réussie : de l'envoi de la requête à la
     /// réception complète de la réponse.
     total_ms: u64,
-    /// Temps passé dans le serveur (Server-Timing), s'il l'indique.
+    /// Envoi du fichier (0.3.2) : du premier au dernier octet remis au
+    /// réseau. Mesuré par l'agent lui-même, sans rien déduire du serveur.
+    envoi_ms: Option<u64>,
+    /// Temps annoncé par le serveur (Server-Timing), s'il l'indique.
     serveur_ms: Option<u64>,
 }
 
@@ -350,11 +359,83 @@ fn create_http_client() -> Result<reqwest::Client, String> {
 
 // ─── Upload d'un fichier ────────────────────────────────────
 
+/// Lit une photo sur le disque, avec un message compréhensible en cas
+/// d'échec.
+async fn lire_photo(file_path: &Path) -> Result<Vec<u8>, String> {
+    tokio::fs::read(file_path).await.map_err(|e| {
+        if e.kind() == std::io::ErrorKind::NotFound {
+            format!("Fichier introuvable: {}", file_path.display())
+        } else if e.kind() == std::io::ErrorKind::PermissionDenied {
+            format!("Accès refusé: {}", file_path.display())
+        } else {
+            format!("Erreur lecture fichier: {}", e)
+        }
+    })
+}
+
+/// La photo de cette empreinte est-elle déjà en ligne pour l'épreuve ?
+///
+/// Base illisible : on répond non, la photo part — au pire le serveur
+/// l'écartera lui-même, comme avant.
+fn empreinte_deja_en_ligne(event_id: i64, empreinte: &str) -> bool {
+    database::connexion()
+        .ok()
+        .and_then(|c| database::empreinte_connue(&c, event_id, empreinte).ok())
+        .flatten()
+        .is_some()
+}
+
+/// Retient qu'une photo est en ligne pour l'épreuve.
+fn retenir_empreinte(event_id: i64, empreinte: &str, taille: u64, nom: &str, photo_id: Option<i64>) {
+    let resultat = database::connexion().and_then(|c| {
+        database::retenir_empreinte(&c, event_id, empreinte, taille as i64, nom, photo_id)
+    });
+
+    if let Err(e) = resultat {
+        warn!("Empreinte de {} non retenue : {}", nom, e);
+    }
+}
+
+/// Taille des morceaux remis au réseau.
+const MORCEAU_ENVOI: usize = 64 * 1024;
+
+/// Corps de requête qui note l'instant où le dernier octet est remis au
+/// réseau (0.3.2).
+///
+/// Avant, le « réseau » se déduisait du temps total moins le temps annoncé
+/// par le serveur. Or ce temps serveur part du début de la requête PHP, qui
+/// commence avant la fin de la réception du fichier : le transfert était
+/// compté dans « serveur », et le réseau tombait à 0,0 s. Ici l'agent mesure
+/// lui-même l'envoi, morceau par morceau.
+fn corps_mesure(contenu: Arc<Vec<u8>>, fin_envoi: Arc<std::sync::Mutex<Option<Instant>>>) -> reqwest::Body {
+    let flux = futures_util::stream::unfold(0usize, move |position| {
+        let contenu = contenu.clone();
+        let fin_envoi = fin_envoi.clone();
+
+        async move {
+            if position >= contenu.len() {
+                return None;
+            }
+
+            let fin = (position + MORCEAU_ENVOI).min(contenu.len());
+
+            // Dernier morceau : le fichier entier a été remis au réseau.
+            if fin == contenu.len() {
+                *fin_envoi.lock().unwrap_or_else(|e| e.into_inner()) = Some(Instant::now());
+            }
+
+            Some((Ok::<Vec<u8>, std::io::Error>(contenu[position..fin].to_vec()), fin))
+        }
+    });
+
+    reqwest::Body::wrap_stream(flux)
+}
+
 /// Uploade un seul fichier vers l'API Attimo.
 ///
-/// Lit le fichier depuis le disque, le met dans un formulaire multipart,
-/// et l'envoie en POST. Le header `Accept: application/json` est essentiel
-/// (sans lui, Laravel retourne du HTML au lieu de JSON).
+/// Le contenu est lu une fois par le worker (il sert aussi à l'empreinte),
+/// puis envoyé en POST multipart. Le header `Accept: application/json` est
+/// essentiel (sans lui, Laravel retourne du HTML au lieu de JSON).
 ///
 /// # Retour
 /// - `Ok(EnvoiReussi)` — succès, avec l'ID de la photo et les temps mesurés
@@ -362,26 +443,21 @@ fn create_http_client() -> Result<reqwest::Client, String> {
 async fn upload_single_file(
     client: &reqwest::Client,
     config: &UploadConfig,
-    file_path: &Path,
+    contenu: Arc<Vec<u8>>,
     filename: &str,
 ) -> Result<EnvoiReussi, Echec> {
-    // Lire le fichier depuis le disque
-    let file_bytes = tokio::fs::read(file_path).await.map_err(|e| {
-        Echec::Erreur(if e.kind() == std::io::ErrorKind::NotFound {
-            format!("Fichier introuvable: {}", file_path.display())
-        } else if e.kind() == std::io::ErrorKind::PermissionDenied {
-            format!("Accès refusé: {}", file_path.display())
-        } else {
-            format!("Erreur lecture fichier: {}", e)
-        })
-    })?;
+    let taille = contenu.len() as u64;
+    let fin_envoi = Arc::new(std::sync::Mutex::new(None));
 
     // Construire le formulaire multipart
     // C'est exactement comme un <form enctype="multipart/form-data"> en HTML
-    let file_part = reqwest::multipart::Part::bytes(file_bytes)
-        .file_name(filename.to_string())
-        .mime_str("image/jpeg")
-        .map_err(|e| Echec::Erreur(format!("Erreur MIME: {}", e)))?;
+    let file_part = reqwest::multipart::Part::stream_with_length(
+        corps_mesure(contenu, fin_envoi.clone()),
+        taille,
+    )
+    .file_name(filename.to_string())
+    .mime_str("image/jpeg")
+    .map_err(|e| Echec::Erreur(format!("Erreur MIME: {}", e)))?;
 
     let mut form = reqwest::multipart::Form::new()
         .part("photo", file_part)
@@ -418,6 +494,11 @@ async fn upload_single_file(
                 format!("Erreur réseau: {}", e)
             })
         })?;
+
+    let envoi_ms = fin_envoi
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .map(|fin| fin.saturating_duration_since(debut).as_millis() as u64);
 
     let status = response.status();
 
@@ -485,11 +566,14 @@ async fn upload_single_file(
     }
 
     // Extraire l'ID de la photo créée sur le serveur
+    let doublon_serveur = api_response.data.as_ref().map(|d| d.duplicate).unwrap_or(false);
     let photo_id = api_response.data.and_then(|d| d.photo_id);
 
     Ok(EnvoiReussi {
         photo_id,
+        doublon_serveur,
         total_ms,
+        envoi_ms,
         serveur_ms,
     })
 }
@@ -507,21 +591,74 @@ fn emit_stats(session_id: i64, app_handle: &tauri::AppHandle) {
                 "sent": stats.sent,
                 "pending": stats.pending + stats.uploading,
                 "failed": stats.failed,
+                "already": stats.already,
             }),
         );
     }
+}
+
+/// Compteurs émis dès la détection (0.3.2).
+///
+/// Avant, les compteurs ne bougeaient qu'à la fin du premier envoi : ils
+/// restaient à « 0 / 0 » les premières secondes alors que le journal
+/// annonçait déjà les photos détectées. Le guetteur les émet désormais à
+/// chaque inscription, au plus une fois toutes les 300 ms — ou tout de suite
+/// avec `forcer`, à la fin d'un paquet du scan initial.
+pub fn signaler_stats(session_id: i64, app_handle: &tauri::AppHandle, forcer: bool) {
+    static DERNIER: std::sync::Mutex<Option<Instant>> = std::sync::Mutex::new(None);
+
+    {
+        let mut dernier = DERNIER.lock().unwrap_or_else(|e| e.into_inner());
+
+        if !forcer {
+            if let Some(t) = *dernier {
+                if t.elapsed() < Duration::from_millis(300) {
+                    return;
+                }
+            }
+        }
+
+        *dernier = Some(Instant::now());
+    }
+
+    emit_stats(session_id, app_handle);
+}
+
+/// Dernier bilan « Terminé » annoncé : (session, envoyées, échouées).
+///
+/// 0.3.2 — Deux envois qui finissent ensemble voyaient tous deux la file
+/// vide, et « Terminé : 60 photos envoyées » s'affichait deux fois. Un bilan
+/// n'est annoncé qu'une fois ; un nouveau n'apparaît que si de nouvelles
+/// photos ont été traitées depuis.
+static DERNIER_BILAN: std::sync::Mutex<Option<(i64, i64, i64)>> = std::sync::Mutex::new(None);
+
+/// Ce bilan est-il nouveau ? Le retient s'il l'est.
+fn bilan_nouveau(session_id: i64, envoyees: i64, echouees: i64) -> bool {
+    let mut dernier = DERNIER_BILAN.lock().unwrap_or_else(|e| e.into_inner());
+    let bilan = Some((session_id, envoyees, echouees));
+
+    if *dernier == bilan {
+        return false;
+    }
+
+    *dernier = bilan;
+    true
 }
 
 /// Vérifie si tous les fichiers de la session ont été traités.
 /// Si pending == 0 et uploading == 0, émet l'événement `all_complete`.
 fn check_all_complete(session_id: i64, app_handle: &tauri::AppHandle) {
     if let Ok(stats) = database::get_session_stats(session_id) {
-        if stats.pending == 0 && stats.uploading == 0 {
+        if stats.pending == 0
+            && stats.uploading == 0
+            && bilan_nouveau(session_id, stats.sent, stats.failed)
+        {
             let _ = app_handle.emit(
                 "all_complete",
                 serde_json::json!({
                     "total_sent": stats.sent,
                     "total_failed": stats.failed,
+                    "total_already": stats.already,
                 }),
             );
         }
@@ -678,6 +815,46 @@ pub fn start_upload_workers(
                     None,
                 );
 
+                // ── Anti-doublon AVANT l'envoi (0.3.2) ──
+                //
+                // Le fichier est lu une seule fois : son empreinte sert à
+                // reconnaître une photo déjà en ligne, et son contenu part
+                // ensuite tel quel. Une lecture ratée n'arrête rien ici : les
+                // tentatives d'envoi relisent et disent pourquoi.
+                let mut contenu: Option<Arc<Vec<u8>>> = None;
+                let mut empreinte: Option<String> = None;
+
+                if let Ok(octets) = lire_photo(&job.file_path).await {
+                    let calcul = crate::empreinte::md5_hexa(&octets);
+
+                    if empreinte_deja_en_ligne(config_clone.event_id, &calcul) {
+                        let _ = database::update_file_status(
+                            job.db_file_id,
+                            "already",
+                            None,
+                            None,
+                        );
+
+                        let _ = app_clone.emit(
+                            "upload_already",
+                            serde_json::json!({
+                                "filename": &job.filename,
+                                "size": job.file_size,
+                            }),
+                        );
+
+                        info!("Worker {} = {} déjà en ligne, non renvoyée", i, job.filename);
+
+                        photo_terminee();
+                        emit_stats(job.session_id, &app_clone);
+                        check_all_complete(job.session_id, &app_clone);
+                        continue;
+                    }
+
+                    empreinte = Some(calcul);
+                    contenu = Some(Arc::new(octets));
+                }
+
                 // Tentatives comptées : un 429 n'en consomme pas.
                 let mut tentatives: u32 = 0;
                 let mut saturations: u32 = 0;
@@ -713,14 +890,23 @@ pub fn start_upload_workers(
                         }),
                     );
 
-                    match upload_single_file(
-                        &client,
-                        &config_clone,
-                        &job.file_path,
-                        &job.filename,
-                    )
-                    .await
-                    {
+                    // Lecture refaite seulement si la première a échoué.
+                    let tentative = match contenu.clone() {
+                        Some(c) => Ok(c),
+                        None => lire_photo(&job.file_path).await.map(|octets| {
+                            empreinte = Some(crate::empreinte::md5_hexa(&octets));
+                            let c = Arc::new(octets);
+                            contenu = Some(c.clone());
+                            c
+                        }),
+                    };
+
+                    let resultat = match tentative {
+                        Ok(c) => upload_single_file(&client, &config_clone, c, &job.filename).await,
+                        Err(message) => Err(Echec::Erreur(message)),
+                    };
+
+                    match resultat {
                         Ok(envoi) => {
                             // ── SUCCÈS ──
                             regulateur.succes(Instant::now());
@@ -732,12 +918,21 @@ pub fn start_upload_workers(
                                 envoi.photo_id,
                             );
 
-                            // Réseau = tout ce qui n'est pas le serveur :
-                            // transfert, latence, attente de la réponse.
-                            let reseau_ms = envoi
-                                .serveur_ms
-                                .map(|s| envoi.total_ms.saturating_sub(s));
+                            // En ligne : elle ne repartira plus, même depuis
+                            // une autre session ou un autre dossier.
+                            if let Some(e) = &empreinte {
+                                retenir_empreinte(
+                                    config_clone.event_id,
+                                    e,
+                                    job.file_size,
+                                    &job.filename,
+                                    envoi.photo_id,
+                                );
+                            }
 
+                            // Envoi = mesuré par l'agent (0.3.2) ; serveur =
+                            // ce que le serveur annonce (Server-Timing).
+                            // L'interface juge si les deux se tiennent.
                             let _ = app_clone.emit(
                                 "upload_success",
                                 serde_json::json!({
@@ -745,21 +940,21 @@ pub fn start_upload_workers(
                                     "size": job.file_size,
                                     "duration_ms": envoi.total_ms,
                                     "server_ms": envoi.serveur_ms,
-                                    "network_ms": reseau_ms,
+                                    "network_ms": envoi.envoi_ms,
                                     "server_photo_id": envoi.photo_id,
+                                    "duplicate": envoi.doublon_serveur,
                                 }),
                             );
 
-                            match (reseau_ms, envoi.serveur_ms) {
-                                (Some(r), Some(s)) => info!(
-                                    "Worker {} ✓ {} en {} ms (réseau {} ms + serveur {} ms)",
-                                    i, job.filename, envoi.total_ms, r, s
-                                ),
-                                _ => info!(
-                                    "Worker {} ✓ {} en {} ms",
-                                    i, job.filename, envoi.total_ms
-                                ),
-                            }
+                            info!(
+                                "Worker {} ✓ {} en {} ms (envoi {} ms, serveur annonce {} ms){}",
+                                i,
+                                job.filename,
+                                envoi.total_ms,
+                                envoi.envoi_ms.map(|v| v.to_string()).unwrap_or_else(|| "?".into()),
+                                envoi.serveur_ms.map(|v| v.to_string()).unwrap_or_else(|| "?".into()),
+                                if envoi.doublon_serveur { " — le serveur l'avait déjà" } else { "" }
+                            );
 
                             break;
                         }
@@ -1041,6 +1236,17 @@ mod tests {
         assert_eq!(lire_server_timing("cache;desc=\"hit\", total;dur=\"42\""), Some(42.0));
         assert_eq!(lire_server_timing("miss"), None);
         assert_eq!(lire_server_timing(""), None);
+    }
+
+    #[test]
+    fn le_bilan_termine_nest_annonce_quune_fois() {
+        // Deux envois qui finissent ensemble voient le même bilan : un seul
+        // « Terminé » doit s'afficher.
+        assert!(bilan_nouveau(9001, 60, 0));
+        assert!(!bilan_nouveau(9001, 60, 0));
+
+        // De nouvelles photos traitées depuis : nouveau bilan.
+        assert!(bilan_nouveau(9001, 61, 0));
     }
 
     #[test]

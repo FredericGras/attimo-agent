@@ -1,6 +1,6 @@
 [package]
 name = "attimo-agent"
-version = "0.3.1"
+version = "0.3.2"
 description = "Attimo Agent Terrain — Upload live terrain pour photographes sportifs"
 authors = ["Frédéric Gras"]
 edition = "2021"
@@ -48,3 +48,18 @@ image = { version = "0.25", default-features = false, features = ["jpeg"] }
 # --- Espace disque (SAAS 430) ---
 # Lecture multiplateforme de l'espace libre, sans `unsafe` côté agent.
 fs4 = "1"
+
+# --- Flux d'envoi des photos (0.3.2) ---
+# Le fichier part en flux, morceau par morceau : l'agent sait ainsi quand le
+# dernier octet a quitté le poste, et sépare l'envoi du traitement serveur.
+futures-util = { version = "0.3", default-features = false }
+
+# --- Stockage sécurisé du jeton (0.3.2) ---
+# Windows : DPAPI, le coffre de la session utilisateur. Le jeton n'est plus
+# lisible en clair dans auth.json.
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_Security_Cryptography"] }
+
+# macOS : le trousseau (Keychain).
+[target.'cfg(target_os = "macos")'.dependencies]
+security-framework = "3"

@@ -71,7 +71,8 @@
         "disk_detail": "{free} GB prostih, {reserved} GB rezerviranih za sistem",
         "nothing_enabled": "Vklopite vsaj fotografije ali video.",
         "hd_pending_title": "Klipi HD na čakanju",
-        "hd_pending_text": "Klipi HD tega dogodka, ki čakajo na pošiljanje: {count} ({size} GB)."
+        "hd_pending_text": "Klipi HD tega dogodka, ki čakajo na pošiljanje: {count} ({size} GB).",
+        "video_folder_same_as_photos": "Ta mapa je tudi nadzorovana mapa fotografij (ali ena vsebuje drugo). Nič ne bo poslano dvakrat, vendar je ločena mapa boljša."
     },
     "dashboard": {
         "status_active": "Aktivno",
@@ -131,7 +132,20 @@
         "video_paused_log": "Snemanje začasno ustavljeno — začeti klip je zaprt in odide z ostalimi",
         "video_resumed_log": "Snemanje se nadaljuje",
         "video_send_failed": "Pošiljanje videa opuščeno po 3 poskusih: {error}",
-        "video_throttled": "Strežnik je preobremenjen: pošiljanje videa začasno ustavljeno za {delay} s"
+        "video_throttled": "Strežnik je preobremenjen: pošiljanje videa začasno ustavljeno za {delay} s",
+        "video_stop_confirm": "Ustaviti videosnemanje? Že posneti klipi se še naprej pošiljajo, snemanje pa bo mogoče znova zagnati.",
+        "video_restart": "Znova zaženi snemanje",
+        "video_restarted_log": "Snemanje znova zagnano — številčenje klipov se nadaljuje",
+        "video_numbering": "Številčenje klipov dogodka se nadaljuje od klipa {index}",
+        "video_analysis_disabled": "Galerija brez identifikacije: slike za analizo se ne pošiljajo. Klipi se pošiljajo običajno.",
+        "video_frames_disabled": "slik za analizo — niso poslane (galerija brez identifikacije)",
+        "video_waiting_failed": "klipov čaka na pošiljanje — {failed} neuspešnih",
+        "video_send_refused": "Strežnik je zavrnil, brez ponovnega poskusa: {error}",
+        "video_clip_label": "Klip {index}",
+        "video_frames_label": "Slike za analizo",
+        "video_missing": "Iz čakalne vrste odstranjenih videodatotek: {count} — ni jih na disku",
+        "video_missing_clips": "Iz čakalne vrste odstranjenih videodatotek: {count} — ni jih na disku (klipi {clips})",
+        "video_online_event": "{total} na spletu za dogodek"
     },
     "watcher": {
         "detected": "Zaznano ({size} MB)",
@@ -146,7 +160,10 @@
         "retry_scheduled": "Ponovni poskus čez {delay}s (poskus {attempt}/3)",
         "success_timing": "OK v {duration} s — omrežje {network} s + strežnik {server} s",
         "success_total": "OK v {duration} s",
-        "throttled": "Strežnik je preobremenjen ({code}): premor {delay} s, vzporedni prenosi: {parallel}"
+        "throttled": "Strežnik je preobremenjen ({code}): premor {delay} s, vzporedni prenosi: {parallel}",
+        "success_server": "OK v {duration} s (strežnik {server} s)",
+        "server_had_it": "strežnik jo je že imel",
+        "already_online": "Že na spletu — ni poslana znova"
     },
     "connection": {
         "restored": "Povezava obnovljena",
@@ -155,7 +172,8 @@
     },
     "complete": {
         "with_errors": "Končano: {sent} poslanih, {failed} neuspešnih",
-        "success": "Končano: {count} fotografij uspešno naloženih!"
+        "success": "Končano: {count} fotografij uspešno naloženih!",
+        "already": "(od tega {count} že na spletu, niso poslane znova)"
     },
     "hd": {
         "title": "Video HD",
@@ -182,5 +200,10 @@
         "event_running": "● Seja poteka",
         "confirm_replace": "Za »{event}« poteka seja. Jo končam, da začnem to?",
         "confirm_logout": "Seja poteka. Jo končam in se odjavim?"
+    },
+    "journal": {
+        "export": "Izvozi dnevnik",
+        "export_dialog": "Shrani dnevnik agenta",
+        "exported": "Dnevnik izvožen: {path}"
     }
 }

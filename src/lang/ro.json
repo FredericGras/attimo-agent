@@ -71,7 +71,8 @@
         "disk_detail": "{free} GB liberi, {reserved} GB rezervați sistemului",
         "nothing_enabled": "Activați cel puțin fotografiile sau videoul.",
         "hd_pending_title": "Clipuri HD în așteptare",
-        "hd_pending_text": "{count} clip(uri) HD din acest eveniment așteaptă să fie trimise ({size} GB)."
+        "hd_pending_text": "{count} clip(uri) HD din acest eveniment așteaptă să fie trimise ({size} GB).",
+        "video_folder_same_as_photos": "Acest dosar este și dosarul de fotografii monitorizat (sau unul îl conține pe celălalt). Nimic nu va fi trimis de două ori, dar un dosar separat este preferabil."
     },
     "dashboard": {
         "status_active": "Activ",
@@ -131,7 +132,20 @@
         "video_paused_log": "Înregistrare în pauză — clipul în curs a fost închis și pleacă împreună cu celelalte",
         "video_resumed_log": "Înregistrare reluată",
         "video_send_failed": "Trimitere video abandonată după 3 încercări: {error}",
-        "video_throttled": "Server supraîncărcat: trimitere video în pauză {delay} s"
+        "video_throttled": "Server supraîncărcat: trimitere video în pauză {delay} s",
+        "video_stop_confirm": "Opriți înregistrarea video? Clipurile deja filmate continuă să fie trimise, iar înregistrarea va putea fi repornită.",
+        "video_restart": "Reporniți înregistrarea",
+        "video_restarted_log": "Înregistrare repornită — numerotarea clipurilor continuă",
+        "video_numbering": "Numerotarea clipurilor evenimentului continuă, de la clipul {index}",
+        "video_analysis_disabled": "Galerie fără identificare: imaginile de analiză nu sunt trimise. Clipurile pleacă normal.",
+        "video_frames_disabled": "imagini de analiză — netrimise (galerie fără identificare)",
+        "video_waiting_failed": "clipuri în așteptarea trimiterii — {failed} eșuate",
+        "video_send_refused": "Refuzat de server, fără reîncercare: {error}",
+        "video_clip_label": "Clipul {index}",
+        "video_frames_label": "Imagini de analiză",
+        "video_missing": "{count} fișier(e) video eliminat(e) din coadă: negăsit(e) pe disc",
+        "video_missing_clips": "{count} fișier(e) video eliminat(e) din coadă: negăsit(e) pe disc (clipuri {clips})",
+        "video_online_event": "{total} online pentru eveniment"
     },
     "watcher": {
         "detected": "Detectat ({size} MB)",
@@ -146,7 +160,10 @@
         "retry_scheduled": "Reîncercare în {delay}s (încercare {attempt}/3)",
         "success_timing": "OK în {duration} s — rețea {network} s + server {server} s",
         "success_total": "OK în {duration} s",
-        "throttled": "Server supraîncărcat ({code}): pauză {delay} s, {parallel} încărcare(ări) în paralel"
+        "throttled": "Server supraîncărcat ({code}): pauză {delay} s, {parallel} încărcare(ări) în paralel",
+        "success_server": "OK în {duration} s (server {server} s)",
+        "server_had_it": "serverul o avea deja",
+        "already_online": "Deja online — nu a fost retrimisă"
     },
     "connection": {
         "restored": "Conexiune restabilită",
@@ -155,7 +172,8 @@
     },
     "complete": {
         "with_errors": "Terminat: {sent} trimise, {failed} eșuate",
-        "success": "Terminat: {count} fotografii încărcate cu succes!"
+        "success": "Terminat: {count} fotografii încărcate cu succes!",
+        "already": "(dintre care {count} deja online, neretrimise)"
     },
     "hd": {
         "title": "Video HD",
@@ -182,5 +200,10 @@
         "event_running": "● Sesiune în curs",
         "confirm_replace": "O sesiune rulează pentru „{event}”. O încheiați pentru a o porni pe aceasta?",
         "confirm_logout": "O sesiune este în curs. O încheiați și vă deconectați?"
+    },
+    "journal": {
+        "export": "Exportați jurnalul",
+        "export_dialog": "Salvați jurnalul agentului",
+        "exported": "Jurnal exportat: {path}"
     }
 }
