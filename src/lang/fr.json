@@ -180,7 +180,9 @@
         "success_server": "OK en {duration} s (serveur {server} s)",
         "server_had_it": "le serveur l'avait déjà",
         "already_online": "Déjà en ligne — non renvoyée",
-        "missing_on_server": "Absente de la galerie — renvoyée"
+        "missing_on_server": "Absente de la galerie — renvoyée",
+        "gallery_recheck_missing": "Galerie revérifiée : {count} photo(s) absente(s), renvoi en cours",
+        "gallery_recheck_ok": "Galerie revérifiée : les {count} photo(s) envoyée(s) sont en ligne"
     },
 
     "connection": {
@@ -215,7 +217,8 @@
         "duration_s": "{n} s",
         "duration_min": "{n} min",
         "duration_h": "{h} h {m} min",
-        "auto_notice": "HD envoyée automatiquement : la pleine qualité part pendant la course (attention au forfait 4G)."
+        "auto_notice": "HD envoyée automatiquement : la pleine qualité part pendant la course (attention au forfait 4G).",
+        "missing_apart": "{count} introuvable(s) sur le disque"
     },
 
     "nav": {

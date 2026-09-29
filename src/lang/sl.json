@@ -174,7 +174,9 @@
         "success_server": "OK v {duration} s (strežnik {server} s)",
         "server_had_it": "strežnik jo je že imel",
         "already_online": "Že na spletu — ni poslana znova",
-        "missing_on_server": "Manjka v galeriji — poslana znova"
+        "missing_on_server": "Manjka v galeriji — poslana znova",
+        "gallery_recheck_missing": "Galerija ponovno preverjena: manjka {count} fotografij, pošiljajo se znova",
+        "gallery_recheck_ok": "Galerija ponovno preverjena: vseh {count} poslanih fotografij je na spletu"
     },
     "connection": {
         "restored": "Povezava obnovljena",
@@ -206,7 +208,8 @@
         "duration_s": "{n} s",
         "duration_min": "{n} min",
         "duration_h": "{h} h {m} min",
-        "auto_notice": "HD se pošilja samodejno: polna kakovost gre med tekmo (pazite na 4G paket)."
+        "auto_notice": "HD se pošilja samodejno: polna kakovost gre med tekmo (pazite na 4G paket).",
+        "missing_apart": "{count} ni najdenih na disku"
     },
     "nav": {
         "banner_title": "Seja poteka: {event}",

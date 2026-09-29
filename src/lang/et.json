@@ -174,7 +174,9 @@
         "success_server": "OK {duration} s (server {server} s)",
         "server_had_it": "serveris oli see juba olemas",
         "already_online": "Juba võrgus — uuesti ei saadetud",
-        "missing_on_server": "Galeriist puudu — saadeti uuesti"
+        "missing_on_server": "Galeriist puudu — saadeti uuesti",
+        "gallery_recheck_missing": "Galerii uuesti kontrollitud: {count} fotot puudub, saadetakse uuesti",
+        "gallery_recheck_ok": "Galerii uuesti kontrollitud: kõik {count} saadetud fotot on võrgus"
     },
     "connection": {
         "restored": "Ühendus taastatud",
@@ -206,7 +208,8 @@
         "duration_s": "{n} s",
         "duration_min": "{n} min",
         "duration_h": "{h} h {m} min",
-        "auto_notice": "HD saadetakse automaatselt: täiskvaliteet läheb üles võistluse ajal (jälgi 4G-paketti)."
+        "auto_notice": "HD saadetakse automaatselt: täiskvaliteet läheb üles võistluse ajal (jälgi 4G-paketti).",
+        "missing_apart": "{count} ei leitud kettalt"
     },
     "nav": {
         "banner_title": "Seanss käib: {event}",

@@ -123,6 +123,11 @@ pub fn init_db() -> Result<()> {
         "
     )?;
 
+    // 0.3.4 : empreinte de chaque photo envoyée, pour revérifier la galerie
+    // à la reprise sans relire les fichiers. L'erreur est ignorée : elle
+    // signifie que la colonne existe déjà.
+    let _ = conn.execute("ALTER TABLE upload_files ADD COLUMN empreinte TEXT", []);
+
     Ok(())
 }
 
@@ -374,6 +379,63 @@ pub fn retenir_empreinte(
     Ok(())
 }
 
+// ─── Revérification de la galerie à la reprise (0.3.4) ───
+
+/// Photo de la session que le serveur a reçue (envoyée, ou déjà en ligne).
+#[derive(Debug, Clone, PartialEq)]
+pub struct PhotoEnLigne {
+    pub id: i64,
+    pub filename: String,
+    pub file_path: String,
+    pub file_size: i64,
+    /// Absente pour une photo envoyée avant la 0.3.4.
+    pub empreinte: Option<String>,
+}
+
+/// Note l'empreinte d'un fichier de la session.
+pub fn noter_empreinte_fichier(conn: &Connection, file_id: i64, empreinte: &str) -> Result<()> {
+    conn.execute(
+        "UPDATE upload_files SET empreinte = ?1 WHERE id = ?2",
+        params![empreinte, file_id],
+    )?;
+    Ok(())
+}
+
+/// Photos de la session que le serveur a reçues : les seules qui puissent
+/// être « renvoyées ». Une photo en attente, en cours ou en échec n'a
+/// jamais été envoyée : elle n'est pas concernée.
+pub fn photos_en_ligne(conn: &Connection, session_id: i64) -> Result<Vec<PhotoEnLigne>> {
+    let mut requete = conn.prepare(
+        "SELECT id, filename, file_path, file_size, empreinte
+         FROM upload_files
+         WHERE session_id = ?1 AND status IN ('success', 'already')
+         ORDER BY id ASC",
+    )?;
+
+    let photos = requete
+        .query_map(params![session_id], |ligne| {
+            Ok(PhotoEnLigne {
+                id: ligne.get(0)?,
+                filename: ligne.get(1)?,
+                file_path: ligne.get(2)?,
+                file_size: ligne.get(3)?,
+                empreinte: ligne.get(4)?,
+            })
+        })?
+        .collect::<Result<Vec<_>>>()?;
+
+    Ok(photos)
+}
+
+/// Remet en attente une photo absente de la galerie : elle repart.
+pub fn remettre_en_attente(conn: &Connection, file_id: i64) -> Result<()> {
+    conn.execute(
+        "UPDATE upload_files SET status = 'pending', last_error = NULL, attempts = 0 WHERE id = ?1",
+        params![file_id],
+    )?;
+    Ok(())
+}
+
 /// Génère un timestamp ISO 8601 courant
 fn chrono_now() -> String {
     // Format simplifié sans dépendance chrono
@@ -416,6 +478,68 @@ mod tests {
         // Le serveur dit ne plus l'avoir : la mémoire est corrigée.
         oublier_empreinte(&conn, 7, "abc").unwrap();
         assert_eq!(empreinte_connue(&conn, 7, "abc").unwrap(), None);
+    }
+
+    fn base_des_fichiers() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE upload_files (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, session_id INTEGER NOT NULL,
+                filename TEXT NOT NULL, file_path TEXT NOT NULL,
+                file_size INTEGER NOT NULL DEFAULT 0, file_modified TEXT NOT NULL DEFAULT '',
+                status TEXT NOT NULL DEFAULT 'pending', attempts INTEGER NOT NULL DEFAULT 0,
+                last_error TEXT, uploaded_at TEXT, server_photo_id INTEGER,
+                empreinte TEXT, UNIQUE(session_id, filename));",
+        )
+        .unwrap();
+        conn
+    }
+
+    fn fichier(conn: &Connection, session: i64, nom: &str, statut: &str) -> i64 {
+        conn.execute(
+            "INSERT INTO upload_files (session_id, filename, file_path, file_size, status)
+             VALUES (?1, ?2, ?3, 100, ?4)",
+            params![session, nom, format!("C:/photos/{}", nom), statut],
+        )
+        .unwrap();
+        conn.last_insert_rowid()
+    }
+
+    #[test]
+    fn seules_les_photos_recues_par_le_serveur_sont_a_reverifier() {
+        let conn = base_des_fichiers();
+
+        let envoyee = fichier(&conn, 1, "A.JPG", "success");
+        fichier(&conn, 1, "B.JPG", "already");
+        fichier(&conn, 1, "C.JPG", "pending");
+        fichier(&conn, 1, "D.JPG", "uploading");
+        fichier(&conn, 1, "E.JPG", "failed");
+        fichier(&conn, 2, "F.JPG", "success");
+
+        noter_empreinte_fichier(&conn, envoyee, "abc").unwrap();
+
+        let photos = photos_en_ligne(&conn, 1).unwrap();
+        let noms: Vec<&str> = photos.iter().map(|p| p.filename.as_str()).collect();
+
+        // Jamais envoyées (en attente, en cours, en échec) : jamais
+        // « renvoyées ». Autre session : pas concernée.
+        assert_eq!(noms, vec!["A.JPG", "B.JPG"]);
+        assert_eq!(photos[0].empreinte.as_deref(), Some("abc"));
+        assert_eq!(photos[1].empreinte, None);
+    }
+
+    #[test]
+    fn une_photo_absente_de_la_galerie_repart_en_attente() {
+        let conn = base_des_fichiers();
+        let id = fichier(&conn, 1, "A.JPG", "success");
+
+        remettre_en_attente(&conn, id).unwrap();
+
+        let statut: String = conn
+            .query_row("SELECT status FROM upload_files WHERE id = ?1", params![id], |l| l.get(0))
+            .unwrap();
+        assert_eq!(statut, "pending");
+        assert!(photos_en_ligne(&conn, 1).unwrap().is_empty());
     }
 
     #[test]

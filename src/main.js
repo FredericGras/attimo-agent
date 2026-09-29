@@ -1042,11 +1042,18 @@ function preparerTableauDeBord(event) {
     // l'ouverture de l'épreuve) : reprises ici, déjà copiées sur le disque,
     // et rappelées dans le bloc vidéo (0.3.3).
     videoAvis = null;
-    releveOctetsHd.length = 0;
+    videoDebitHd = null;
+
+    // Le bilan HD repart de zéro (0.3.4) : « 5 envoyés — 8 introuvables »
+    // restait affiché à l'ouverture de la session suivante. Les clips
+    // retirés à l'ouverture de l'épreuve, juste avant, font partie de cette
+    // session : le bilan part de leur retrait.
+    videoHdDepuisMs = Date.now();
 
     for (const ligne of journalAvantSession.splice(0)) {
         ajouterLigneEcran(ligne.heure, '—', 'retry', ligne.message);
         videoAvis = ligne.message;
+        videoHdDepuisMs = Math.min(videoHdDepuisMs, ligne.ms);
     }
     debitFenetre.length = 0;
 
@@ -1312,7 +1319,8 @@ function initDashboard() {
                 dot.className = 'status-dot status-paused';
                 addLogEntry(timeNow(), '—', 'retry', t('dashboard.msg_paused'));
             } else {
-                // Reprendre
+                // Reprendre. L'agent revérifie aussi la galerie (0.3.4) :
+                // une photo supprimée pendant la pause repart.
                 await invoke('resume_session');
                 AppState.isPaused = false;
                 dot.className = 'status-dot status-active';
@@ -1513,6 +1521,15 @@ async function initRustEventListeners() {
     await listen('upload_back', (event) => {
         const { filename } = event.payload;
         addLogEntry(timeNow(), filename, 'retry', t('upload.missing_on_server'));
+    });
+
+    // ── « Reprendre » a revérifié la galerie (0.3.4) ──
+    await listen('gallery_rechecked', (event) => {
+        const { checked, missing } = event.payload;
+
+        addLogEntry(timeNow(), '—', missing > 0 ? 'retry' : 'success', missing > 0
+            ? t('upload.gallery_recheck_missing', { count: missing })
+            : t('upload.gallery_recheck_ok', { count: checked }));
     });
 
     // ── Photo déjà en ligne : non renvoyée (0.3.2) ──
@@ -1752,12 +1769,15 @@ function updateStats(sent, pending, failed) {
     majBandeauSession();
 }
 
-// ─── Débit réel des photos (0.3.1) ───
+// ─── Débit réel des envois (0.3.1) ───
 //
 // Octets effectivement envoyés sur la dernière minute, tous envois
 // confondus : c'est le chiffre à comparer à un test de débit (fast.com),
 // en mégabits par seconde comme lui. Il remplace le « Ko/s » d'un seul
 // fichier, qui mêlait réseau, traitement serveur et attentes.
+//
+// 0.3.4 — Vidéo comprise : clips, versions légères et images d'analyse y
+// entrent à chaque relevé de la file vidéo (releverOctetsVideo).
 
 const FENETRE_DEBIT_MS = 60000;
 const debitFenetre = [];
@@ -1830,7 +1850,7 @@ let videoImages = 0;
 let videoChronoTimer = null;
 
 // Toutes les captations de la session (une par reprise), et ce qu'on sait
-// de chacune : départ, épreuve, découpage, clips filmés et assemblés.
+// de chacune : épreuve, découpage, clips filmés et assemblés.
 let videoSessionsCourantes = [];
 const videoCaptations = {};
 
@@ -1882,8 +1902,19 @@ let videoAvis = null;
 // Épreuves dont le serveur a déjà été interrogé sur ses numéros de clip.
 const videoServeurInterroge = new Set();
 
-// Relevés des octets HD envoyés, pour le débit et le temps restant.
-const releveOctetsHd = [];
+// ─── 0.3.4 ───
+
+// Débit HD mesuré par l'agent pendant l'envoi réel des morceaux (Mb/s), ou
+// null. Remplace les relevés de la 0.3.3, qui moyennaient aussi les temps
+// morts.
+let videoDebitHd = null;
+
+// Ouverture de la session : le bloc HD ne fait le bilan que de ce qui est
+// sorti de la file depuis (envoyés, introuvables).
+let videoHdDepuisMs = Date.now();
+
+// Dernier relevé des octets vidéo envoyés, pour la tuile « Mb/s envoyés ».
+let videoOctetsReleve = null;
 
 // Prochain numéro de clip, par épreuve. Tenu ici en plus de la file : le
 // dernier clip d'une captation n'entre en file qu'après sa version légère,
@@ -1995,7 +2026,6 @@ async function demarrerCaptation(reprise) {
         videoActivite = true;
 
         videoCaptations[sessionId] = {
-            debutMs: debut,
             eventId: evenement.id,
             plan: plan,
             filmes: 0,
@@ -2435,13 +2465,21 @@ async function traiterFinDeCaptation(fin, sessionEnCours) {
     // La captation suivante — reprise, relance — continue la numérotation.
     retenirNumeroClip(evenementDeCaptation(sessionEnCours), fin.prochain_numero);
 
+    // 0.3.4 — Comptés tout de suite, avant la première attente : l'arrêt
+    // écrit « Captation arrêtée — N clip(s) produit(s) » dès que cette
+    // fonction lui rend la main. Comptés plus bas, après la mise en file des
+    // images, les clips refermés à l'arrêt manquaient au message (4 pour 5).
+    for (const clip of fin.clips) {
+        compterClipAssemble(clip, sessionEnCours);
+    }
+
     try {
         if (!videoAnalyseDesactivee) {
             await mettreImagesEnFile(fin.frames, sessionEnCours);
         }
 
         for (const clip of fin.clips) {
-            await mettreClipEnFile(clip, sessionEnCours);
+            await mettreClipEnFile(clip, sessionEnCours, true);
         }
     } catch (e) {
         addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: e }));
@@ -2513,24 +2551,36 @@ async function mettreImagesEnFile(images, sessionEnCours) {
 }
 
 /**
- * Version légère, puis mise en file des deux variantes d'un clip.
- *
- * Sortie de surMorceauPret pour que l'arrêt de captation emprunte
- * exactement le même chemin : un clip de fin ne doit pas être traité
- * autrement qu'un clip de course.
+ * Un clip de plus est assemblé : compteurs et numérotation.
  */
-async function mettreClipEnFile(clip, sessionEnCours) {
+function compterClipAssemble(clip, sessionEnCours) {
     const captation = videoCaptations[sessionEnCours];
-    const eventId = evenementDeCaptation(sessionEnCours);
 
     if (captation) {
         captation.assembles++;
         captation.filmes = Math.max(captation.filmes, captation.assembles);
     }
 
-    retenirNumeroClip(eventId, clip.index + 1);
+    retenirNumeroClip(evenementDeCaptation(sessionEnCours), clip.index + 1);
 
     majPanneauVideo();
+}
+
+/**
+ * Version légère, puis mise en file des deux variantes d'un clip.
+ *
+ * Sortie de surMorceauPret pour que l'arrêt de captation emprunte
+ * exactement le même chemin : un clip de fin ne doit pas être traité
+ * autrement qu'un clip de course.
+ *
+ * `dejaCompte` : l'arrêt a compté ses clips d'avance (0.3.4).
+ */
+async function mettreClipEnFile(clip, sessionEnCours, dejaCompte) {
+    const eventId = evenementDeCaptation(sessionEnCours);
+
+    if (!dejaCompte) {
+        compterClipAssemble(clip, sessionEnCours);
+    }
 
     addLogEntry(timeNow(), clip.filename, 'success',
         t('dashboard.video_clip_ready', { index: clip.index }));
@@ -2543,16 +2593,13 @@ async function mettreClipEnFile(clip, sessionEnCours) {
         bitrateMbps: 2
     });
 
-    // Horodatages du clip, dérivés du départ de SA captation.
-    //
-    // `duration_secs` est la durée MESURÉE pour les clips de fin : le
-    // dernier est plus court que les autres, et une fin annoncée trop tard
-    // rattacherait des coureurs à des secondes que le fichier ne contient
-    // pas.
-    const depart = captation ? captation.debutMs : videoDebutMs;
-    const debutMs = depart + clip.offset_secs * 1000;
-    const finMs = debutMs + clip.duration_secs * 1000;
-    const iso = (ms) => new Date(ms).toISOString();
+    // Horodatages du clip : ceux de l'agent (0.3.4), datés sur le même
+    // départ que les images d'analyse, fin mesurée à la milliseconde pour
+    // les clips de fin. Avant, l'interface les calculait depuis l'heure du
+    // clic, prise un peu plus tôt que le départ des images : la fin des
+    // clips tombait avant les dernières images, qui restaient sans clip.
+    const debutIso = clip.started_at;
+    const finIso = clip.ended_at;
 
     // Les deux variantes entrent en file. L'ordre d'envoi réel dépendra
     // de la priorité et de l'autorisation HD, pas de l'ordre d'ajout.
@@ -2562,8 +2609,8 @@ async function mettreClipEnFile(clip, sessionEnCours) {
         kind: 'clip_proxy',
         filePath: proxyPath,
         clipIndex: clip.index,
-        startedAt: iso(debutMs),
-        endedAt: iso(finMs),
+        startedAt: debutIso,
+        endedAt: finIso,
         instantAt: null
     });
 
@@ -2573,8 +2620,8 @@ async function mettreClipEnFile(clip, sessionEnCours) {
         kind: 'clip_hd',
         filePath: clip.path,
         clipIndex: clip.index,
-        startedAt: iso(debutMs),
-        endedAt: iso(finMs),
+        startedAt: debutIso,
+        endedAt: finIso,
         instantAt: null
     });
 
@@ -2853,7 +2900,10 @@ function majBlocHd(evt) {
 
     // 0.3.3 : libellés dans affichage.js (testés), avec les clips
     // introuvables sur le disque, le débit et le temps restant.
-    const mbps = AppState.videoSendHd ? Affichage.debitHd(releveOctetsHd, Date.now()) : null;
+    //
+    // 0.3.4 : débit mesuré par l'agent pendant l'envoi réel, en envoi
+    // manuel comme en HD automatique.
+    const mbps = AppState.videoSendHd ? videoDebitHd : null;
     const bloc = Affichage.blocHd(evt, AppState.videoSendHd, mbps, t);
     const restant = bloc.restant;
 
@@ -3135,7 +3185,7 @@ function journaliserAbsents(absents) {
     // Purge faite à l'ouverture de l'épreuve, hors session : la ligne est
     // reprise au journal de la session qui démarre, qui repart à blanc.
     if (!sessionEnCours()) {
-        journalAvantSession.push({ heure, message });
+        journalAvantSession.push({ heure, message, ms: Date.now() });
     }
 }
 
@@ -3174,6 +3224,40 @@ function journaliserEnvoiVideo(detail) {
 }
 
 /**
+ * Octets vidéo envoyés depuis le dernier relevé (0.3.4).
+ *
+ * La tuile « Mb/s envoyés (1 min) » ne comptait que les photos : elle
+ * restait à « — » pendant tout envoi vidéo. Chaque relevé y ajoute les
+ * octets vidéo partis depuis le précédent — clips, versions légères, images
+ * d'analyse. Le débit HD, lui, vient tel quel de l'agent.
+ */
+async function releverOctetsVideo() {
+    let octets;
+
+    try {
+        octets = await invoke('video_bytes_sent');
+    } catch (e) {
+        return;
+    }
+
+    const maintenant = Date.now();
+
+    videoDebitHd = typeof octets.hd_mbps === 'number' ? octets.hd_mbps : null;
+
+    if (videoOctetsReleve && octets.total > videoOctetsReleve.total) {
+        debitFenetre.push({
+            debut: videoOctetsReleve.t,
+            fin: maintenant,
+            octets: octets.total - videoOctetsReleve.total
+        });
+
+        majDebit();
+    }
+
+    videoOctetsReleve = { t: maintenant, total: octets.total };
+}
+
+/**
  * Relit la file : compteurs, bloc HD, fin du vidage final.
  */
 async function rafraichirFileVideo() {
@@ -3184,6 +3268,11 @@ async function rafraichirFileVideo() {
     videoRafraichissementEnCours = true;
 
     try {
+        // Octets vidéo envoyés (0.3.4) : la tuile « Mb/s envoyés » les compte
+        // avec les photos, et le bloc HD en tire son débit. Relevés avant
+        // tout le reste : le vidage final envoie encore sans épreuve ouverte.
+        await releverOctetsVideo();
+
         // Fin du vidage final. Les deux conditions comptent : une file vide
         // pendant qu'un morceau s'assemble encore serait un faux signal, et
         // le clip produit une seconde plus tard resterait en attente. Les
@@ -3220,24 +3309,6 @@ async function rafraichirFileVideo() {
 
         const eventId = AppState.activeEvent.id;
 
-        // Octets HD envoyés, pour le débit et le temps restant (0.3.3).
-        if (AppState.videoSendHd) {
-            try {
-                const octets = await invoke('video_bytes_sent');
-                const maintenant = Date.now();
-
-                releveOctetsHd.push({ t: maintenant, hd: octets.hd });
-
-                while (releveOctetsHd.length > 0 && maintenant - releveOctetsHd[0].t > 60000) {
-                    releveOctetsHd.shift();
-                }
-            } catch (e) {
-                // Sans importance : le débit s'affichera au passage suivant.
-            }
-        } else {
-            releveOctetsHd.length = 0;
-        }
-
         // Toutes les 30 s environ : un fichier supprimé du disque pendant
         // la session sort de la file (0.3.2).
         videoRafraichissements++;
@@ -3249,7 +3320,8 @@ async function rafraichirFileVideo() {
         try {
             videoStatsEvenement = await invoke('video_queue_stats', {
                 eventId: eventId,
-                sessions: null
+                sessions: null,
+                hdSinceMs: videoHdDepuisMs
             });
 
             videoStatsSession = videoSessionsCourantes.length > 0

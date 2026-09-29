@@ -48,6 +48,7 @@ use tauri::{AppHandle, Emitter};
 use tauri_plugin_shell::process::CommandEvent;
 use tauri_plugin_shell::ShellExt;
 
+use crate::frames::chrono_simple::Instant;
 use crate::recorder::SegmentPlan;
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -72,6 +73,39 @@ pub struct AssembledClip {
 
     /// Morceaux qui le composent — utile au diagnostic.
     pub segments: Vec<u32>,
+
+    /// Durée à la milliseconde (0.3.4) : prévue en course, mesurée à l'arrêt.
+    /// `duration_secs` n'en est que l'arrondi, pour le journal.
+    pub duree_ms: u64,
+
+    /// Début et fin ABSOLUS du clip, au format ISO 8601 (0.3.4).
+    ///
+    /// Datés sur la même ancre que les images d'analyse — le départ de la
+    /// captation retenu par l'agent — et non plus sur l'heure du clic, prise
+    /// par l'interface un peu plus tôt : les images tombaient d'autant après
+    /// la fin des clips. C'est ce couple que reçoit le serveur.
+    pub started_at: String,
+    pub ended_at: String,
+}
+
+impl AssembledClip {
+    /// Fin du clip, en millisecondes depuis 1970.
+    pub fn fin_ms(&self, debut_captation: Instant) -> i64 {
+        self.debut_ms(debut_captation) + self.duree_ms as i64
+    }
+
+    /// Début du clip, en millisecondes depuis 1970.
+    pub fn debut_ms(&self, debut_captation: Instant) -> i64 {
+        debut_captation.millis() + self.offset_secs as i64 * 1000
+    }
+
+    /// Donne au clip sa durée, et date son début et sa fin.
+    pub fn dater(&mut self, debut_captation: Instant, duree_ms: u64) {
+        self.duree_ms = duree_ms;
+        self.duration_secs = ((duree_ms + 500) / 1000) as u32;
+        self.started_at = Instant::depuis_millis(self.debut_ms(debut_captation)).to_iso8601();
+        self.ended_at = Instant::depuis_millis(self.fin_ms(debut_captation)).to_iso8601();
+    }
 }
 
 /// Suit l'avancement et décide quand un clip est prêt.
@@ -100,11 +134,21 @@ pub struct ClipTracker {
     /// continuent donc à 8, 9, 10… au lieu de repartir à clip_0001 : le
     /// serveur ne reçoit plus deux « clip_0001 » dans la même épreuve.
     decalage: u32,
+
+    /// Départ de la captation (0.3.4) : l'ancre des images d'analyse, donc
+    /// aussi celle des clips.
+    debut: Instant,
 }
 
 impl ClipTracker {
     /// `premier_numero` : numéro du premier clip de cette captation.
-    pub fn new(plan: SegmentPlan, dossier_travail: &Path, premier_numero: u32) -> Result<Self, String> {
+    /// `debut` : départ de la captation, celui qui date les images.
+    pub fn new(
+        plan: SegmentPlan,
+        dossier_travail: &Path,
+        premier_numero: u32,
+        debut: Instant,
+    ) -> Result<Self, String> {
         let dossier_clips = dossier_travail.join("clips");
 
         std::fs::create_dir_all(&dossier_clips)
@@ -117,6 +161,7 @@ impl ClipTracker {
             morceaux_prets: Vec::new(),
             prochain_clip: 1,
             decalage: premier_numero.max(1) - 1,
+            debut,
         })
     }
 
@@ -174,6 +219,17 @@ impl ClipTracker {
         // suppression automatique sur le poste du photographe.
         let premier_utile = (self.prochain_clip - 1) * self.plan.segments_step;
         self.morceaux_prets.retain(|index| *index >= premier_utile);
+    }
+
+    /// Départ de la captation suivie.
+    pub fn debut(&self) -> Instant {
+        self.debut
+    }
+
+    /// Premier morceau du prochain clip attendu (0.3.4) : les morceaux
+    /// antérieurs ne serviront plus à aucun clip.
+    pub fn premier_morceau_attendu(&self) -> u32 {
+        (self.prochain_clip - 1) * self.plan.segments_step
     }
 
     /// Numéro du prochain clip à produire, dans la numérotation de
@@ -345,15 +401,23 @@ pub async fn assembler_clip(
         ));
     }
 
-    let clip = AssembledClip {
+    let mut clip = AssembledClip {
         index: index_clip,
         filename: nom_clip,
         path: chemin_clip.to_string_lossy().to_string(),
         size_bytes: taille,
         offset_secs: tracker.offset_du_clip_courant(),
-        duration_secs: tracker.plan.segments_per_clip * tracker.plan.segment_secs,
+        duration_secs: 0,
         segments: morceaux.to_vec(),
+        duree_ms: 0,
+        started_at: String::new(),
+        ended_at: String::new(),
     };
+
+    // Durée prévue : celle des morceaux qui le composent. À l'arrêt, elle
+    // est ensuite remplacée par la durée mesurée.
+    let prevue_ms = morceaux.len() as u64 * tracker.plan.segment_secs as u64 * 1000;
+    clip.dater(tracker.debut, prevue_ms);
 
     log::info!(
         "Clip {} assemblé : {} morceaux, {} octets",
@@ -557,6 +621,7 @@ mod tests {
             morceaux_prets: Vec::new(),
             prochain_clip: 1,
             decalage: 0,
+            debut: Instant::depuis_millis(1_767_268_800_000),
         }
     }
 
@@ -726,10 +791,67 @@ mod tests {
 
     #[test]
     fn un_premier_numero_nul_vaut_un() {
-        let t = ClipTracker::new(plan_reference(), &std::env::temp_dir().join("attimo_tracker_0"), 0).unwrap();
+        let t = ClipTracker::new(
+            plan_reference(),
+            &std::env::temp_dir().join("attimo_tracker_0"),
+            0,
+            Instant::depuis_millis(0),
+        )
+        .unwrap();
         assert_eq!(t.clip_courant(), 1);
 
         let _ = std::fs::remove_dir_all(std::env::temp_dir().join("attimo_tracker_0"));
+    }
+
+    fn clip_de_test(offset_secs: u32) -> AssembledClip {
+        AssembledClip {
+            index: 1,
+            filename: String::new(),
+            path: String::new(),
+            size_bytes: 1,
+            offset_secs,
+            duration_secs: 0,
+            segments: vec![],
+            duree_ms: 0,
+            started_at: String::new(),
+            ended_at: String::new(),
+        }
+    }
+
+    #[test]
+    fn un_clip_est_date_sur_le_depart_de_la_captation() {
+        // Même ancre que les images d'analyse : 12:00:00.
+        let depart = Instant::depuis_millis(1_767_268_800_000);
+        let mut clip = clip_de_test(120);
+
+        clip.dater(depart, 150_000);
+
+        assert_eq!(clip.started_at, "2026-01-01T12:02:00.000Z");
+        assert_eq!(clip.ended_at, "2026-01-01T12:04:30.000Z");
+        assert_eq!(clip.duration_secs, 150);
+    }
+
+    #[test]
+    fn la_duree_mesuree_se_garde_a_la_milliseconde() {
+        let depart = Instant::depuis_millis(1_767_268_800_000);
+        let mut clip = clip_de_test(120);
+
+        clip.dater(depart, 71_400);
+
+        // Fin exacte, et non arrondie à la seconde inférieure.
+        assert_eq!(clip.ended_at, "2026-01-01T12:03:11.400Z");
+        assert_eq!(clip.fin_ms(depart) - clip.debut_ms(depart), 71_400);
+        assert_eq!(clip.duration_secs, 71);
+    }
+
+    #[test]
+    fn connait_le_premier_morceau_du_clip_attendu() {
+        let mut t = tracker_de_test();
+
+        assert_eq!(t.premier_morceau_attendu(), 0);
+
+        t.clip_termine();
+        assert_eq!(t.premier_morceau_attendu(), 4);
     }
 
     #[test]

@@ -174,7 +174,9 @@
         "success_server": "OK per {duration} s (serveris {server} s)",
         "server_had_it": "serveris ją jau turėjo",
         "already_online": "Jau internete — pakartotinai nesiųsta",
-        "missing_on_server": "Galerijoje nėra — išsiųsta iš naujo"
+        "missing_on_server": "Galerijoje nėra — išsiųsta iš naujo",
+        "gallery_recheck_missing": "Galerija patikrinta iš naujo: trūksta {count} nuotraukų, siunčiamos iš naujo",
+        "gallery_recheck_ok": "Galerija patikrinta iš naujo: visos {count} išsiųstos nuotraukos yra internete"
     },
     "connection": {
         "restored": "Ryšys atkurtas",
@@ -206,7 +208,8 @@
         "duration_s": "{n} s",
         "duration_min": "{n} min",
         "duration_h": "{h} val. {m} min",
-        "auto_notice": "HD siunčiama automatiškai: visa kokybė keliama varžybų metu (atkreipkite dėmesį į 4G planą)."
+        "auto_notice": "HD siunčiama automatiškai: visa kokybė keliama varžybų metu (atkreipkite dėmesį į 4G planą).",
+        "missing_apart": "{count} nerasta diske"
     },
     "nav": {
         "banner_title": "Vyksta seansas: {event}",

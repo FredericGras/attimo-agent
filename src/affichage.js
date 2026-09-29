@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════
-// ATTIMO AGENT TERRAIN — Libellés du tableau de bord (0.3.3)
+// ATTIMO AGENT TERRAIN — Libellés du tableau de bord (0.3.3, bloc HD revu en 0.3.4)
 // ═══════════════════════════════════════════════════════
 //
 // Fonctions pures : elles reçoivent des chiffres et la fonction de
@@ -36,29 +36,6 @@ const Affichage = {
     },
 
     /**
-     * Débit de l'envoi HD, en Mb/s, d'après des relevés { t (ms), hd
-     * (octets cumulés) } : sur la dernière minute, 8 s d'observation au
-     * moins. Rien si l'on ne peut pas encore le dire.
-     */
-    debitHd(releves, maintenant) {
-        const recents = releves.filter(r => maintenant - r.t <= 60000);
-
-        if (recents.length < 2) {
-            return null;
-        }
-
-        const premier = recents[0];
-        const dernier = recents[recents.length - 1];
-        const secondes = (dernier.t - premier.t) / 1000;
-
-        if (secondes < 8 || dernier.hd <= premier.hd) {
-            return null;
-        }
-
-        return ((dernier.hd - premier.hd) * 8) / secondes / 1000000;
-    },
-
-    /**
      * Temps restant, en secondes, pour envoyer `octets` à `mbps`.
      */
     resteSecondes(octets, mbps) {
@@ -92,11 +69,18 @@ const Affichage = {
      *
      * `evt` : décompte de la file pour l'épreuve (video_queue_stats).
      * `envoiActif` : l'envoi des HD est autorisé.
-     * `mbps` : débit HD mesuré, ou null.
+     * `mbps` : débit HD mesuré pendant l'envoi réel, ou null.
      *
      * Les clips HD sortis de la file faute de fichier (supprimés du disque)
      * ne sont plus annoncés « tous envoyés » : « 24 envoyés — 5 introuvables
      * sur le disque (restent en version légère) ».
+     *
+     * 0.3.4 — La barre et le compteur portent sur les clips envoyables :
+     * « 5 / 5 », et non « 5 / 13 » avec 8 introuvables ; ceux-ci sont dits à
+     * part. Envoyés et introuvables sont ceux de la session en cours
+     * (`hd_sent_session`, `hd_missing_session`) : le bilan d'une session
+     * précédente ne s'affiche plus. Ce qui reste à envoyer, ou en échec,
+     * compte pour toute l'épreuve : c'est encore à faire.
      */
     blocHd(evt, envoiActif, mbps, t) {
         if (!evt) {
@@ -104,14 +88,16 @@ const Affichage = {
         }
 
         const restant = evt.hd_pending + evt.hd_sending;
-        const manquants = evt.hd_missing || 0;
-        const total = restant + evt.hd_sent + evt.hd_failed + manquants;
+        const envoyes = evt.hd_sent_session !== undefined ? evt.hd_sent_session : evt.hd_sent;
+        const manquants = (evt.hd_missing_session !== undefined ? evt.hd_missing_session : evt.hd_missing) || 0;
+        const envoyables = restant + envoyes + evt.hd_failed;
 
-        if (total === 0) {
+        if (envoyables === 0 && manquants === 0) {
             return { statut: t('hd.none'), progression: '', jauge: 0, restant: 0, echecs: 0 };
         }
 
         let statut;
+        let introuvablesDits = false;
 
         if (restant > 0) {
             statut = t('hd.remaining', {
@@ -121,12 +107,21 @@ const Affichage = {
         } else if (evt.hd_failed > 0) {
             statut = t('hd.failed', { count: evt.hd_failed });
         } else if (manquants > 0) {
-            statut = t('hd.sent_missing', { sent: evt.hd_sent, missing: manquants });
+            statut = t('hd.sent_missing', { sent: envoyes, missing: manquants });
+            introuvablesDits = true;
         } else {
             statut = t('hd.all_sent');
         }
 
-        let progression = t('hd.progress', { sent: evt.hd_sent, total: total });
+        let progression = envoyables > 0
+            ? t('hd.progress', { sent: envoyes, total: envoyables })
+            : '';
+
+        // Les introuvables, à part : ils ne pèsent ni sur la barre ni sur le
+        // compteur.
+        if (manquants > 0 && !introuvablesDits) {
+            progression += (progression ? ' · ' : '') + t('hd.missing_apart', { count: manquants });
+        }
 
         if (envoiActif && restant > 0 && mbps) {
             progression += ' · ' + t('hd.rate', { rate: mbps.toFixed(1) });
@@ -141,7 +136,7 @@ const Affichage = {
         return {
             statut,
             progression,
-            jauge: Math.round((evt.hd_sent / total) * 100),
+            jauge: envoyables > 0 ? Math.round((envoyes / envoyables) * 100) : 0,
             restant,
             echecs: evt.hd_failed
         };

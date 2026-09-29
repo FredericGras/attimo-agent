@@ -415,6 +415,14 @@ fn oublier_empreinte(event_id: i64, empreinte: &str) {
     }
 }
 
+/// Note l'empreinte d'une photo de la session (0.3.4) : « Reprendre »
+/// revérifie la galerie sans relire le fichier.
+fn noter_empreinte_fichier(file_id: i64, empreinte: &str) {
+    if let Err(e) = database::connexion().and_then(|c| database::noter_empreinte_fichier(&c, file_id, empreinte)) {
+        warn!("Empreinte du fichier {} non notée : {}", file_id, e);
+    }
+}
+
 /// Retient qu'une photo est en ligne pour l'épreuve.
 fn retenir_empreinte(event_id: i64, empreinte: &str, taille: u64, nom: &str, photo_id: Option<i64>) {
     let resultat = database::connexion().and_then(|c| {
@@ -870,16 +878,27 @@ pub fn start_upload_workers(
                 if let Some(calcul) = empreinte.clone() {
                     let connue = empreinte_deja_en_ligne(config_clone.event_id, &calcul);
 
-                    // Détectée en direct, et crue en ligne : le serveur est
+                    // Crue en ligne, et le serveur ne l'a pas confirmé : il est
                     // interrogé pour elle seule, s'il sait répondre.
-                    if connue && avis_serveur.is_none() {
-                        avis_serveur = crate::verification::verifier_empreintes(
+                    //
+                    // Détectée en direct : il n'avait rien dit. Inscrite au
+                    // scan ou à la reprise (0.3.4) : son avis date de
+                    // l'inscription. Entre-temps, la même photo a pu partir
+                    // — une copie du fichier dans le dossier, par exemple. Se
+                    // fier à cet avis ancien la disait « renvoyée » alors que
+                    // ce fichier-là n'était jamais parti. « Renvoyée » exige
+                    // donc que le serveur la dise absente À CET INSTANT ; sans
+                    // réponse, l'avis du scan reste valable.
+                    if connue && avis_serveur != Some(true) {
+                        if let Some(existantes) = crate::verification::verifier_empreintes(
                             &config_clone.token,
                             config_clone.event_id,
                             std::slice::from_ref(&calcul),
                         )
                         .await
-                        .map(|existantes| existantes.contains(&calcul));
+                        {
+                            avis_serveur = Some(existantes.contains(&calcul));
+                        }
                     }
 
                     let decision = crate::verification::decider(connue, avis_serveur);
@@ -905,6 +924,8 @@ pub fn start_upload_workers(
                                 None,
                             );
                         }
+
+                        noter_empreinte_fichier(job.db_file_id, &calcul);
 
                         let _ = database::update_file_status(
                             job.db_file_id,
@@ -1003,6 +1024,8 @@ pub fn start_upload_workers(
                                     &job.filename,
                                     envoi.photo_id,
                                 );
+
+                                noter_empreinte_fichier(job.db_file_id, e);
                             }
 
                             // Envoi = mesuré par l'agent (0.3.2) ; serveur =

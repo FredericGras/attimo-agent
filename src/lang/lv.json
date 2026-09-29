@@ -174,7 +174,9 @@
         "success_server": "OK {duration} s (serveris {server} s)",
         "server_had_it": "serverim tas jau bija",
         "already_online": "Jau tiešsaistē — atkārtoti netika sūtīts",
-        "missing_on_server": "Galerijā trūkst — nosūtīts atkārtoti"
+        "missing_on_server": "Galerijā trūkst — nosūtīts atkārtoti",
+        "gallery_recheck_missing": "Galerija pārbaudīta atkārtoti: trūkst {count} fotoattēlu, tie tiek sūtīti vēlreiz",
+        "gallery_recheck_ok": "Galerija pārbaudīta atkārtoti: visi {count} nosūtītie fotoattēli ir tiešsaistē"
     },
     "connection": {
         "restored": "Savienojums atjaunots",
@@ -206,7 +208,8 @@
         "duration_s": "{n} s",
         "duration_min": "{n} min",
         "duration_h": "{h} h {m} min",
-        "auto_notice": "HD tiek sūtīts automātiski: pilna kvalitāte tiek augšupielādēta sacensību laikā (uzmanieties ar 4G datu plānu)."
+        "auto_notice": "HD tiek sūtīts automātiski: pilna kvalitāte tiek augšupielādēta sacensību laikā (uzmanieties ar 4G datu plānu).",
+        "missing_apart": "{count} nav atrasti diskā"
     },
     "nav": {
         "banner_title": "Notiek sesija: {event}",

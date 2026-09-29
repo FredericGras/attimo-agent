@@ -499,6 +499,170 @@ async fn avis_du_serveur(
         .collect()
 }
 
+// ─── Revérification de la galerie à la reprise (0.3.4) ───
+
+/// « Reprendre » : les photos déjà envoyées que le serveur n'a plus
+/// repartent.
+///
+/// Même vérification qu'au démarrage d'une session (hash-check), sur les
+/// seules photos de la session que le serveur a reçues. Une photo jamais
+/// envoyée — en attente, en cours, en échec — n'est pas concernée : elle
+/// partira de toute façon, et ne sera jamais dite « renvoyée ».
+///
+/// Les empreintes viennent de la base (notées à l'envoi depuis la 0.3.4) ;
+/// seules celles d'avant sont recalculées. Une photo absente est remise en
+/// attente et confiée à l'envoi avec l'avis du serveur : c'est l'envoi qui
+/// la dit « Absente de la galerie — renvoyée », après avoir revérifié.
+///
+/// Sans réponse du serveur, rien ne change : une ligne au journal technique.
+///
+/// Une seule à la fois : deux « Reprendre » rapprochés confieraient deux
+/// fois la même photo à l'envoi.
+pub async fn reverifier_galerie(
+    session_id: i64,
+    verification: &VerificationServeur,
+    tx: &mpsc::UnboundedSender<FileJob>,
+    app_handle: &tauri::AppHandle,
+    running: &Arc<AtomicBool>,
+) {
+    static EN_COURS: AtomicBool = AtomicBool::new(false);
+
+    if EN_COURS.swap(true, Ordering::AcqRel) {
+        info!("Reprise : une revérification de la galerie est déjà en cours");
+        return;
+    }
+
+    reverifier_galerie_une_fois(session_id, verification, tx, app_handle, running).await;
+
+    EN_COURS.store(false, Ordering::Release);
+}
+
+async fn reverifier_galerie_une_fois(
+    session_id: i64,
+    verification: &VerificationServeur,
+    tx: &mpsc::UnboundedSender<FileJob>,
+    app_handle: &tauri::AppHandle,
+    running: &Arc<AtomicBool>,
+) {
+    let photos = match database::connexion()
+        .and_then(|c| database::photos_en_ligne(&c, session_id))
+    {
+        Ok(photos) => photos,
+        Err(e) => {
+            warn!("Revérification de la galerie impossible : {}", e);
+            return;
+        }
+    };
+
+    // Une photo effacée du disque ne peut pas repartir.
+    let photos: Vec<database::PhotoEnLigne> = photos
+        .into_iter()
+        .filter(|p| Path::new(&p.file_path).exists())
+        .collect();
+
+    if photos.is_empty() {
+        return;
+    }
+
+    let mut empreintes: Vec<Option<String>> = Vec::with_capacity(photos.len());
+
+    for paquet in photos.chunks(VERIFICATIONS_SIMULTANEES) {
+        if !running.load(Ordering::Relaxed) {
+            return;
+        }
+
+        let calculs: Vec<_> = paquet
+            .iter()
+            .map(|photo| {
+                let connue = photo.empreinte.clone();
+                let chemin = photo.file_path.clone();
+
+                tokio::task::spawn_blocking(move || {
+                    connue.or_else(|| std::fs::read(&chemin).ok().map(|o| crate::empreinte::md5_hexa(&o)))
+                })
+            })
+            .collect();
+
+        for calcul in calculs {
+            empreintes.push(calcul.await.ok().flatten());
+        }
+    }
+
+    let connues: Vec<String> = empreintes.iter().flatten().cloned().collect();
+
+    let Some(existantes) =
+        crate::verification::verifier_empreintes(&verification.token, verification.event_id, &connues)
+            .await
+    else {
+        return;
+    };
+
+    let absentes = photos_absentes(&photos, &empreintes, &existantes);
+
+    info!(
+        "Reprise : galerie revérifiée, {} photo(s) envoyée(s), {} absente(s) de la galerie",
+        connues.len(),
+        absentes.len()
+    );
+
+    let _ = app_handle.emit(
+        "gallery_rechecked",
+        serde_json::json!({ "checked": connues.len(), "missing": absentes.len() }),
+    );
+
+    for (photo, empreinte) in absentes {
+        if !running.load(Ordering::Relaxed) {
+            return;
+        }
+
+        if let Err(e) = database::connexion().and_then(|c| database::remettre_en_attente(&c, photo.id)) {
+            warn!("{} : remise en attente impossible : {}", photo.filename, e);
+            continue;
+        }
+
+        let job = FileJob {
+            db_file_id: photo.id,
+            session_id,
+            file_path: PathBuf::from(&photo.file_path),
+            filename: photo.filename.clone(),
+            file_size: photo.file_size.max(0) as u64,
+            empreinte: Some(empreinte),
+            sur_le_serveur: Some(false),
+        };
+
+        match tx.send(job) {
+            Ok(()) => crate::uploader::photo_ajoutee(),
+            Err(e) => {
+                info!("Session close : {} n'est pas confiée à l'envoi", e.0.filename);
+                return;
+            }
+        }
+    }
+
+    crate::uploader::signaler_stats(session_id, app_handle, true);
+}
+
+/// Photos que le serveur n'a plus, avec leur empreinte.
+fn photos_absentes<'a>(
+    photos: &'a [database::PhotoEnLigne],
+    empreintes: &[Option<String>],
+    existantes: &std::collections::HashSet<String>,
+) -> Vec<(&'a database::PhotoEnLigne, String)> {
+    photos
+        .iter()
+        .zip(empreintes)
+        .filter_map(|(photo, empreinte)| {
+            let empreinte = empreinte.as_ref()?;
+
+            if existantes.contains(empreinte) {
+                None
+            } else {
+                Some((photo, empreinte.clone()))
+            }
+        })
+        .collect()
+}
+
 /// Liste les fichiers d'un dossier (non récursif, un seul niveau)
 fn collect_files_flat(folder: &Path) -> Vec<PathBuf> {
     std::fs::read_dir(folder)
@@ -730,4 +894,33 @@ pub fn start_watching(
     }
 
     Ok(watcher)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn photo(nom: &str) -> database::PhotoEnLigne {
+        database::PhotoEnLigne {
+            id: 1,
+            filename: nom.into(),
+            file_path: String::new(),
+            file_size: 1,
+            empreinte: None,
+        }
+    }
+
+    #[test]
+    fn a_la_reprise_seules_les_photos_absentes_du_serveur_repartent() {
+        let photos = vec![photo("A.JPG"), photo("B.JPG"), photo("C.JPG")];
+        let empreintes = vec![Some("aaa".to_string()), Some("bbb".to_string()), None];
+        let existantes: std::collections::HashSet<String> = ["aaa".to_string()].into_iter().collect();
+
+        let absentes = photos_absentes(&photos, &empreintes, &existantes);
+
+        // A est en ligne ; C, sans empreinte lisible, n'est pas jugée.
+        assert_eq!(absentes.len(), 1);
+        assert_eq!(absentes[0].0.filename, "B.JPG");
+        assert_eq!(absentes[0].1, "bbb");
+    }
 }

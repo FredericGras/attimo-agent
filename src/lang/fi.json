@@ -174,7 +174,9 @@
         "success_server": "OK {duration} s:ssa (palvelin {server} s)",
         "server_had_it": "palvelimella se oli jo",
         "already_online": "Jo verkossa — ei lähetetty uudelleen",
-        "missing_on_server": "Puuttuu galleriasta — lähetetty uudelleen"
+        "missing_on_server": "Puuttuu galleriasta — lähetetty uudelleen",
+        "gallery_recheck_missing": "Galleria tarkistettu uudelleen: {count} kuva(a) puuttuu, lähetetään uudelleen",
+        "gallery_recheck_ok": "Galleria tarkistettu uudelleen: kaikki {count} lähetettyä kuvaa ovat verkossa"
     },
     "connection": {
         "restored": "Yhteys palautettu",
@@ -206,7 +208,8 @@
         "duration_s": "{n} s",
         "duration_min": "{n} min",
         "duration_h": "{h} h {m} min",
-        "auto_notice": "HD lähetetään automaattisesti: täysi laatu lähtee kilpailun aikana (huomioi 4G-liittymäsi)."
+        "auto_notice": "HD lähetetään automaattisesti: täysi laatu lähtee kilpailun aikana (huomioi 4G-liittymäsi).",
+        "missing_apart": "{count} ei löytynyt levyltä"
     },
     "nav": {
         "banner_title": "Istunto käynnissä: {event}",

@@ -174,7 +174,9 @@
         "success_server": "OK på {duration} s (server {server} s)",
         "server_had_it": "serveren havde det allerede",
         "already_online": "Allerede online — ikke sendt igen",
-        "missing_on_server": "Mangler i galleriet — sendt igen"
+        "missing_on_server": "Mangler i galleriet — sendt igen",
+        "gallery_recheck_missing": "Galleriet kontrolleret igen: {count} foto(s) mangler, sendes igen",
+        "gallery_recheck_ok": "Galleriet kontrolleret igen: alle {count} sendte fotos er online"
     },
     "connection": {
         "restored": "Forbindelse genoprettet",
@@ -206,7 +208,8 @@
         "duration_s": "{n} s",
         "duration_min": "{n} min",
         "duration_h": "{h} t {m} min",
-        "auto_notice": "HD sendes automatisk: fuld kvalitet uploades under løbet (pas på dit 4G-abonnement)."
+        "auto_notice": "HD sendes automatisk: fuld kvalitet uploades under løbet (pas på dit 4G-abonnement).",
+        "missing_apart": "{count} ikke fundet på disken"
     },
     "nav": {
         "banner_title": "Session i gang: {event}",

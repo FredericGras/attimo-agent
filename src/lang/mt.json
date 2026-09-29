@@ -174,7 +174,9 @@
         "success_server": "OK fi {duration} s (server {server} s)",
         "server_had_it": "is-server kien diġà għandu",
         "already_online": "Diġà online — ma ntbagħatx mill-ġdid",
-        "missing_on_server": "Nieqes mill-gallerija — mibgħut mill-ġdid"
+        "missing_on_server": "Nieqes mill-gallerija — mibgħut mill-ġdid",
+        "gallery_recheck_missing": "Gallerija ċċekkjata mill-ġdid: {count} ritratt(i) neqsin, qed jintbagħtu mill-ġdid",
+        "gallery_recheck_ok": "Gallerija ċċekkjata mill-ġdid: il-{count} ritratt(i) mibgħuta kollha huma online"
     },
     "connection": {
         "restored": "Konnessjoni reġgħet lura",
@@ -206,7 +208,8 @@
         "duration_s": "{n} s",
         "duration_min": "{n} min",
         "duration_h": "{h} siegħa {m} min",
-        "auto_notice": "HD mibgħuta awtomatikament: il-kwalità sħiħa titla' matul it-tellieqa (oqgħod attent għall-pakkett 4G)."
+        "auto_notice": "HD mibgħuta awtomatikament: il-kwalità sħiħa titla' matul it-tellieqa (oqgħod attent għall-pakkett 4G).",
+        "missing_apart": "{count} ma nstabux fuq id-diska"
     },
     "nav": {
         "banner_title": "Sessjoni għaddejja: {event}",

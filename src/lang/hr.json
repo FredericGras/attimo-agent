@@ -174,7 +174,9 @@
         "success_server": "OK za {duration} s (poslužitelj {server} s)",
         "server_had_it": "poslužitelj ju je već imao",
         "already_online": "Već na mreži — nije ponovno poslana",
-        "missing_on_server": "Nedostaje u galeriji — ponovno poslana"
+        "missing_on_server": "Nedostaje u galeriji — ponovno poslana",
+        "gallery_recheck_missing": "Galerija ponovno provjerena: nedostaje {count} fotografija, ponovno se šalju",
+        "gallery_recheck_ok": "Galerija ponovno provjerena: svih {count} poslanih fotografija je na mreži"
     },
     "connection": {
         "restored": "Veza obnovljena",
@@ -206,7 +208,8 @@
         "duration_s": "{n} s",
         "duration_min": "{n} min",
         "duration_h": "{h} h {m} min",
-        "auto_notice": "HD se šalje automatski: puna kvaliteta ide tijekom utrke (pazite na 4G paket)."
+        "auto_notice": "HD se šalje automatski: puna kvaliteta ide tijekom utrke (pazite na 4G paket).",
+        "missing_apart": "{count} nije pronađeno na disku"
     },
     "nav": {
         "banner_title": "Sesija u tijeku: {event}",

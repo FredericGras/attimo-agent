@@ -174,7 +174,9 @@
         "success_server": "OK în {duration} s (server {server} s)",
         "server_had_it": "serverul o avea deja",
         "already_online": "Deja online — nu a fost retrimisă",
-        "missing_on_server": "Lipsă din galerie — retrimisă"
+        "missing_on_server": "Lipsă din galerie — retrimisă",
+        "gallery_recheck_missing": "Galerie reverificată: lipsesc {count} fotografii, se retrimit",
+        "gallery_recheck_ok": "Galerie reverificată: toate cele {count} fotografii trimise sunt online"
     },
     "connection": {
         "restored": "Conexiune restabilită",
@@ -206,7 +208,8 @@
         "duration_s": "{n} s",
         "duration_min": "{n} min",
         "duration_h": "{h} h {m} min",
-        "auto_notice": "HD trimis automat: calitatea completă pleacă în timpul cursei (atenție la abonamentul 4G)."
+        "auto_notice": "HD trimis automat: calitatea completă pleacă în timpul cursei (atenție la abonamentul 4G).",
+        "missing_apart": "{count} negăsite pe disc"
     },
     "nav": {
         "banner_title": "Sesiune în curs: {event}",

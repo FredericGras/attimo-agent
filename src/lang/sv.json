@@ -174,7 +174,9 @@
         "success_server": "OK på {duration} s (server {server} s)",
         "server_had_it": "servern hade det redan",
         "already_online": "Redan online — skickas inte igen",
-        "missing_on_server": "Saknas i galleriet — skickas igen"
+        "missing_on_server": "Saknas i galleriet — skickas igen",
+        "gallery_recheck_missing": "Galleriet kontrollerat igen: {count} foto(n) saknas, skickas igen",
+        "gallery_recheck_ok": "Galleriet kontrollerat igen: alla {count} skickade foton finns online"
     },
     "connection": {
         "restored": "Anslutning återställd",
@@ -206,7 +208,8 @@
         "duration_s": "{n} s",
         "duration_min": "{n} min",
         "duration_h": "{h} h {m} min",
-        "auto_notice": "HD skickas automatiskt: full kvalitet laddas upp under loppet (tänk på ditt 4G-abonnemang)."
+        "auto_notice": "HD skickas automatiskt: full kvalitet laddas upp under loppet (tänk på ditt 4G-abonnemang).",
+        "missing_apart": "{count} hittades inte på disken"
     },
     "nav": {
         "banner_title": "Pågående session: {event}",

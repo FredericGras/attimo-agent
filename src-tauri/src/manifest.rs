@@ -227,7 +227,8 @@ impl ManifestWriter {
             .debut_session
             .plus_millis(clip.offset_secs as i64 * 1000);
 
-        let fin = debut.plus_millis(clip.duration_secs as i64 * 1000);
+        // À la milliseconde (0.3.4) : c'est la fin que reçoit le serveur.
+        let fin = debut.plus_millis(clip.duree_ms as i64);
 
         self.manifeste.clips.push(ClipEntry {
             numero: clip.index,
@@ -405,6 +406,9 @@ mod tests {
             offset_secs: 0,
             duration_secs: 150,
             segments: vec![0, 1, 2, 3, 4],
+            duree_ms: 150_000,
+            started_at: String::new(),
+            ended_at: String::new(),
         };
 
         writer.ajouter_clip(&clip, true).unwrap();
@@ -432,6 +436,9 @@ mod tests {
             offset_secs: 0,
             duration_secs: 150,
             segments: vec![0, 1, 2, 3, 4],
+            duree_ms: 150_000,
+            started_at: String::new(),
+            ended_at: String::new(),
         };
 
         let second = AssembledClip {
@@ -442,6 +449,9 @@ mod tests {
             offset_secs: 120,
             duration_secs: 150,
             segments: vec![4, 5, 6, 7, 8],
+            duree_ms: 150_000,
+            started_at: String::new(),
+            ended_at: String::new(),
         };
 
         writer.ajouter_clip(&premier, true).unwrap();
@@ -473,6 +483,7 @@ mod tests {
                 path: String::new(),
                 size_bytes: 330_000,
                 instant_at: "2026-01-01T12:00:00.000Z".into(),
+                instant_ms: 0,
                 segment_index: 0,
             },
             ExtractedFrame {
@@ -480,6 +491,7 @@ mod tests {
                 path: String::new(),
                 size_bytes: 328_000,
                 instant_at: "2026-01-01T12:00:02.000Z".into(),
+                instant_ms: 0,
                 segment_index: 0,
             },
         ];
@@ -513,6 +525,9 @@ mod tests {
                 offset_secs: (i - 1) * 120,
                 duration_secs: 150,
                 segments: vec![],
+                duree_ms: 150_000,
+                started_at: String::new(),
+                ended_at: String::new(),
             };
 
             writer.ajouter_clip(&clip, true).unwrap();

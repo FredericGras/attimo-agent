@@ -116,6 +116,98 @@ pub fn octets_envoyes() -> (u64, u64) {
     (OCTETS_VIDEO.load(Ordering::Relaxed), OCTETS_HD.load(Ordering::Relaxed))
 }
 
+/// Morceaux de clips HD récemment envoyés (0.3.4) : début et fin de la
+/// requête, octets. Le débit HD se calcule sur eux seuls.
+static ENVOIS_HD: std::sync::Mutex<std::collections::VecDeque<(Instant, Instant, u64)>> =
+    std::sync::Mutex::new(std::collections::VecDeque::new());
+
+/// Morceaux retenus pour le débit HD : une soixantaine de mégaoctets, pris
+/// dans les dix dernières minutes.
+const ENVOIS_HD_RETENUS: usize = 12;
+const ENVOIS_HD_AGE_MAX: Duration = Duration::from_secs(600);
+
+fn noter_envoi_hd(debut: Instant, fin: Instant, octets: u64) {
+    let mut envois = ENVOIS_HD.lock().unwrap_or_else(|e| e.into_inner());
+
+    envois.push_back((debut, fin, octets));
+
+    while envois.len() > ENVOIS_HD_RETENUS {
+        envois.pop_front();
+    }
+}
+
+/// Débit de l'envoi HD, en Mb/s, mesuré pendant les envois eux-mêmes (0.3.4).
+///
+/// Le débit de la 0.3.3 divisait les octets de la dernière minute par la
+/// minute entière : attente des photos, assemblage du clip suivant,
+/// finalisation, pause entre deux clips en HD automatique. D'où « 0,3 Mb/s »
+/// sur une 4G à 20 Mb/s. Seul compte désormais le temps où un morceau HD
+/// était réellement en route.
+pub fn debit_hd_mbps() -> Option<f64> {
+    let maintenant = Instant::now();
+    let envois = ENVOIS_HD.lock().unwrap_or_else(|e| e.into_inner());
+
+    let recents: Vec<(f64, f64, u64)> = envois
+        .iter()
+        .filter(|(_, fin, _)| maintenant.duration_since(*fin) <= ENVOIS_HD_AGE_MAX)
+        .map(|(debut, fin, octets)| {
+            (
+                -(maintenant.duration_since(*debut).as_secs_f64()),
+                -(maintenant.duration_since(*fin).as_secs_f64()),
+                *octets,
+            )
+        })
+        .collect();
+
+    debit_actif(&recents)
+}
+
+/// Octets divisés par le temps où au moins un envoi était en cours.
+///
+/// `envois` : (début, fin, octets), en secondes sur une même échelle. Deux
+/// envois simultanés ne comptent qu'une fois leur temps commun : le débit
+/// reste celui de la liaison, pas une somme de débits.
+pub fn debit_actif(envois: &[(f64, f64, u64)]) -> Option<f64> {
+    let mut intervalles: Vec<(f64, f64)> = envois
+        .iter()
+        .filter(|(debut, fin, _)| fin > debut)
+        .map(|(debut, fin, _)| (*debut, *fin))
+        .collect();
+
+    intervalles.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
+
+    let mut actif = 0.0;
+    let mut courant: Option<(f64, f64)> = None;
+
+    for (debut, fin) in intervalles {
+        courant = match courant {
+            Some((d, f)) if debut <= f => Some((d, f.max(fin))),
+            Some((d, f)) => {
+                actif += f - d;
+                Some((debut, fin))
+            }
+            None => Some((debut, fin)),
+        };
+    }
+
+    if let Some((d, f)) = courant {
+        actif += f - d;
+    }
+
+    let octets: u64 = envois
+        .iter()
+        .filter(|(debut, fin, _)| fin > debut)
+        .map(|(_, _, octets)| *octets)
+        .sum();
+
+    // Moins d'un quart de seconde d'envoi : rien de fiable à dire.
+    if actif < 0.25 || octets == 0 {
+        return None;
+    }
+
+    Some(octets as f64 * 8.0 / actif / 1_000_000.0)
+}
+
 fn compter_octets(octets: u64, hd: bool) {
     use std::sync::atomic::Ordering;
 
@@ -440,6 +532,10 @@ pub async fn envoyer_clip(
             API_BASE_URL, config.event_id
         );
 
+        // Chronométré à partir d'ici (0.3.4) : l'attente des photos, juste
+        // avant, n'est pas du temps d'envoi.
+        let debut_envoi = Instant::now();
+
         let reponse = authentifier(client.post(&url), &config.token)
             .timeout(Duration::from_secs(TIMEOUT_CLIP_SECS))
             .multipart(formulaire)
@@ -469,6 +565,10 @@ pub async fn envoyer_clip(
         }
 
         compter_octets(longueur as u64, variant == ClipVariant::Hd);
+
+        if variant == ClipVariant::Hd {
+            noter_envoi_hd(debut_envoi, Instant::now(), longueur as u64);
+        }
     }
 
     // ─── Finalisation ───
@@ -892,6 +992,37 @@ pub async fn etat_session(config: &VideoUploadConfig) -> Result<SessionStatus, S
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn le_debit_hd_ne_compte_que_le_temps_denvoi() {
+        // Deux morceaux de 5 Mo en 2 s chacun, séparés par 50 s d'attente :
+        // 20 Mb/s, et non 1,5 Mb/s sur la minute.
+        let envois = [(0.0, 2.0, 5_000_000), (52.0, 54.0, 5_000_000)];
+
+        let debit = debit_actif(&envois).unwrap();
+
+        assert!((debit - 20.0).abs() < 1e-9, "obtenu {}", debit);
+    }
+
+    #[test]
+    fn deux_envois_simultanes_ne_comptent_quune_fois_leur_temps_commun() {
+        // Deux morceaux de 5 Mo envoyés ensemble, de 0 à 4 s : la liaison a
+        // passé 10 Mo en 4 s, soit 20 Mb/s.
+        let envois = [(0.0, 4.0, 5_000_000), (0.0, 4.0, 5_000_000)];
+
+        assert!((debit_actif(&envois).unwrap() - 20.0).abs() < 1e-9);
+
+        // Chevauchement partiel : actif de 0 à 5 s.
+        let envois = [(0.0, 3.0, 5_000_000), (2.0, 5.0, 5_000_000)];
+
+        assert!((debit_actif(&envois).unwrap() - 16.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn sans_envoi_pas_de_debit() {
+        assert_eq!(debit_actif(&[]), None);
+        assert_eq!(debit_actif(&[(1.0, 1.1, 5_000_000)]), None);
+    }
 
     #[test]
     fn les_variantes_ont_les_bons_libelles() {

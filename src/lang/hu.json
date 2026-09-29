@@ -174,7 +174,9 @@
         "success_server": "OK {duration} mp alatt (szerver {server} mp)",
         "server_had_it": "a szervernek már megvolt",
         "already_online": "Már online — nem küldtük újra",
-        "missing_on_server": "Hiányzik a galériából — újraküldve"
+        "missing_on_server": "Hiányzik a galériából — újraküldve",
+        "gallery_recheck_missing": "Galéria újraellenőrizve: {count} fotó hiányzik, újraküldés folyamatban",
+        "gallery_recheck_ok": "Galéria újraellenőrizve: mind a(z) {count} elküldött fotó elérhető online"
     },
     "connection": {
         "restored": "Kapcsolat helyreállt",
@@ -206,7 +208,8 @@
         "duration_s": "{n} mp",
         "duration_min": "{n} perc",
         "duration_h": "{h} óra {m} perc",
-        "auto_notice": "A HD automatikusan megy: a teljes minőség a verseny alatt töltődik fel (figyeljen a 4G-keretre)."
+        "auto_notice": "A HD automatikusan megy: a teljes minőség a verseny alatt töltődik fel (figyeljen a 4G-keretre).",
+        "missing_apart": "{count} nem található a lemezen"
     },
     "nav": {
         "banner_title": "Futó munkamenet: {event}",

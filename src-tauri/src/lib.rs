@@ -40,6 +40,9 @@ pub struct ActiveSession {
     pub tx: tokio::sync::mpsc::UnboundedSender<crate::watcher::FileJob>,
     /// Envois simultanés autorisés (0.3.1) : réglable en cours de session.
     pub regulateur: Arc<crate::uploader::Regulateur>,
+    /// De quoi interroger le serveur sur les photos de l'épreuve (0.3.4) :
+    /// « Reprendre » revérifie la galerie, comme au démarrage.
+    pub verification: crate::watcher::VerificationServeur,
 }
 
 pub struct AppState {

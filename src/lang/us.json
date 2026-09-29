@@ -174,7 +174,9 @@
         "success_server": "OK in {duration} s (server {server} s)",
         "server_had_it": "the server already had it",
         "already_online": "Already online — not sent again",
-        "missing_on_server": "Missing from the gallery — sent again"
+        "missing_on_server": "Missing from the gallery — sent again",
+        "gallery_recheck_missing": "Gallery rechecked: {count} photo(s) missing, sending them again",
+        "gallery_recheck_ok": "Gallery rechecked: all {count} photo(s) sent are online"
     },
     "connection": {
         "restored": "Connection restored",
@@ -206,7 +208,8 @@
         "duration_s": "{n} s",
         "duration_min": "{n} min",
         "duration_h": "{h} h {m} min",
-        "auto_notice": "HD sent automatically: full quality is uploaded during the race (watch your 4G data plan)."
+        "auto_notice": "HD sent automatically: full quality is uploaded during the race (watch your 4G data plan).",
+        "missing_apart": "{count} not found on disk"
     },
     "nav": {
         "banner_title": "Session running: {event}",

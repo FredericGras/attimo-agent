@@ -174,7 +174,9 @@
         "success_server": "OK w {duration} s (serwer {server} s)",
         "server_had_it": "serwer już je miał",
         "already_online": "Już online — nie wysłano ponownie",
-        "missing_on_server": "Brak w galerii — wysłane ponownie"
+        "missing_on_server": "Brak w galerii — wysłane ponownie",
+        "gallery_recheck_missing": "Galeria sprawdzona ponownie: brakuje {count} zdjęć, trwa ponowne wysyłanie",
+        "gallery_recheck_ok": "Galeria sprawdzona ponownie: wszystkie wysłane zdjęcia ({count}) są online"
     },
     "connection": {
         "restored": "Połączenie przywrócone",
@@ -206,7 +208,8 @@
         "duration_s": "{n} s",
         "duration_min": "{n} min",
         "duration_h": "{h} godz. {m} min",
-        "auto_notice": "HD wysyłane automatycznie: pełna jakość idzie w trakcie zawodów (uwaga na pakiet 4G)."
+        "auto_notice": "HD wysyłane automatycznie: pełna jakość idzie w trakcie zawodów (uwaga na pakiet 4G).",
+        "missing_apart": "{count} nie znaleziono na dysku"
     },
     "nav": {
         "banner_title": "Trwa sesja: {event}",

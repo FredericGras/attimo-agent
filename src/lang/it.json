@@ -174,7 +174,9 @@
         "success_server": "OK in {duration} s (server {server} s)",
         "server_had_it": "il server l'aveva già",
         "already_online": "Già online — non reinviata",
-        "missing_on_server": "Assente dalla galleria — reinviata"
+        "missing_on_server": "Assente dalla galleria — reinviata",
+        "gallery_recheck_missing": "Galleria ricontrollata: {count} foto mancanti, reinvio in corso",
+        "gallery_recheck_ok": "Galleria ricontrollata: le {count} foto inviate sono online"
     },
     "connection": {
         "restored": "Connessione ripristinata",
@@ -206,7 +208,8 @@
         "duration_s": "{n} s",
         "duration_min": "{n} min",
         "duration_h": "{h} h {m} min",
-        "auto_notice": "HD inviato automaticamente: la qualità piena parte durante la gara (attenzione al piano dati 4G)."
+        "auto_notice": "HD inviato automaticamente: la qualità piena parte durante la gara (attenzione al piano dati 4G).",
+        "missing_apart": "{count} non trovati sul disco"
     },
     "nav": {
         "banner_title": "Sessione in corso: {event}",

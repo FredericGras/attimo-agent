@@ -174,7 +174,9 @@
         "success_server": "{duration} sn'de OK (sunucu {server} sn)",
         "server_had_it": "sunucuda zaten vardı",
         "already_online": "Zaten çevrimiçi — yeniden gönderilmedi",
-        "missing_on_server": "Galeride yok — yeniden gönderildi"
+        "missing_on_server": "Galeride yok — yeniden gönderildi",
+        "gallery_recheck_missing": "Galeri yeniden kontrol edildi: {count} fotoğraf eksik, yeniden gönderiliyor",
+        "gallery_recheck_ok": "Galeri yeniden kontrol edildi: gönderilen {count} fotoğrafın tamamı çevrimiçi"
     },
     "connection": {
         "restored": "Bağlantı yeniden kuruldu",
@@ -206,7 +208,8 @@
         "duration_s": "{n} sn",
         "duration_min": "{n} dk",
         "duration_h": "{h} sa {m} dk",
-        "auto_notice": "HD otomatik gönderiliyor: tam kalite yarış sırasında yüklenir (4G paketinize dikkat edin)."
+        "auto_notice": "HD otomatik gönderiliyor: tam kalite yarış sırasında yüklenir (4G paketinize dikkat edin).",
+        "missing_apart": "{count} diskte bulunamadı"
     },
     "nav": {
         "banner_title": "Oturum sürüyor: {event}",

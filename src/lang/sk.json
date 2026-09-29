@@ -174,7 +174,9 @@
         "success_server": "OK za {duration} s (server {server} s)",
         "server_had_it": "server ju už mal",
         "already_online": "Už online — znova neodoslaná",
-        "missing_on_server": "Chýba v galérii — odoslané znova"
+        "missing_on_server": "Chýba v galérii — odoslané znova",
+        "gallery_recheck_missing": "Galéria znova skontrolovaná: chýba {count} fotografií, odosielajú sa znova",
+        "gallery_recheck_ok": "Galéria znova skontrolovaná: všetkých {count} odoslaných fotografií je online"
     },
     "connection": {
         "restored": "Pripojenie obnovené",
@@ -206,7 +208,8 @@
         "duration_s": "{n} s",
         "duration_min": "{n} min",
         "duration_h": "{h} h {m} min",
-        "auto_notice": "HD sa odosiela automaticky: plná kvalita odchádza počas pretekov (pozor na dátový balík 4G)."
+        "auto_notice": "HD sa odosiela automaticky: plná kvalita odchádza počas pretekov (pozor na dátový balík 4G).",
+        "missing_apart": "{count} sa nenašlo na disku"
     },
     "nav": {
         "banner_title": "Prebieha relácia: {event}",

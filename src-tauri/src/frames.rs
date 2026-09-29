@@ -110,6 +110,11 @@ pub struct ExtractedFrame {
     /// retrouver quels clips couvrent l'instant où un dossard a été lu.
     pub instant_at: String,
 
+    /// Le même instant, en millisecondes depuis 1970 (0.3.4) : sert à
+    /// vérifier qu'un clip le couvre. Pas transmis à l'interface.
+    #[serde(skip)]
+    pub instant_ms: i64,
+
     /// Morceau dont elle provient — utile au diagnostic.
     pub segment_index: u32,
 }
@@ -265,6 +270,7 @@ pub async fn extraire_images(
             path: chemin.to_string_lossy().to_string(),
             size_bytes: taille,
             instant_at: instant.to_iso8601(),
+            instant_ms: instant.millis(),
             segment_index,
         });
     }

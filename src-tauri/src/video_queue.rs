@@ -143,6 +143,15 @@ pub struct QueueStats {
     /// Dont clips HD (0.3.3) : le bloc HD les annonce « introuvables sur le
     /// disque » au lieu de « tous envoyés ».
     pub hd_missing: i64,
+
+    // ─── 0.3.4 : bilan HD de la session en cours ───
+    /// Clips HD envoyés depuis l'ouverture de la session. Le bloc HD ne
+    /// montre plus le bilan d'une session précédente.
+    pub hd_sent_session: i64,
+
+    /// Clips HD sortis de la file depuis l'ouverture de la session, faute de
+    /// fichier sur le disque.
+    pub hd_missing_session: i64,
 }
 
 /// Voie d'un envoi vidéo (0.3.2) : ce qu'il sert en premier.
@@ -819,15 +828,55 @@ pub fn purger_absents(conn: &Connection, event_id: i64) -> Result<Vec<QueueItem>
 }
 
 /// Marque un élément dont le fichier a disparu.
+///
+/// 0.3.4 — `sent_at` date ici sa sortie de la file : le bilan HD d'une
+/// session ne compte que les clips sortis depuis son ouverture.
 pub fn marquer_absent(conn: &Connection, id: i64) -> Result<(), String> {
     conn.execute(
-        "UPDATE video_queue SET status = 'missing', last_error = 'Fichier introuvable'
+        "UPDATE video_queue SET status = 'missing', last_error = 'Fichier introuvable',
+                sent_at = datetime('now')
          WHERE id = ?1",
         params![id],
     )
     .map_err(|e| format!("Mise à jour impossible : {}", e))?;
 
     Ok(())
+}
+
+/// Clips HD envoyés, et introuvables, depuis un instant (0.3.4).
+///
+/// `depuis` : secondes depuis 1970. Sert au bilan HD de la session en cours.
+pub fn bilan_hd_depuis(conn: &Connection, event_id: i64, depuis: i64) -> Result<(i64, i64), String> {
+    let mut requete = conn
+        .prepare(
+            "SELECT status, COUNT(*) FROM video_queue
+             WHERE (event_id = ?1 OR event_id IS NULL) AND kind = 'clip_hd'
+               AND status IN ('sent', 'missing')
+               AND sent_at >= datetime(?2, 'unixepoch')
+             GROUP BY status",
+        )
+        .map_err(|e| format!("Bilan HD impossible : {}", e))?;
+
+    let lignes = requete
+        .query_map(params![event_id, depuis], |ligne| {
+            Ok((ligne.get::<_, String>(0)?, ligne.get::<_, i64>(1)?))
+        })
+        .map_err(|e| format!("Bilan HD impossible : {}", e))?;
+
+    let mut envoyes = 0;
+    let mut absents = 0;
+
+    for ligne in lignes {
+        let (statut, nombre) = ligne.map_err(|e| format!("Lecture impossible : {}", e))?;
+
+        match statut.as_str() {
+            "sent" => envoyes = nombre,
+            "missing" => absents = nombre,
+            _ => {}
+        }
+    }
+
+    Ok((envoyes, absents))
 }
 
 /// Premier numéro de clip libre pour une épreuve (0.3.2).
@@ -996,6 +1045,40 @@ mod tests {
         let conn = Connection::open_in_memory().unwrap();
         init_schema(&conn).unwrap();
         conn
+    }
+
+    #[test]
+    fn le_bilan_hd_ne_compte_que_la_session_en_cours() {
+        let conn = base_de_test();
+
+        let hier_envoye = enfiler_simple(&conn, QueueKind::ClipHd, "hier_1.mp4");
+        let hier_absent = enfiler_simple(&conn, QueueKind::ClipHd, "hier_2.mp4");
+        let envoye = enfiler_simple(&conn, QueueKind::ClipHd, "a.mp4");
+        let absent = enfiler_simple(&conn, QueueKind::ClipHd, "b.mp4");
+        enfiler_simple(&conn, QueueKind::ClipHd, "c.mp4");
+
+        // La session précédente : sortis de la file il y a une heure.
+        marquer_envoye(&conn, hier_envoye).unwrap();
+        marquer_absent(&conn, hier_absent).unwrap();
+        conn.execute(
+            "UPDATE video_queue SET sent_at = datetime('now', '-1 hour') WHERE id IN (?1, ?2)",
+            params![hier_envoye, hier_absent],
+        )
+        .unwrap();
+
+        let ouverture: i64 = conn
+            .query_row("SELECT CAST(strftime('%s', 'now', '-1 minute') AS INTEGER)", [], |l| l.get(0))
+            .unwrap();
+
+        marquer_envoye(&conn, envoye).unwrap();
+        marquer_absent(&conn, absent).unwrap();
+
+        assert_eq!(bilan_hd_depuis(&conn, EVT, ouverture).unwrap(), (1, 1));
+
+        // Toute l'épreuve, elle, compte tout.
+        let stats = statistiques(&conn, EVT).unwrap();
+        assert_eq!(stats.hd_sent, 2);
+        assert_eq!(stats.hd_missing, 2);
     }
 
     fn enfiler_simple(conn: &Connection, kind: QueueKind, chemin: &str) -> i64 {

@@ -197,6 +197,8 @@ pub async fn start_session(
         Some(watcher::VerificationServeur { token: token.clone(), event_id }),
     )?;
 
+    let verification = watcher::VerificationServeur { token: token.clone(), event_id };
+
     let upload_config = uploader::UploadConfig {
         token,
         event_id,
@@ -224,6 +226,7 @@ pub async fn start_session(
             watcher_handle: Some(watcher_handle),
             tx: tx_for_state,
             regulateur,
+            verification,
         });
     }
 
@@ -269,14 +272,39 @@ pub async fn set_parallel(
     }
 }
 
+/// Reprend l'envoi des photos.
+///
+/// 0.3.4 — « Reprendre » revérifie aussi la galerie, comme au démarrage
+/// d'une session : une photo déjà envoyée puis supprimée de la galerie
+/// pendant la session repart. Avant, il fallait terminer la session et la
+/// relancer. La vérification tourne en tâche de fond : l'envoi reprend
+/// aussitôt.
 #[tauri::command]
-pub async fn resume_session(state: tauri::State<'_, AppState>) -> Result<(), String> {
+pub async fn resume_session(
+    state: tauri::State<'_, AppState>,
+    app_handle: tauri::AppHandle,
+) -> Result<(), String> {
     let session_lock = state.active_session.lock().await;
     match &*session_lock {
         Some(session) => {
             session.paused.store(false, Ordering::Relaxed);
             uploader::photos_en_pause(false);
             info!("Session #{} reprise", session.session_id);
+
+            // Le serveur a pu être mis à jour pendant la pause : la route est
+            // redemandée, comme à l'ouverture d'une session.
+            crate::verification::reinitialiser();
+
+            let session_id = session.session_id;
+            let verification = session.verification.clone();
+            let tx = session.tx.clone();
+            let running = session.running.clone();
+
+            tokio::spawn(async move {
+                watcher::reverifier_galerie(session_id, &verification, &tx, &app_handle, &running)
+                    .await;
+            });
+
             Ok(())
         }
         None => Err("Aucune session active.".to_string()),
@@ -616,6 +644,7 @@ async fn assembler_si_pret(
     let dossier = enregistrement.work_dir.clone();
     let session = enregistrement.session_id.clone();
     let premier_numero = enregistrement.premier_numero;
+    let debut = enregistrement.started_at;
 
     // Le verrou est relâché avant l'assemblage : celui-ci peut durer
     // plusieurs secondes, et le garder bloquerait l'arrêt de la captation.
@@ -624,7 +653,7 @@ async fn assembler_si_pret(
     let mut suivi = state.clip_tracker.lock().await;
 
     if suivi.is_none() {
-        *suivi = Some(crate::assembler::ClipTracker::new(plan, &dossier, premier_numero)?);
+        *suivi = Some(crate::assembler::ClipTracker::new(plan, &dossier, premier_numero, debut)?);
     }
 
     let tracker = suivi.as_mut().unwrap();
@@ -640,7 +669,7 @@ async fn assembler_si_pret(
     drop(suivi);
 
     let complet = if fin_de_captation {
-        mesurer_duree(app, &mut clip).await
+        mesurer_duree(app, &mut clip, debut).await
     } else {
         true
     };
@@ -663,9 +692,15 @@ async fn assembler_si_pret(
 /// Renvoie vrai si les deux coïncident, c'est-à-dire si le clip est
 /// complet. Un clip amputé qui annoncerait sa durée nominale ferait
 /// rattacher des coureurs à des secondes qu'il ne contient pas.
+///
+/// 0.3.4 — À la milliseconde, et non plus arrondie à la seconde : l'arrondi
+/// pouvait retirer une demi-seconde à la fin du dernier clip. Les images
+/// d'analyse qui tombent au-delà de cette fin sont écartées à l'arrêt
+/// (`images_couvertes`).
 async fn mesurer_duree(
     app: &tauri::AppHandle,
     clip: &mut crate::assembler::AssembledClip,
+    debut: crate::frames::chrono_simple::Instant,
 ) -> bool {
     let chemin = PathBuf::from(&clip.path);
 
@@ -673,20 +708,90 @@ async fn mesurer_duree(
         return false;
     };
 
-    let arrondie = reelle.round() as u32;
+    let mesuree_ms = (reelle * 1000.0).floor() as u64;
+    let prevue_ms = clip.duree_ms;
 
-    if arrondie == 0 || arrondie >= clip.duration_secs {
+    if mesuree_ms == 0 || mesuree_ms >= prevue_ms {
         return true;
     }
 
     info!(
-        "Clip {} : {} s réelles au lieu de {} s prévues.",
-        clip.index, arrondie, clip.duration_secs
+        "Clip {} : {:.3} s réelles au lieu de {} s prévues.",
+        clip.index,
+        mesuree_ms as f64 / 1000.0,
+        prevue_ms / 1000
     );
 
-    clip.duration_secs = arrondie;
+    clip.dater(debut, mesuree_ms);
 
-    false
+    // Moins d'une demi-seconde d'écart : le clip est complet, sa fin est
+    // simplement annoncée au plus juste.
+    mesuree_ms + 500 >= prevue_ms
+}
+
+/// Images d'analyse couvertes par l'un des clips donnés (0.3.4).
+///
+/// Le serveur rattache une image aux clips vérifiant `début <= instant <
+/// fin`. Une image datée au-delà de la fin du dernier clip ne trouvait
+/// aucun clip : sa lecture restait « en attente de son clip » pour
+/// toujours. Elle n'est plus envoyée. Renvoie les images gardées, et le
+/// nombre d'images écartées.
+fn images_couvertes(
+    images: Vec<crate::frames::ExtractedFrame>,
+    clips: &[(i64, i64)],
+) -> (Vec<crate::frames::ExtractedFrame>, usize) {
+    let total = images.len();
+
+    let gardees: Vec<_> = images
+        .into_iter()
+        .filter(|image| {
+            clips
+                .iter()
+                .any(|(debut, fin)| *debut <= image.instant_ms && image.instant_ms < *fin)
+        })
+        .collect();
+
+    let ecartees = total - gardees.len();
+
+    (gardees, ecartees)
+}
+
+/// Morceaux déjà clos que l'interface n'a pas encore fait assembler (0.3.4).
+///
+/// Un morceau clos juste avant l'arrêt est annoncé à l'interface, qui en
+/// extrait d'abord les images — quelques secondes — avant de demander
+/// l'assemblage. Si l'arrêt passait avant, le dernier morceau arrivait au
+/// suivi sans son prédécesseur : le clip qui les réunit n'était jamais
+/// assemblé, et les images de ces instants restaient sans clip. L'arrêt
+/// déclare donc lui-même ces morceaux, dans l'ordre, avant le dernier ; une
+/// annonce tardive de l'interface ne trouve ensuite plus rien à faire.
+async fn rattraper_morceaux_clos(
+    state: &AppState,
+    app: &tauri::AppHandle,
+    dernier: u32,
+) -> Vec<crate::assembler::AssembledClip> {
+    let depart = state
+        .clip_tracker
+        .lock()
+        .await
+        .as_ref()
+        .map(|suivi| suivi.premier_morceau_attendu())
+        .unwrap_or(0);
+
+    let mut clips = Vec::new();
+
+    for index in depart..dernier {
+        match assembler_si_pret(state, app, index, false).await {
+            Ok(Some(clip)) => {
+                info!("Clip {} assemblé à l'arrêt (morceau {} déjà clos)", clip.index, index);
+                clips.push(clip);
+            }
+            Ok(None) => {}
+            Err(e) => log::error!("Assemblage du morceau clos {} : {}", index, e),
+        }
+    }
+
+    clips
 }
 
 /// Extrait les images d'analyse d'un morceau.
@@ -702,15 +807,20 @@ pub async fn extract_frames(
     segment_index: u32,
     interval_secs: f32,
 ) -> Result<crate::frames::ExtractionResult, String> {
-    extraire_images_morceau(&state, &app, segment_index, interval_secs).await
+    extraire_images_morceau(&state, &app, segment_index, interval_secs, true).await
 }
 
 /// Corps commun de l'extraction — même raison que pour l'assemblage.
+///
+/// `inscrire` : les images entrent tout de suite à l'index du manifeste. À
+/// l'arrêt, l'appelant les inscrit lui-même, après avoir écarté celles
+/// qu'aucun clip ne couvre (0.3.4).
 async fn extraire_images_morceau(
     state: &AppState,
     app: &tauri::AppHandle,
     segment_index: u32,
     interval_secs: f32,
+    inscrire: bool,
 ) -> Result<crate::frames::ExtractionResult, String> {
     let verrou = state.active_recording.lock().await;
 
@@ -739,7 +849,7 @@ async fn extraire_images_morceau(
             .await?;
 
     // Index en ajout seul : jamais relu, jamais réécrit.
-    {
+    if inscrire {
         let mut verrou = state.manifest_writer.lock().await;
 
         if let Some(writer) = verrou.as_mut() {
@@ -899,14 +1009,35 @@ pub async fn queue_video_file(
 ///
 /// `sessions` (0.3.1) restreint le décompte aux captations de la session en
 /// cours ; absent, il porte sur toute l'épreuve.
+///
+/// `hd_since_ms` (0.3.4) : ouverture de la session. Le bilan HD
+/// (`hd_sent_session`, `hd_missing_session`) ne compte que ce qui est sorti
+/// de la file depuis ; absent, il vaut celui de toute l'épreuve.
 #[tauri::command]
 pub async fn video_queue_stats(
     event_id: i64,
     sessions: Option<Vec<String>>,
+    hd_since_ms: Option<i64>,
 ) -> Result<crate::video_queue::QueueStats, String> {
     let conn = database::connexion().map_err(|e| format!("Base indisponible : {}", e))?;
 
-    crate::video_queue::statistiques_filtrees(&conn, event_id, &sessions.unwrap_or_default())
+    let mut stats =
+        crate::video_queue::statistiques_filtrees(&conn, event_id, &sessions.unwrap_or_default())?;
+
+    match hd_since_ms {
+        Some(depuis) => {
+            let (envoyes, absents) =
+                crate::video_queue::bilan_hd_depuis(&conn, event_id, depuis.div_euclid(1000))?;
+            stats.hd_sent_session = envoyes;
+            stats.hd_missing_session = absents;
+        }
+        None => {
+            stats.hd_sent_session = stats.hd_sent;
+            stats.hd_missing_session = stats.hd_missing;
+        }
+    }
+
+    Ok(stats)
 }
 
 /// Autorise ou interdit l'envoi des clips pleine qualité.
@@ -1377,10 +1508,17 @@ pub async fn video_server_clip_max(token: String, event_id: i64) -> Result<Optio
 }
 
 /// Octets vidéo envoyés depuis le lancement : tous envois, et HD (0.3.3).
+///
+/// 0.3.4 — Et le débit HD, mesuré pendant l'envoi réel des morceaux (Mb/s,
+/// null tant qu'aucun n'est parti).
 #[tauri::command]
 pub async fn video_bytes_sent() -> serde_json::Value {
     let (total, hd) = crate::video_uploader::octets_envoyes();
-    serde_json::json!({ "total": total, "hd": hd })
+    serde_json::json!({
+        "total": total,
+        "hd": hd,
+        "hd_mbps": crate::video_uploader::debit_hd_mbps(),
+    })
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1497,7 +1635,7 @@ async fn arreter(
     // passe par les mêmes fonctions que pendant la course, et celles-ci
     // refusent de travailler sans captation active. C'était le verrou qui
     // faisait disparaître le dernier clip.
-    let (session, dernier, dossier_travail, interval, premier_numero) = {
+    let (session, dernier, dossier_travail, interval, premier_numero, debut_captation) = {
         let mut verrou = state.active_recording.lock().await;
 
         let Some(poignee) = verrou.as_mut() else {
@@ -1525,6 +1663,7 @@ async fn arreter(
             poignee.work_dir.clone(),
             poignee.interval_secs,
             poignee.premier_numero,
+            poignee.started_at,
         )
     };
 
@@ -1537,6 +1676,14 @@ async fn arreter(
         clips: Vec::new(),
         prochain_numero: premier_numero,
     };
+
+    // ─── 1 bis. Les morceaux clos pas encore assemblés (0.3.4) ───
+    //
+    // Avant le dernier morceau : c'est lui qui complète le dernier clip, et
+    // il doit trouver ses prédécesseurs au suivi.
+    if let Some(index) = dernier {
+        fin.clips.extend(rattraper_morceaux_clos(state, app, index).await);
+    }
 
     // ─── 2. Le morceau resté ouvert ───
     if let Some(index) = dernier {
@@ -1557,7 +1704,7 @@ async fn arreter(
             // en erreur (-22), et le journal recevait « Aucune image extraite
             // du morceau N » avec tout son rapport, à chaque pause.
             if assez_long_pour_des_images(duree) {
-                match extraire_images_morceau(state, app, index, interval).await {
+                match extraire_images_morceau(state, app, index, interval, false).await {
                     Ok(resultat) => fin.frames = resultat.frames,
                     Err(e) => info!(
                         "Dernier morceau {} : {}",
@@ -1594,6 +1741,40 @@ async fn arreter(
         Ok(Some(clip)) => fin.clips.push(clip),
         Ok(None) => {}
         Err(e) => log::error!("Clip final : {}", e),
+    }
+
+    // ─── 3 bis. Images du dernier morceau : celles qu'un clip couvre
+    //     (0.3.4) ───
+    //
+    // Le dernier clip porte sa durée mesurée ; les images, elles, sont datées
+    // d'après leur rang dans le morceau. Celles qui tombent après la fin du
+    // dernier clip n'auraient aucun clip côté serveur : elles ne partent pas.
+    // Seules les images gardées entrent à l'index du manifeste.
+    if !fin.frames.is_empty() {
+        let fenetres: Vec<(i64, i64)> = fin
+            .clips
+            .iter()
+            .map(|clip| (clip.debut_ms(debut_captation), clip.fin_ms(debut_captation)))
+            .collect();
+
+        let (gardees, ecartees) = images_couvertes(std::mem::take(&mut fin.frames), &fenetres);
+
+        if ecartees > 0 {
+            info!(
+                "Dernier morceau : {} image(s) d'analyse après la fin du dernier clip, non envoyée(s)",
+                ecartees
+            );
+        }
+
+        fin.frames = gardees;
+
+        let mut verrou = state.manifest_writer.lock().await;
+
+        if let Some(writer) = verrou.as_mut() {
+            if let Err(e) = writer.ajouter_images(&fin.frames) {
+                log::error!("Index des images : {}", e);
+            }
+        }
     }
 
     // ─── 4. Clôture ───
@@ -1660,9 +1841,11 @@ async fn assembler_clip_final(
 
     tracker.clip_termine();
 
+    let debut = tracker.debut();
+
     drop(suivi);
 
-    mesurer_duree(app, &mut clip).await;
+    mesurer_duree(app, &mut clip, debut).await;
 
     {
         let mut verrou = state.manifest_writer.lock().await;
@@ -1706,6 +1889,52 @@ pub async fn disk_estimate(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn image(instant_ms: i64) -> crate::frames::ExtractedFrame {
+        crate::frames::ExtractedFrame {
+            filename: format!("img_{}.jpg", instant_ms),
+            path: String::new(),
+            size_bytes: 1,
+            instant_at: String::new(),
+            instant_ms,
+            segment_index: 0,
+        }
+    }
+
+    #[test]
+    fn aucune_image_apres_la_fin_du_dernier_clip() {
+        // Dernier clip : de 120 s à 191,4 s (durée mesurée). Une image toutes
+        // les 2 s dans le dernier morceau, qui commence à 180 s.
+        let clips = [(120_000, 191_400)];
+        let images: Vec<_> = (0..7).map(|rang| image(180_000 + rang * 2000)).collect();
+
+        let (gardees, ecartees) = images_couvertes(images, &clips);
+
+        let instants: Vec<i64> = gardees.iter().map(|i| i.instant_ms).collect();
+        assert_eq!(instants, vec![180_000, 182_000, 184_000, 186_000, 188_000, 190_000]);
+        assert_eq!(ecartees, 1);
+    }
+
+    #[test]
+    fn la_fin_dun_clip_est_exclue_comme_sur_le_serveur() {
+        // Le serveur cherche `début <= instant < fin`.
+        let (gardees, ecartees) = images_couvertes(vec![image(150_000)], &[(0, 150_000)]);
+
+        assert!(gardees.is_empty());
+        assert_eq!(ecartees, 1);
+
+        let (gardees, _) =
+            images_couvertes(vec![image(150_000)], &[(0, 150_000), (120_000, 180_000)]);
+        assert_eq!(gardees.len(), 1);
+    }
+
+    #[test]
+    fn sans_clip_aucune_image_ne_part() {
+        let (gardees, ecartees) = images_couvertes(vec![image(1000), image(3000)], &[]);
+
+        assert!(gardees.is_empty());
+        assert_eq!(ecartees, 2);
+    }
 
     #[test]
     fn un_dernier_morceau_trop_court_ne_donne_pas_dimages() {

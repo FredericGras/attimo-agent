@@ -174,7 +174,9 @@
         "success_server": "OK i {duration} s (freastalaí {server} s)",
         "server_had_it": "bhí sé ag an bhfreastalaí cheana",
         "already_online": "Ar líne cheana — níor seoladh arís é",
-        "missing_on_server": "Ar iarraidh ón ngailearaí — seolta arís"
+        "missing_on_server": "Ar iarraidh ón ngailearaí — seolta arís",
+        "gallery_recheck_missing": "Gailearaí seiceáilte arís: {count} grianghraf ar iarraidh, á seoladh arís",
+        "gallery_recheck_ok": "Gailearaí seiceáilte arís: tá na {count} grianghraf seolta ar fad ar líne"
     },
     "connection": {
         "restored": "Ceangal athbhunaithe",
@@ -206,7 +208,8 @@
         "duration_s": "{n} s",
         "duration_min": "{n} nóim",
         "duration_h": "{h} u {m} nóim",
-        "auto_notice": "Seoltar HD go huathoibríoch: uaslódáiltear an cháilíocht iomlán le linn an rása (bí aireach ar do phlean 4G)."
+        "auto_notice": "Seoltar HD go huathoibríoch: uaslódáiltear an cháilíocht iomlán le linn an rása (bí aireach ar do phlean 4G).",
+        "missing_apart": "{count} nár aimsíodh ar an diosca"
     },
     "nav": {
         "banner_title": "Seisiún ar siúl: {event}",

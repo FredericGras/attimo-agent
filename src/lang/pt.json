@@ -174,7 +174,9 @@
         "success_server": "OK em {duration} s (servidor {server} s)",
         "server_had_it": "o servidor já a tinha",
         "already_online": "Já online — não reenviada",
-        "missing_on_server": "Ausente da galeria — reenviada"
+        "missing_on_server": "Ausente da galeria — reenviada",
+        "gallery_recheck_missing": "Galeria verificada novamente: {count} foto(s) em falta, a reenviar",
+        "gallery_recheck_ok": "Galeria verificada novamente: as {count} foto(s) enviadas estão online"
     },
     "connection": {
         "restored": "Ligação restabelecida",
@@ -206,7 +208,8 @@
         "duration_s": "{n} s",
         "duration_min": "{n} min",
         "duration_h": "{h} h {m} min",
-        "auto_notice": "HD enviada automaticamente: a qualidade total é enviada durante a prova (atenção ao tarifário 4G)."
+        "auto_notice": "HD enviada automaticamente: a qualidade total é enviada durante a prova (atenção ao tarifário 4G).",
+        "missing_apart": "{count} não encontrado(s) no disco"
     },
     "nav": {
         "banner_title": "Sessão em curso: {event}",
