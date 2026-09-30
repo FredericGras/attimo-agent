@@ -19,6 +19,7 @@
         "photos_one": "{count} fotografija online",
         "photos_other": "{count} fotografija online",
         "no_photos": "Još nema fotografija",
+        "draft": "Skica",
         "checkpoints_one": "{count} kontrolna točka",
         "checkpoints_other": "{count} kontrolnih točaka",
         "logout_title": "Odjava",
@@ -109,7 +110,11 @@
         "video_disk_detail": "zapisano {written} GB, izmjereno {rate} GB/h",
         "video_disk_estimated": "zapisano {written} GB, procijenjeno {rate} GB/h",
         "video_started": "Snimanje pokrenuto — klip svakih {step} s",
-        "video_stopped": "Snimanje zaustavljeno — izrađeno {clips} klipova",
+        "video_stopped": "Snimanje zaustavljeno — ovim snimanjem izrađeno {clips} klipova",
+        "video_draft_waiting": "Klipovi čekaju: događaj je skica. Objavite ga na Attimu i slanje će krenuti samo.",
+        "draft_notice": "Događaj je skica: objavite ga na Attimu. Do tada se u galeriji ništa ne vidi, a videoklipovi mogu čekati u agentu.",
+        "draft_published": "Događaj objavljen: slanja na čekanju se nastavljaju.",
+        "already_note": "+ {count} već na mreži",
         "video_clip_ready": "Klip {index} sastavljen",
         "video_clip_sent": "Klip {index} poslan",
         "video_frames_ready": "Izdvojeno {count} slika za analizu",
@@ -186,7 +191,9 @@
     "complete": {
         "with_errors": "Gotovo: {sent} poslano, {failed} neuspjelo",
         "success": "Gotovo: {count} fotografija uspješno preneseno!",
-        "already": "(od toga {count} već na mreži, nisu ponovno poslane)"
+        "all_online": "Gotovo: ništa za slanje, svih {count} fotografija već je na mreži (nisu ponovno poslane)",
+        "sent_and_online": "Gotovo: poslano {sent} fotografija, {already} već na mreži (nisu ponovno poslane)",
+        "sent_online_failed": "Gotovo: poslano {sent}, {already} već na mreži (nisu ponovno poslane), {failed} neuspjelo"
     },
     "hd": {
         "title": "HD video",
@@ -214,6 +221,7 @@
     "nav": {
         "banner_title": "Sesija u tijeku: {event}",
         "banner_photos": "poslane fotografije: {sent}, na čekanju: {pending}",
+        "banner_photos_already": "Poslano {sent} fotografija, {already} već na mreži, {pending} na čekanju",
         "banner_video_recording": "snimanje videa u tijeku",
         "banner_video_paused": "video pauziran",
         "banner_video_sending": "video datoteke za slanje: {count}",
@@ -224,7 +232,8 @@
     },
     "journal": {
         "export": "Izvezi dnevnik",
-        "export_dialog": "Spremi dnevnik agenta",
+        "export_hint": "Izvezi zapisnik u Documents › Attimo Agent Terrain › Journaux",
+        "folder_opened": "Mapa se otvara u Eksploreru datoteka.",
         "exported": "Dnevnik izvezen: {path}"
     }
 }

@@ -19,6 +19,7 @@
         "photos_one": "{count} kuva verkossa",
         "photos_other": "{count} kuvaa verkossa",
         "no_photos": "Ei vielä kuvia",
+        "draft": "Luonnos",
         "checkpoints_one": "{count} tarkistuspiste",
         "checkpoints_other": "{count} tarkistuspistettä",
         "logout_title": "Kirjaudu ulos",
@@ -109,7 +110,11 @@
         "video_disk_detail": "{written} Gt kirjoitettu, {rate} Gt/h mitattu",
         "video_disk_estimated": "{written} Gt kirjoitettu, {rate} Gt/h arvioitu",
         "video_started": "Kuvaus alkoi — klippi {step} sekunnin välein",
-        "video_stopped": "Kuvaus päättyi — {clips} klippiä tehty",
+        "video_stopped": "Kuvaus päättyi — tässä kuvauksessa tehtiin {clips} klippiä",
+        "video_draft_waiting": "Klipit odottavat: tapahtuma on luonnos. Julkaise se Attimossa, niin lähetys alkaa itsestään.",
+        "draft_notice": "Tapahtuma on luonnos: julkaise se Attimossa. Siihen asti galleriassa ei näy mitään ja videoklipit voivat jäädä odottamaan agenttiin.",
+        "draft_published": "Tapahtuma julkaistu: odottavat lähetykset jatkuvat.",
+        "already_note": "+ {count} jo verkossa",
         "video_clip_ready": "Klippi {index} koottu",
         "video_clip_sent": "Klippi {index} lähetetty",
         "video_frames_ready": "{count} analyysikuvaa poimittu",
@@ -186,7 +191,9 @@
     "complete": {
         "with_errors": "Valmis: {sent} lähetetty, {failed} epäonnistunut",
         "success": "Valmis: {count} kuvaa ladattu onnistuneesti!",
-        "already": "(joista {count} jo verkossa, ei lähetetty uudelleen)"
+        "all_online": "Valmis: ei lähetettävää, kaikki {count} kuvaa ovat jo verkossa (ei lähetetty uudelleen)",
+        "sent_and_online": "Valmis: {sent} kuvaa lähetetty, {already} jo verkossa (ei lähetetty uudelleen)",
+        "sent_online_failed": "Valmis: {sent} lähetetty, {already} jo verkossa (ei lähetetty uudelleen), {failed} epäonnistui"
     },
     "hd": {
         "title": "HD-video",
@@ -214,6 +221,7 @@
     "nav": {
         "banner_title": "Istunto käynnissä: {event}",
         "banner_photos": "{sent} kuvaa lähetetty, {pending} odottaa",
+        "banner_photos_already": "{sent} kuvaa lähetetty, {already} jo verkossa, {pending} odottaa",
         "banner_video_recording": "videokuvaus käynnissä",
         "banner_video_paused": "video tauolla",
         "banner_video_sending": "{count} videotiedostoa lähettämättä",
@@ -224,7 +232,8 @@
     },
     "journal": {
         "export": "Vie loki",
-        "export_dialog": "Tallenna agentin loki",
+        "export_hint": "Vie loki kansioon Documents › Attimo Agent Terrain › Journaux",
+        "folder_opened": "Kansio avautuu Resurssienhallintaan.",
         "exported": "Loki viety: {path}"
     }
 }

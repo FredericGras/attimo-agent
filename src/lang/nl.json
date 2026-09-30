@@ -19,6 +19,7 @@
         "photos_one": "{count} foto online",
         "photos_other": "{count} foto's online",
         "no_photos": "Nog geen foto's",
+        "draft": "Concept",
         "checkpoints_one": "{count} checkpoint",
         "checkpoints_other": "{count} checkpoints",
         "logout_title": "Uitloggen",
@@ -109,7 +110,11 @@
         "video_disk_detail": "{written} GB geschreven, {rate} GB/u gemeten",
         "video_disk_estimated": "{written} GB geschreven, {rate} GB/u geschat",
         "video_started": "Opname gestart — een clip elke {step} s",
-        "video_stopped": "Opname gestopt — {clips} clip(s) gemaakt",
+        "video_stopped": "Opname gestopt — {clips} clip(s) gemaakt in deze opname",
+        "video_draft_waiting": "Clips wachten: het evenement is een concept. Publiceer het op Attimo, dan start het verzenden vanzelf.",
+        "draft_notice": "Evenement in concept: publiceer het op Attimo. Tot dan is er niets zichtbaar in de galerij en kunnen videoclips in de agent blijven wachten.",
+        "draft_published": "Evenement gepubliceerd: wachtende uploads worden hervat.",
+        "already_note": "+ {count} al online",
         "video_clip_ready": "Clip {index} samengevoegd",
         "video_clip_sent": "Clip {index} verstuurd",
         "video_frames_ready": "{count} analysebeeld(en) uitgesneden",
@@ -186,7 +191,9 @@
     "complete": {
         "with_errors": "Klaar: {sent} verzonden, {failed} mislukt",
         "success": "Klaar: {count} foto's succesvol geüpload!",
-        "already": "(waarvan {count} al online, niet opnieuw verzonden)"
+        "all_online": "Klaar: niets te verzenden, alle {count} foto's staan al online (niet opnieuw verzonden)",
+        "sent_and_online": "Klaar: {sent} foto('s) verzonden, {already} al online (niet opnieuw verzonden)",
+        "sent_online_failed": "Klaar: {sent} verzonden, {already} al online (niet opnieuw verzonden), {failed} mislukt"
     },
     "hd": {
         "title": "HD-video",
@@ -214,6 +221,7 @@
     "nav": {
         "banner_title": "Lopende sessie: {event}",
         "banner_photos": "{sent} foto('s) verzonden, {pending} wachtend",
+        "banner_photos_already": "{sent} foto('s) verzonden, {already} al online, {pending} in wachtrij",
         "banner_video_recording": "video-opname bezig",
         "banner_video_paused": "video gepauzeerd",
         "banner_video_sending": "{count} videobestand(en) te versturen",
@@ -224,7 +232,8 @@
     },
     "journal": {
         "export": "Logboek exporteren",
-        "export_dialog": "Logboek van de agent opslaan",
+        "export_hint": "Logboek exporteren naar Documents › Attimo Agent Terrain › Journaux",
+        "folder_opened": "De map wordt geopend in Verkenner.",
         "exported": "Logboek geëxporteerd: {path}"
     }
 }

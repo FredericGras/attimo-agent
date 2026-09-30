@@ -19,6 +19,7 @@
         "photos_one": "{count} φωτογραφία online",
         "photos_other": "{count} φωτογραφίες online",
         "no_photos": "Δεν υπάρχουν φωτογραφίες ακόμα",
+        "draft": "Πρόχειρο",
         "checkpoints_one": "{count} σημείο ελέγχου",
         "checkpoints_other": "{count} σημεία ελέγχου",
         "logout_title": "Αποσύνδεση",
@@ -109,7 +110,11 @@
         "video_disk_detail": "{written} GB γράφτηκαν, {rate} GB/ώρα μετρημένα",
         "video_disk_estimated": "{written} GB γράφτηκαν, {rate} GB/ώρα εκτιμώμενα",
         "video_started": "Η λήψη ξεκίνησε — ένα κλιπ κάθε {step} δευτ.",
-        "video_stopped": "Η λήψη σταμάτησε — δημιουργήθηκαν {clips} κλιπ",
+        "video_stopped": "Η λήψη σταμάτησε — δημιουργήθηκαν {clips} κλιπ σε αυτή τη λήψη",
+        "video_draft_waiting": "Κλιπ σε αναμονή: η εκδήλωση είναι πρόχειρη. Δημοσιεύστε την στο Attimo και η αποστολή θα ξεκινήσει μόνη της.",
+        "draft_notice": "Πρόχειρη εκδήλωση: δημοσιεύστε την στο Attimo. Μέχρι τότε τίποτα δεν φαίνεται στη συλλογή και τα βίντεο κλιπ μπορεί να περιμένουν στον πράκτορα.",
+        "draft_published": "Η εκδήλωση δημοσιεύτηκε: οι αποστολές σε αναμονή συνεχίζονται.",
+        "already_note": "+ {count} ήδη online",
         "video_clip_ready": "Το κλιπ {index} συναρμολογήθηκε",
         "video_clip_sent": "Το κλιπ {index} στάλθηκε",
         "video_frames_ready": "Εξήχθησαν {count} εικόνες ανάλυσης",
@@ -186,7 +191,9 @@
     "complete": {
         "with_errors": "Ολοκληρώθηκε: {sent} απεσταλμένα, {failed} αποτυχημένα",
         "success": "Ολοκληρώθηκε: {count} φωτογραφίες μεταφορτώθηκαν επιτυχώς!",
-        "already": "(εκ των οποίων {count} ήδη online, δεν στάλθηκαν ξανά)"
+        "all_online": "Ολοκληρώθηκε: τίποτα προς αποστολή, και οι {count} φωτογραφίες είναι ήδη online (δεν στάλθηκαν ξανά)",
+        "sent_and_online": "Ολοκληρώθηκε: στάλθηκαν {sent} φωτογραφίες, {already} ήδη online (δεν στάλθηκαν ξανά)",
+        "sent_online_failed": "Ολοκληρώθηκε: στάλθηκαν {sent}, {already} ήδη online (δεν στάλθηκαν ξανά), {failed} απέτυχαν"
     },
     "hd": {
         "title": "Βίντεο HD",
@@ -214,6 +221,7 @@
     "nav": {
         "banner_title": "Συνεδρία σε εξέλιξη: {event}",
         "banner_photos": "φωτογραφίες που στάλθηκαν: {sent}, σε αναμονή: {pending}",
+        "banner_photos_already": "Στάλθηκαν {sent} φωτογραφίες, {already} ήδη online, {pending} σε αναμονή",
         "banner_video_recording": "λήψη βίντεο σε εξέλιξη",
         "banner_video_paused": "βίντεο σε παύση",
         "banner_video_sending": "αρχεία βίντεο προς αποστολή: {count}",
@@ -224,7 +232,8 @@
     },
     "journal": {
         "export": "Εξαγωγή αρχείου καταγραφής",
-        "export_dialog": "Αποθήκευση του αρχείου καταγραφής του πράκτορα",
+        "export_hint": "Εξαγωγή του αρχείου καταγραφής στο Documents › Attimo Agent Terrain › Journaux",
+        "folder_opened": "Ο φάκελος ανοίγει στην Εξερεύνηση αρχείων.",
         "exported": "Το αρχείο καταγραφής εξήχθη: {path}"
     }
 }

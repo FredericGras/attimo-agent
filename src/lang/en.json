@@ -21,6 +21,7 @@
         "photos_one": "{count} photo online",
         "photos_other": "{count} photos online",
         "no_photos": "No photos yet",
+        "draft": "Draft",
         "checkpoints_one": "{count} checkpoint",
         "checkpoints_other": "{count} checkpoints",
         "logout_title": "Sign out",
@@ -113,7 +114,11 @@
         "video_disk_detail": "{written} GB written, {rate} GB/h measured",
         "video_disk_estimated": "{written} GB written, {rate} GB/h estimated",
         "video_started": "Recording started — a clip every {step} s",
-        "video_stopped": "Recording stopped — {clips} clip(s) produced",
+        "video_stopped": "Recording stopped — {clips} clip(s) produced by this recording",
+        "video_draft_waiting": "Clips waiting: the event is a draft. Publish it on Attimo and sending will start on its own.",
+        "draft_notice": "Draft event: publish it on Attimo. Until then, nothing is visible in the gallery and video clips may stay waiting in the agent.",
+        "draft_published": "Event published: waiting uploads are resuming.",
+        "already_note": "+ {count} already online",
         "video_clip_ready": "Clip {index} assembled",
         "video_clip_sent": "Clip {index} sent",
         "video_frames_ready": "{count} analysis frame(s) extracted",
@@ -194,7 +199,9 @@
     "complete": {
         "with_errors": "Done: {sent} sent, {failed} failed",
         "success": "Done: {count} photos uploaded successfully!",
-        "already": "(including {count} already online, not sent again)"
+        "all_online": "Done: nothing to send, all {count} photos are already online (not sent again)",
+        "sent_and_online": "Done: {sent} photo(s) sent, {already} already online (not sent again)",
+        "sent_online_failed": "Done: {sent} sent, {already} already online (not sent again), {failed} failed"
     },
 
     "hd": {
@@ -224,6 +231,7 @@
     "nav": {
         "banner_title": "Session running: {event}",
         "banner_photos": "{sent} photo(s) sent, {pending} waiting",
+        "banner_photos_already": "{sent} photo(s) sent, {already} already online, {pending} waiting",
         "banner_video_recording": "video recording",
         "banner_video_paused": "video paused",
         "banner_video_sending": "{count} video file(s) to send",
@@ -235,7 +243,8 @@
 
     "journal": {
         "export": "Export log",
-        "export_dialog": "Save the agent log",
+        "export_hint": "Export the log to Documents › Attimo Agent Terrain › Journaux",
+        "folder_opened": "The folder opens in File Explorer.",
         "exported": "Log exported: {path}"
     }
 }

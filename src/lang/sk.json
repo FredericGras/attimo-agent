@@ -19,6 +19,7 @@
         "photos_one": "{count} fotografia online",
         "photos_other": "{count} fotografií online",
         "no_photos": "Zatiaľ žiadne fotografie",
+        "draft": "Koncept",
         "checkpoints_one": "{count} kontrolný bod",
         "checkpoints_other": "{count} kontrolných bodov",
         "logout_title": "Odhlásiť sa",
@@ -109,7 +110,11 @@
         "video_disk_detail": "zapísaných {written} GB, namerané {rate} GB/h",
         "video_disk_estimated": "zapísaných {written} GB, odhad {rate} GB/h",
         "video_started": "Natáčanie spustené — klip každých {step} s",
-        "video_stopped": "Natáčanie zastavené — vytvorených {clips} klipov",
+        "video_stopped": "Natáčanie zastavené — týmto natáčaním vytvorených {clips} klipov",
+        "video_draft_waiting": "Klipy čakajú: podujatie je koncept. Zverejnite ho na Attimo a odosielanie sa spustí samo.",
+        "draft_notice": "Podujatie je koncept: zverejnite ho na Attimo. Dovtedy v galérii nič nie je vidieť a videoklipy môžu čakať v agentovi.",
+        "draft_published": "Podujatie zverejnené: čakajúce odosielanie pokračuje.",
+        "already_note": "+ {count} už online",
         "video_clip_ready": "Klip {index} zostavený",
         "video_clip_sent": "Klip {index} odoslaný",
         "video_frames_ready": "Extrahovaných {count} snímok na analýzu",
@@ -186,7 +191,9 @@
     "complete": {
         "with_errors": "Hotovo: {sent} odoslaných, {failed} neúspešných",
         "success": "Hotovo: {count} fotografií úspešne nahraných!",
-        "already": "(z toho {count} už online, znova neodoslané)"
+        "all_online": "Hotovo: nič na odoslanie, všetkých {count} fotografií je už online (znova neodoslané)",
+        "sent_and_online": "Hotovo: odoslaných {sent} fotografií, {already} už online (znova neodoslané)",
+        "sent_online_failed": "Hotovo: odoslaných {sent}, {already} už online (znova neodoslané), {failed} zlyhalo"
     },
     "hd": {
         "title": "Video HD",
@@ -214,6 +221,7 @@
     "nav": {
         "banner_title": "Prebieha relácia: {event}",
         "banner_photos": "odoslané fotografie: {sent}, čakajúce: {pending}",
+        "banner_photos_already": "Odoslaných {sent} fotografií, {already} už online, {pending} čaká",
         "banner_video_recording": "prebieha natáčanie videa",
         "banner_video_paused": "video pozastavené",
         "banner_video_sending": "videosúbory na odoslanie: {count}",
@@ -224,7 +232,8 @@
     },
     "journal": {
         "export": "Exportovať protokol",
-        "export_dialog": "Uložiť protokol agenta",
+        "export_hint": "Exportovať denník do Documents › Attimo Agent Terrain › Journaux",
+        "folder_opened": "Priečinok sa otvorí v Prieskumníkovi súborov.",
         "exported": "Protokol exportovaný: {path}"
     }
 }

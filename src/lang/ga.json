@@ -19,6 +19,7 @@
         "photos_one": "{count} grianghraf ar líne",
         "photos_other": "{count} grianghraf ar líne",
         "no_photos": "Níl aon ghrianghraf fós",
+        "draft": "Dréacht",
         "checkpoints_one": "{count} seicphointe",
         "checkpoints_other": "{count} seicphointe",
         "logout_title": "Logáil amach",
@@ -109,7 +110,11 @@
         "video_disk_detail": "{written} GB scríofa, {rate} GB/u tomhaiste",
         "video_disk_estimated": "{written} GB scríofa, {rate} GB/u measta",
         "video_started": "Thosaigh an taifeadadh — clip gach {step} s",
-        "video_stopped": "Stop an taifeadadh — {clips} clip déanta",
+        "video_stopped": "Stop an taifeadadh — {clips} clip déanta sa taifeadadh seo",
+        "video_draft_waiting": "Gearrthóga ag fanacht: is dréacht é an imeacht. Foilsigh ar Attimo é agus tosóidh an seoladh leis féin.",
+        "draft_notice": "Imeacht i ndréacht: foilsigh ar Attimo é. Go dtí sin, ní fheictear aon rud sa ghailearaí agus d'fhéadfadh gearrthóga físe fanacht sa ghníomhaire.",
+        "draft_published": "Imeacht foilsithe: tá na huaslódálacha a bhí ag fanacht ag atosú.",
+        "already_note": "+ {count} ar líne cheana",
         "video_clip_ready": "Clip {index} cóimeáilte",
         "video_clip_sent": "Clip {index} seolta",
         "video_frames_ready": "Baineadh {count} fráma anailíse",
@@ -186,7 +191,9 @@
     "complete": {
         "with_errors": "Críochnaithe: {sent} seolta, {failed} theip",
         "success": "Críochnaithe: {count} grianghraf uaslódáilte go rathúil!",
-        "already": "({count} díobh ar líne cheana, níor seoladh arís iad)"
+        "all_online": "Críochnaithe: dada le seoladh, tá na {count} grianghraf ar fad ar líne cheana (níor seoladh arís)",
+        "sent_and_online": "Críochnaithe: {sent} grianghraf seolta, {already} ar líne cheana (níor seoladh arís)",
+        "sent_online_failed": "Críochnaithe: {sent} seolta, {already} ar líne cheana (níor seoladh arís), {failed} theip"
     },
     "hd": {
         "title": "Físeán HD",
@@ -214,6 +221,7 @@
     "nav": {
         "banner_title": "Seisiún ar siúl: {event}",
         "banner_photos": "grianghraif seolta: {sent}, ag fanacht: {pending}",
+        "banner_photos_already": "{sent} grianghraf seolta, {already} ar líne cheana, {pending} ag fanacht",
         "banner_video_recording": "taifeadadh físeáin ar siúl",
         "banner_video_paused": "físeán ar sos",
         "banner_video_sending": "comhaid físeáin le seoladh: {count}",
@@ -224,7 +232,8 @@
     },
     "journal": {
         "export": "Easpórtáil an logáil",
-        "export_dialog": "Sábháil logáil an ghníomhaire",
+        "export_hint": "Easpórtáil an loga go Documents › Attimo Agent Terrain › Journaux",
+        "folder_opened": "Osclaíonn an fillteán i File Explorer.",
         "exported": "Logáil easpórtáilte: {path}"
     }
 }

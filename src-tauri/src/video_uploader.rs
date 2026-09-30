@@ -103,6 +103,16 @@ pub const ANALYSE_DESACTIVEE: &str = "ANALYSE_DESACTIVEE";
 /// (`SportClipFrameController::resolveEvent`).
 const MESSAGE_ANALYSE_DESACTIVEE: &str = "Recognition is disabled";
 
+/// L'épreuve n'a pas encore de galerie (0.3.5) : c'est une épreuve en
+/// brouillon, jamais publiée. Le serveur refuse clips et images (422) tant
+/// qu'elle ne l'est pas ; publiée, il les accepte. Ce n'est donc pas un
+/// échec : les éléments restent en file, sans consommer d'essai.
+pub const EPREUVE_BROUILLON: &str = "EPREUVE_BROUILLON";
+
+/// Message exact du serveur dans ce cas (`resolveEvent` des contrôleurs de
+/// clips et d'images).
+const MESSAGE_SANS_GALERIE: &str = "Event has no gallery";
+
 /// Octets vidéo remis au serveur depuis le lancement (0.3.3) : tous les
 /// envois vidéo, et la part des clips HD. L'interface en tire le débit et
 /// le temps restant de l'envoi HD.
@@ -408,6 +418,11 @@ async fn lire_refus(reponse: reqwest::Response) -> (u16, String, bool) {
     (code, message, corps.get("errors").is_some())
 }
 
+/// Refus d'une épreuve en brouillon (0.3.5), reconnu au message du serveur.
+fn refus_brouillon(code: u16, message: &str) -> Option<String> {
+    (code == 422 && message.contains(MESSAGE_SANS_GALERIE)).then(|| EPREUVE_BROUILLON.to_string())
+}
+
 /// Traduit un refus du serveur (4xx) en erreur définitive.
 fn refus_definitif(code: u16, message: &str) -> String {
     if message.is_empty() {
@@ -548,9 +563,11 @@ pub async fn envoyer_clip(
         }
 
         // Morceau refusé (validation) : le renvoyer n'y changerait rien.
+        // Sauf sur une épreuve en brouillon, qui l'acceptera une fois
+        // publiée (0.3.5).
         if reponse.status().is_client_error() {
             let (code, message, _) = lire_refus(reponse).await;
-            return Err(refus_definitif(code, &message));
+            return Err(refus_brouillon(code, &message).unwrap_or_else(|| refus_definitif(code, &message)));
         }
 
         let corps: ChunkResponse = reponse
@@ -610,6 +627,10 @@ pub async fn envoyer_clip(
     // refus ne changeront pas.
     if reponse.status().is_client_error() {
         let (code, message, _) = lire_refus(reponse).await;
+
+        if let Some(brouillon) = refus_brouillon(code, &message) {
+            return Err(brouillon);
+        }
 
         if code == 422 {
             return Err(if message.is_empty() {
@@ -780,6 +801,10 @@ pub async fn envoyer_lot_images(
     // en boucle. Le cas se reconnaît désormais au message exact du serveur.
     if reponse.status().is_client_error() {
         let (code, message, _) = lire_refus(reponse).await;
+
+        if let Some(brouillon) = refus_brouillon(code, &message) {
+            return Err(brouillon);
+        }
 
         if message.contains(MESSAGE_ANALYSE_DESACTIVEE) {
             return Err(ANALYSE_DESACTIVEE.to_string());
@@ -1164,6 +1189,18 @@ mod tests {
         assert_eq!(lire_numero_max(&serde_json::json!({"clips": [{"index": 2}, {"index": 9}]})), Some(9));
         assert_eq!(lire_numero_max(&serde_json::json!({"clips": []})), None);
         assert_eq!(lire_numero_max(&serde_json::json!({"success": true})), None);
+    }
+
+    #[test]
+    fn une_epreuve_en_brouillon_n_est_pas_un_echec() {
+        // Réponse du serveur à une épreuve jamais publiée (0.3.5).
+        assert_eq!(refus_brouillon(422, "Event has no gallery."), Some(EPREUVE_BROUILLON.to_string()));
+
+        // Les autres refus ne sont pas pris pour un brouillon.
+        assert_eq!(refus_brouillon(404, "Event has no gallery."), None);
+        assert_eq!(refus_brouillon(422, "Recognition is disabled for this event."), None);
+        assert_eq!(refus_brouillon(422, "The chunk field is required."), None);
+        assert!(!est_definitive(EPREUVE_BROUILLON));
     }
 
     #[test]

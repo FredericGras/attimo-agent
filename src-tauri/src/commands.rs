@@ -124,6 +124,15 @@ pub async fn fetch_events(token: String) -> Result<Vec<auth::SportEvent>, String
     auth::fetch_events(&token).await
 }
 
+/// L'épreuve est-elle publiée ? (0.3.5) `None` si le serveur ne le dit pas.
+///
+/// Demandé toutes les minutes tant que l'épreuve ouverte est en brouillon :
+/// dès qu'elle est publiée, l'avis disparaît et la file vidéo repart.
+#[tauri::command]
+pub async fn event_published(token: String, event_id: i64) -> Result<Option<bool>, String> {
+    auth::fetch_event_published(&token, event_id).await
+}
+
 #[tauri::command]
 pub async fn fetch_checkpoints(token: String, event_id: i64) -> Result<Vec<auth::Checkpoint>, String> {
     auth::fetch_checkpoints(&token, event_id).await
@@ -1348,6 +1357,17 @@ fn conclure_echec(
         return Err(e);
     }
 
+    // Épreuve en brouillon (0.3.5) : le serveur acceptera ces fichiers dès
+    // qu'elle sera publiée. Ils restent en file, sans consommer d'essai, et
+    // l'interface le dit au lieu de laisser « 3 en attente » sans raison.
+    if e == crate::video_uploader::EPREUVE_BROUILLON {
+        for element in elements {
+            crate::video_queue::liberer(conn, element.id)?;
+        }
+
+        return Ok(Some(serde_json::json!({ "unpublished": true })));
+    }
+
     if let Some(attente) = crate::video_uploader::attente_si_sature(&e) {
         for element in elements {
             crate::video_queue::liberer(conn, element.id)?;
@@ -1531,10 +1551,65 @@ pub async fn journal_append(lignes: Vec<crate::journal::LigneEcran>) {
     crate::journal::ecrire_lignes_ecran(&lignes);
 }
 
-/// Exporte le journal complet dans le fichier choisi par le photographe.
+/// Exporte le journal complet (0.3.5).
+///
+/// Plus de boîte « Enregistrer sous » : le fichier `nom` va dans le dossier
+/// d'export de l'agent, jamais dans un dossier surveillé (`surveilles` :
+/// dossiers photos et vidéo). Renvoie le chemin complet du fichier, que
+/// l'interface affiche, et ouvre l'Explorateur sur lui.
 #[tauri::command]
-pub async fn export_journal(destination: String) -> Result<u64, String> {
-    crate::journal::exporter(std::path::Path::new(&destination))
+pub async fn export_journal(
+    app: tauri::AppHandle,
+    nom: String,
+    surveilles: Vec<String>,
+) -> Result<String, String> {
+    use tauri::Manager;
+
+    if !crate::journal::nom_export_valide(&nom) {
+        return Err(format!("Nom de fichier refusé : {}", nom));
+    }
+
+    let surveilles: Vec<PathBuf> = surveilles
+        .iter()
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .map(PathBuf::from)
+        .collect();
+
+    let repli = database::dirs().join("exports");
+    let mut dossier = crate::journal::dossier_export(app.path().document_dir().ok(), &surveilles, repli.clone());
+
+    // Documents inaccessible en écriture (droits, dossier redirigé absent) :
+    // le dossier de données de l'agent.
+    if std::fs::create_dir_all(&dossier).is_err() {
+        dossier = repli;
+        std::fs::create_dir_all(&dossier)
+            .map_err(|e| format!("Impossible de créer {} : {}", dossier.display(), e))?;
+    }
+
+    let destination = dossier.join(&nom);
+    crate::journal::exporter(&destination)?;
+
+    info!("Journal exporté : {}", destination.display());
+    montrer_dans_l_explorateur(&destination);
+
+    Ok(destination.display().to_string())
+}
+
+/// Ouvre l'Explorateur sur le fichier, sélectionné. Sans effet hors de
+/// Windows ; un échec n'empêche rien, le chemin est affiché de toute façon.
+fn montrer_dans_l_explorateur(fichier: &std::path::Path) {
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+
+        let _ = std::process::Command::new("explorer")
+            .raw_arg(format!("/select,\"{}\"", fichier.display()))
+            .spawn();
+    }
+
+    #[cfg(not(windows))]
+    let _ = fichier;
 }
 
 /// Remet en file les éléments abandonnés.

@@ -19,6 +19,7 @@
         "photos_one": "{count} zdjęcie online",
         "photos_other": "{count} zdjęć online",
         "no_photos": "Brak zdjęć",
+        "draft": "Wersja robocza",
         "checkpoints_one": "{count} punkt kontrolny",
         "checkpoints_other": "{count} punktów kontrolnych",
         "logout_title": "Wyloguj się",
@@ -109,7 +110,11 @@
         "video_disk_detail": "zapisano {written} GB, zmierzone {rate} GB/godz.",
         "video_disk_estimated": "zapisano {written} GB, szacowane {rate} GB/godz.",
         "video_started": "Nagrywanie rozpoczęte — klip co {step} s",
-        "video_stopped": "Nagrywanie zatrzymane — utworzono {clips} klip(ów)",
+        "video_stopped": "Nagrywanie zatrzymane — w tym nagraniu utworzono {clips} klip(ów)",
+        "video_draft_waiting": "Klipy czekają: wydarzenie jest wersją roboczą. Opublikuj je w Attimo, a wysyłanie ruszy samo.",
+        "draft_notice": "Wydarzenie w wersji roboczej: opublikuj je w Attimo. Do tego czasu nic nie jest widoczne w galerii, a klipy wideo mogą czekać w agencie.",
+        "draft_published": "Wydarzenie opublikowane: oczekujące wysyłki są wznawiane.",
+        "already_note": "+ {count} już online",
         "video_clip_ready": "Klip {index} złożony",
         "video_clip_sent": "Klip {index} wysłany",
         "video_frames_ready": "Wyodrębniono {count} klatek do analizy",
@@ -186,7 +191,9 @@
     "complete": {
         "with_errors": "Gotowe: {sent} wysłanych, {failed} nieudanych",
         "success": "Gotowe: {count} zdjęć przesłanych pomyślnie!",
-        "already": "(w tym {count} już online, nie wysłano ponownie)"
+        "all_online": "Gotowe: nic do wysłania, wszystkie {count} zdjęcia są już online (nie wysłano ponownie)",
+        "sent_and_online": "Gotowe: wysłano {sent} zdjęć, {already} już online (nie wysłano ponownie)",
+        "sent_online_failed": "Gotowe: wysłano {sent}, {already} już online (nie wysłano ponownie), {failed} nieudanych"
     },
     "hd": {
         "title": "Wideo HD",
@@ -214,6 +221,7 @@
     "nav": {
         "banner_title": "Trwa sesja: {event}",
         "banner_photos": "wysłane zdjęcia: {sent}, oczekujące: {pending}",
+        "banner_photos_already": "Wysłano {sent} zdjęć, {already} już online, {pending} oczekuje",
         "banner_video_recording": "trwa nagrywanie wideo",
         "banner_video_paused": "wideo wstrzymane",
         "banner_video_sending": "pliki wideo do wysłania: {count}",
@@ -224,7 +232,8 @@
     },
     "journal": {
         "export": "Eksportuj dziennik",
-        "export_dialog": "Zapisz dziennik agenta",
+        "export_hint": "Eksportuj dziennik do Documents › Attimo Agent Terrain › Journaux",
+        "folder_opened": "Folder otworzy się w Eksploratorze plików.",
         "exported": "Dziennik wyeksportowany: {path}"
     }
 }

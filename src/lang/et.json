@@ -19,6 +19,7 @@
         "photos_one": "{count} foto veebis",
         "photos_other": "{count} fotot veebis",
         "no_photos": "Veel pole fotosid",
+        "draft": "Mustand",
         "checkpoints_one": "{count} kontrollpunkt",
         "checkpoints_other": "{count} kontrollpunkti",
         "logout_title": "Logi välja",
@@ -109,7 +110,11 @@
         "video_disk_detail": "{written} GB kirjutatud, mõõdetud {rate} GB/h",
         "video_disk_estimated": "{written} GB kirjutatud, hinnanguliselt {rate} GB/h",
         "video_started": "Salvestamine algas — klipp iga {step} sekundi järel",
-        "video_stopped": "Salvestamine peatus — valmis {clips} klippi",
+        "video_stopped": "Salvestamine peatus — selles salvestuses valmis {clips} klippi",
+        "video_draft_waiting": "Klipid ootavad: sündmus on mustand. Avaldage see Attimos ja saatmine algab iseenesest.",
+        "draft_notice": "Sündmus on mustand: avaldage see Attimos. Seni pole galeriis midagi näha ja videoklipid võivad agendis oodata.",
+        "draft_published": "Sündmus avaldatud: ootel üleslaadimised jätkuvad.",
+        "already_note": "+ {count} juba võrgus",
         "video_clip_ready": "Klipp {index} kokku pandud",
         "video_clip_sent": "Klipp {index} saadetud",
         "video_frames_ready": "Eraldatud {count} analüüsikaadrit",
@@ -186,7 +191,9 @@
     "complete": {
         "with_errors": "Valmis: {sent} saadetud, {failed} ebaõnnestunud",
         "success": "Valmis: {count} fotot edukalt üles laaditud!",
-        "already": "(neist {count} juba võrgus, uuesti ei saadetud)"
+        "all_online": "Valmis: pole midagi saata, kõik {count} fotot on juba võrgus (uuesti ei saadetud)",
+        "sent_and_online": "Valmis: saadetud {sent} fotot, {already} juba võrgus (uuesti ei saadetud)",
+        "sent_online_failed": "Valmis: saadetud {sent}, {already} juba võrgus (uuesti ei saadetud), {failed} ebaõnnestus"
     },
     "hd": {
         "title": "HD-video",
@@ -214,6 +221,7 @@
     "nav": {
         "banner_title": "Seanss käib: {event}",
         "banner_photos": "saadetud fotod: {sent}, ootel: {pending}",
+        "banner_photos_already": "Saadetud {sent} fotot, {already} juba võrgus, {pending} ootel",
         "banner_video_recording": "videosalvestus käib",
         "banner_video_paused": "video peatatud",
         "banner_video_sending": "saata videofaile: {count}",
@@ -224,7 +232,8 @@
     },
     "journal": {
         "export": "Ekspordi logi",
-        "export_dialog": "Salvesta agendi logi",
+        "export_hint": "Ekspordi logi kausta Documents › Attimo Agent Terrain › Journaux",
+        "folder_opened": "Kaust avaneb failihalduris.",
         "exported": "Logi eksporditud: {path}"
     }
 }

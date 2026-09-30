@@ -39,7 +39,7 @@ const AppState = {
     envoiSeul: false,
 
     // Derniers compteurs photo, pour le bandeau de session.
-    photoStats: { sent: 0, pending: 0, failed: 0 },
+    photoStats: { sent: 0, pending: 0, failed: 0, already: 0 },
 
     // Photo et vidéo tournent ensemble ou séparément (SAAS 430).
     photoEnabled: true,
@@ -295,6 +295,11 @@ async function loadEvents() {
                 ? '<span class="event-live">● LIVE</span>'
                 : '';
 
+            // Épreuve en brouillon (0.3.5) : à publier sur Attimo.
+            const brouillonHtml = event.is_published === false
+                ? `<span class="event-draft">${escapeHtml(t('events.draft'))}</span>`
+                : '';
+
             // L'épreuve dont la session tourne : un clic ramène à la
             // surveillance, sans rien relancer.
             const enCours = sessionEnCours() && AppState.activeEvent.id === event.id;
@@ -310,6 +315,7 @@ async function loadEvents() {
                     <span class="event-icon">${icon}</span>
                     <span class="event-name">${escapeHtml(event.name)}</span>
                     ${liveHtml}
+                    ${brouillonHtml}
                     ${runningHtml}
                 </div>
                 <div class="event-meta">
@@ -1028,8 +1034,9 @@ function preparerTableauDeBord(event) {
     document.getElementById('dash-event-name').textContent = event.name;
 
     // Reset des stats
-    AppState.photoStats = { sent: 0, pending: 0, failed: 0 };
+    AppState.photoStats = { sent: 0, pending: 0, failed: 0, already: 0 };
     document.getElementById('stat-sent').textContent = '0';
+    document.getElementById('stat-already').style.display = 'none';
     document.getElementById('stat-pending').textContent = '0';
     document.getElementById('stat-failed').textContent = '0';
     document.getElementById('stat-speed').textContent = '—';
@@ -1064,6 +1071,7 @@ function preparerTableauDeBord(event) {
 
     // Vidéo : compteurs de la nouvelle session
     videoSessionsCourantes = [];
+    videoDepartCaptation = 0;
     videoImages = 0;
     videoActivite = false;
     videoStatsEvenement = null;
@@ -1113,6 +1121,7 @@ async function startSession() {
 
     AppState.activeEvent = event;
     AppState.envoiSeul = false;
+    majAvisBrouillon();
 
     if (AppState.photoEnabled) {
         AppState.selectedCheckpoint = checkpointId ? { id: checkpointId, name: checkpointName } : null;
@@ -1243,6 +1252,7 @@ async function terminerSession() {
     AppState.activeEvent = null;
     AppState.envoiSeul = false;
     videoSessionsCourantes = [];
+    videoDepartCaptation = 0;
     videoActivite = false;
 
     majPanneauVideo();
@@ -1271,6 +1281,7 @@ async function demarrerEnvoiHdSeul() {
         preparerTableauDeBord(event);
         AppState.activeEvent = event;
         AppState.envoiSeul = true;
+        majAvisBrouillon();
 
         document.getElementById('dash-checkpoint-name').style.display = 'none';
         document.getElementById('dash-folder').textContent = '';
@@ -1409,6 +1420,8 @@ function initBandeauSession() {
 }
 
 function majBandeauSession() {
+    majAvisBrouillon();
+
     const bandeau = document.getElementById('session-banner');
 
     if (!bandeau) {
@@ -1431,10 +1444,19 @@ function majBandeauSession() {
     const parties = [];
 
     if (AppState.sessionId) {
-        parties.push(t('nav.banner_photos', {
-            sent: AppState.photoStats.sent,
-            pending: AppState.photoStats.pending
-        }));
+        const { envoyees, deja } = Affichage.comptePhotos(
+            AppState.photoStats.sent, AppState.photoStats.already);
+
+        parties.push(deja > 0
+            ? t('nav.banner_photos_already', {
+                sent: envoyees,
+                already: deja,
+                pending: AppState.photoStats.pending
+            })
+            : t('nav.banner_photos', {
+                sent: envoyees,
+                pending: AppState.photoStats.pending
+            }));
     }
 
     if (videoSessionId) {
@@ -1559,22 +1581,16 @@ async function initRustEventListeners() {
 
     // ── Stats mises à jour (après chaque upload) ──
     await listen('stats_updated', (event) => {
-        const { sent, pending, failed } = event.payload;
-        updateStats(sent, pending, failed);
+        const { sent, pending, failed, already } = event.payload;
+        updateStats(sent, pending, failed, already);
     });
 
     // ── Tous les fichiers traités ──
     await listen('all_complete', (event) => {
         const { total_sent, total_failed, total_already } = event.payload;
-        let msg = total_failed > 0
-            ? t('complete.with_errors', { sent: total_sent, failed: total_failed })
-            : t('complete.success', { count: total_sent });
 
-        if (total_already > 0) {
-            msg += ' ' + t('complete.already', { count: total_already });
-        }
-
-        addLogEntry(timeNow(), '—', 'success', msg);
+        addLogEntry(timeNow(), '—', 'success',
+            Affichage.bilanPhotos(total_sent, total_failed, total_already, t));
     });
 
     // ── Changement d'état réseau ──
@@ -1719,30 +1735,26 @@ setInterval(journaliserSurDisque, 1000);
 /**
  * « Exporter le journal » : un seul fichier, du plus ancien au plus récent,
  * à joindre à un compte rendu de test ou à un signalement.
+ *
+ * 0.3.5 — Plus de boîte « Enregistrer sous », qui s'ouvrait sur le dossier
+ * des photos : l'agent écrit dans Documents\Attimo Agent Terrain\Journaux,
+ * jamais dans un dossier surveillé, dit où, et ouvre ce dossier.
  */
 async function exporterJournal() {
     try {
         await journaliserSurDisque();
 
-        const { save } = window.__TAURI__.dialog;
         const d = new Date();
         const deux = (n) => String(n).padStart(2, '0');
-        const nom = `attimo-agent-journal-${d.getFullYear()}${deux(d.getMonth() + 1)}${deux(d.getDate())}-${deux(d.getHours())}${deux(d.getMinutes())}.log`;
+        const nom = `attimo-agent-journal-${d.getFullYear()}${deux(d.getMonth() + 1)}${deux(d.getDate())}-${deux(d.getHours())}${deux(d.getMinutes())}${deux(d.getSeconds())}.log`;
 
-        const destination = await save({
-            title: t('journal.export_dialog'),
-            defaultPath: nom,
-            filters: [{ name: 'Journal', extensions: ['log', 'txt'] }],
+        const destination = await invoke('export_journal', {
+            nom,
+            surveilles: [AppState.watchFolder, AppState.videoFolder].filter(Boolean)
         });
 
-        if (!destination) {
-            return;
-        }
-
-        await invoke('export_journal', { destination });
-
         addLogEntry(timeNow(), '—', 'success', t('journal.exported', { path: destination }));
-        alert(t('journal.exported', { path: destination }));
+        alert(t('journal.exported', { path: destination }) + '\n\n' + t('journal.folder_opened'));
     } catch (e) {
         addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: e }));
         alert(t('dashboard.msg_error', { error: e }));
@@ -1751,10 +1763,18 @@ async function exporterJournal() {
 
 // ─── Stats du dashboard ───
 
-function updateStats(sent, pending, failed) {
-    AppState.photoStats = { sent, pending, failed };
+function updateStats(sent, pending, failed, already) {
+    AppState.photoStats = { sent, pending, failed, already: already || 0 };
 
-    document.getElementById('stat-sent').textContent = sent;
+    // 0.3.5 — La tuile « Envoyées » ne compte que les photos parties ; celles
+    // que le serveur avait déjà sont dites dessous. La barre, elle, avance
+    // sur toutes les photos traitées.
+    const { envoyees, deja } = Affichage.comptePhotos(sent, already);
+    const note = document.getElementById('stat-already');
+
+    document.getElementById('stat-sent').textContent = envoyees;
+    note.textContent = deja > 0 ? t('dashboard.already_note', { count: deja }) : '';
+    note.style.display = deja > 0 ? 'block' : 'none';
     document.getElementById('stat-pending').textContent = pending;
     document.getElementById('stat-failed').textContent = failed;
 
@@ -1853,6 +1873,11 @@ let videoChronoTimer = null;
 // de chacune : épreuve, découpage, clips filmés et assemblés.
 let videoSessionsCourantes = [];
 const videoCaptations = {};
+
+// 0.3.5 — Rang, dans videoSessionsCourantes, du dernier « Démarrer » ou
+// « Relancer » : le message d'arrêt ne compte que les clips de cette
+// captation-là, pauses comprises, et non ceux des captations précédentes.
+let videoDepartCaptation = 0;
 
 // Réglages figés au premier démarrage : une reprise filme à l'identique,
 // même si l'écran de réglages a été modifié entre-temps.
@@ -1993,6 +2018,8 @@ async function demarrerCaptation(reprise) {
     const evenement = AppState.activeEvent;
 
     if (!reprise) {
+        videoDepartCaptation = videoSessionsCourantes.length;
+
         const selectCp = document.getElementById('config-video-checkpoint');
         videoCheckpointId = selectCp.value ? parseInt(selectCp.value, 10) : null;
         videoConfigCaptation = construireConfigVideo();
@@ -2225,6 +2252,10 @@ async function relancerCaptation() {
     videoTransition = 'resuming';
     majBoutonsVideo();
 
+    // Une relance ouvre une nouvelle captation : son message d'arrêt ne
+    // reprendra pas les clips de la précédente (0.3.5).
+    videoDepartCaptation = videoSessionsCourantes.length;
+
     let ok = false;
 
     try {
@@ -2319,7 +2350,7 @@ async function arreterCaptation() {
         }
 
         addLogEntry(timeNow(), '—', 'retry',
-            t('dashboard.video_stopped', { clips: videoTotal('assembles') }));
+            t('dashboard.video_stopped', { clips: videoTotalCaptation('assembles') }));
     })();
 
     try {
@@ -2442,7 +2473,19 @@ function compterClipsFilmes(sessionId, indexMorceau) {
  * Somme d'un compteur sur toutes les captations de la session.
  */
 function videoTotal(champ) {
-    return videoSessionsCourantes.reduce((somme, id) => {
+    return videoSomme(videoSessionsCourantes, champ);
+}
+
+/**
+ * Même somme, pour la seule captation en cours : depuis le dernier
+ * « Démarrer » ou « Relancer », pauses comprises (0.3.5).
+ */
+function videoTotalCaptation(champ) {
+    return videoSomme(videoSessionsCourantes.slice(videoDepartCaptation), champ);
+}
+
+function videoSomme(ids, champ) {
+    return ids.reduce((somme, id) => {
         const captation = videoCaptations[id];
         return somme + (captation ? captation[champ] : 0);
     }, 0);
@@ -3068,6 +3111,12 @@ async function traiterUnEnvoiVideo(voie) {
     }
 
     for (const eventId of ids) {
+        // Épreuve en brouillon (0.3.5) : redemandée toutes les minutes
+        // seulement, ou dès que sa publication est constatée.
+        if ((videoAttenteBrouillon[eventId] || 0) > Date.now()) {
+            continue;
+        }
+
         let resultat;
 
         try {
@@ -3106,7 +3155,13 @@ async function traiterUnEnvoiVideo(voie) {
             return resultat.throttled * 1000;
         }
 
+        if (resultat.unpublished) {
+            signalerBrouillon(eventId);
+            continue;
+        }
+
         if (resultat.detail) {
+            finBrouillon(eventId);
             journaliserEnvoiVideo(resultat.detail);
             rafraichirFileVideo();
             return 0;
@@ -3142,6 +3197,114 @@ async function traiterUnEnvoiVideo(voie) {
     }
 
     return 2000;
+}
+
+// ─── Épreuve en brouillon (0.3.5) ───
+//
+// Tant qu'une épreuve n'a jamais été publiée, elle n'a pas de galerie, et le
+// serveur refuse ses clips et ses images (« Event has no gallery. »). Avant,
+// l'écran montrait « 0 clips envoyés / 3 en attente » sans rien dire. Les
+// fichiers restent en file, l'agent le dit, et reprend seul à la publication.
+
+const ATTENTE_BROUILLON_MS = 60000;
+
+// Épreuve → instant avant lequel sa file vidéo n'est pas redemandée.
+const videoAttenteBrouillon = {};
+
+// Épreuves dont l'attente est déjà annoncée au journal.
+const videoBrouillonAnnonce = new Set();
+
+let brouillonTimer = null;
+
+function epreuveEnBrouillon() {
+    return !!AppState.activeEvent && AppState.activeEvent.is_published === false;
+}
+
+/**
+ * Avis du tableau de bord : l'épreuve ouverte est en brouillon. Tant qu'il
+ * est affiché, l'agent demande chaque minute si elle a été publiée.
+ */
+function majAvisBrouillon() {
+    const avis = document.getElementById('dash-draft-notice');
+    const brouillon = epreuveEnBrouillon();
+
+    if (avis) {
+        avis.textContent = brouillon ? t('dashboard.draft_notice') : '';
+        avis.style.display = brouillon ? '' : 'none';
+    }
+
+    if (brouillon && !brouillonTimer) {
+        brouillonTimer = setInterval(verifierPublication, ATTENTE_BROUILLON_MS);
+    } else if (!brouillon && brouillonTimer) {
+        clearInterval(brouillonTimer);
+        brouillonTimer = null;
+    }
+}
+
+/**
+ * Le serveur a refusé les fichiers d'une épreuve en brouillon : dit une
+ * fois, au journal et dans le bloc vidéo ; la file de cette épreuve attend.
+ */
+function signalerBrouillon(eventId) {
+    videoAttenteBrouillon[eventId] = Date.now() + ATTENTE_BROUILLON_MS;
+
+    if (AppState.activeEvent && AppState.activeEvent.id === eventId
+        && AppState.activeEvent.is_published !== false) {
+        AppState.activeEvent.is_published = false;
+        majAvisBrouillon();
+    }
+
+    if (!videoBrouillonAnnonce.has(eventId)) {
+        videoBrouillonAnnonce.add(eventId);
+
+        const message = t('dashboard.video_draft_waiting');
+        addLogEntry(timeNow(), '—', 'retry', message);
+        videoAvis = message;
+        majPanneauVideo();
+    }
+}
+
+/**
+ * Un envoi est passé : l'épreuve n'est plus en attente de publication.
+ */
+function finBrouillon(eventId) {
+    delete videoAttenteBrouillon[eventId];
+
+    if (videoBrouillonAnnonce.delete(eventId) && videoAvis === t('dashboard.video_draft_waiting')) {
+        videoAvis = null;
+        majPanneauVideo();
+    }
+}
+
+/**
+ * L'épreuve ouverte a-t-elle été publiée depuis ? Si oui, l'avis disparaît
+ * et la file vidéo repart tout de suite.
+ */
+async function verifierPublication() {
+    const evenement = AppState.activeEvent;
+
+    if (!evenement || evenement.is_published !== false || !AppState.token) {
+        majAvisBrouillon();
+        return;
+    }
+
+    try {
+        const publiee = await invoke('event_published', {
+            token: AppState.token,
+            eventId: evenement.id
+        });
+
+        if (publiee !== true || AppState.activeEvent !== evenement) {
+            return;
+        }
+
+        evenement.is_published = true;
+        finBrouillon(evenement.id);
+        addLogEntry(timeNow(), '—', 'success', t('dashboard.draft_published'));
+        majAvisBrouillon();
+    } catch (e) {
+        console.error('Publication check error:', e);
+    }
 }
 
 /**

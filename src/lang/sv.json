@@ -19,6 +19,7 @@
         "photos_one": "{count} foto online",
         "photos_other": "{count} foton online",
         "no_photos": "Inga foton ännu",
+        "draft": "Utkast",
         "checkpoints_one": "{count} checkpoint",
         "checkpoints_other": "{count} checkpoints",
         "logout_title": "Logga ut",
@@ -109,7 +110,11 @@
         "video_disk_detail": "{written} GB skrivet, {rate} GB/h uppmätt",
         "video_disk_estimated": "{written} GB skrivet, {rate} GB/h uppskattat",
         "video_started": "Inspelning startad — ett klipp var {step} s",
-        "video_stopped": "Inspelning stoppad — {clips} klipp skapade",
+        "video_stopped": "Inspelning stoppad — {clips} klipp skapade i denna inspelning",
+        "video_draft_waiting": "Klipp väntar: evenemanget är ett utkast. Publicera det på Attimo så startar sändningen av sig själv.",
+        "draft_notice": "Evenemang i utkast: publicera det på Attimo. Tills dess syns inget i galleriet och videoklipp kan bli kvar i agenten.",
+        "draft_published": "Evenemang publicerat: väntande uppladdningar återupptas.",
+        "already_note": "+ {count} redan online",
         "video_clip_ready": "Klipp {index} sammanfogat",
         "video_clip_sent": "Klipp {index} skickat",
         "video_frames_ready": "{count} analysbild(er) uttagna",
@@ -186,7 +191,9 @@
     "complete": {
         "with_errors": "Klart: {sent} skickade, {failed} misslyckade",
         "success": "Klart: {count} foton uppladdade!",
-        "already": "(varav {count} redan online, skickades inte igen)"
+        "all_online": "Klart: inget att skicka, alla {count} foton finns redan online (skickas inte igen)",
+        "sent_and_online": "Klart: {sent} foto(n) skickade, {already} redan online (skickas inte igen)",
+        "sent_online_failed": "Klart: {sent} skickade, {already} redan online (skickas inte igen), {failed} misslyckades"
     },
     "hd": {
         "title": "HD-video",
@@ -214,6 +221,7 @@
     "nav": {
         "banner_title": "Pågående session: {event}",
         "banner_photos": "{sent} foto(n) skickade, {pending} väntar",
+        "banner_photos_already": "{sent} foto(n) skickade, {already} redan online, {pending} väntar",
         "banner_video_recording": "videoinspelning pågår",
         "banner_video_paused": "video pausad",
         "banner_video_sending": "{count} videofil(er) att skicka",
@@ -224,7 +232,8 @@
     },
     "journal": {
         "export": "Exportera logg",
-        "export_dialog": "Spara agentens logg",
+        "export_hint": "Exportera loggen till Documents › Attimo Agent Terrain › Journaux",
+        "folder_opened": "Mappen öppnas i Utforskaren.",
         "exported": "Logg exporterad: {path}"
     }
 }

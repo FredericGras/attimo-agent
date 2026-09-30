@@ -137,3 +137,26 @@ test('écran des épreuves : champs présents ou absents, sans erreur', () => {
     assert.strictEqual(A.videosEnLigne(undefined, tPlural), null);
     assert.strictEqual(A.videosEnLigne(null, tPlural), null);
 });
+
+// 0.3.5 — « 25 envoyées (dont 25 déjà en ligne) » : les photos parties et
+// celles que le serveur avait déjà ne sont plus mêlées.
+test('bilan photos : toutes déjà en ligne, aucune envoyée', () => {
+    assert.strictEqual(A.bilanPhotos(25, 0, 25, t), 'complete.all_online{"count":25}');
+});
+
+test('bilan photos : envoyées et déjà en ligne, comptées à part', () => {
+    assert.strictEqual(A.bilanPhotos(25, 0, 5, t), 'complete.sent_and_online{"sent":20,"already":5}');
+    assert.strictEqual(A.bilanPhotos(25, 2, 5, t),
+        'complete.sent_online_failed{"sent":20,"already":5,"failed":2}');
+});
+
+test('bilan photos : sans photo déjà en ligne, libellés inchangés', () => {
+    assert.strictEqual(A.bilanPhotos(25, 0, 0, t), 'complete.success{"count":25}');
+    assert.strictEqual(A.bilanPhotos(25, 3, 0, t), 'complete.with_errors{"sent":25,"failed":3}');
+});
+
+test('tuile « Envoyées » : seules les photos parties', () => {
+    assert.deepStrictEqual({ ...A.comptePhotos(25, 25) }, { envoyees: 0, deja: 25 });
+    assert.deepStrictEqual({ ...A.comptePhotos(30, 4) }, { envoyees: 26, deja: 4 });
+    assert.deepStrictEqual({ ...A.comptePhotos(7, undefined) }, { envoyees: 7, deja: 0 });
+});

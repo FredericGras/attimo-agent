@@ -135,6 +135,7 @@ pub fn run() {
             commands::agent_info,
             // Événements (Phase 3)
             commands::fetch_events,
+            commands::event_published,
             commands::fetch_checkpoints,
             // Session de surveillance (Phase 4)
             commands::start_session,

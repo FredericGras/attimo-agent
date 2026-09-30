@@ -19,6 +19,7 @@
         "photos_one": "{count} ritratt online",
         "photos_other": "{count} ritratti online",
         "no_photos": "Għad m'hemm l-ebda ritratti",
+        "draft": "Abbozz",
         "checkpoints_one": "{count} checkpoint",
         "checkpoints_other": "{count} checkpoints",
         "logout_title": "Oħroġ",
@@ -109,7 +110,11 @@
         "video_disk_detail": "{written} GB miktuba, {rate} GB/siegħa mkejla",
         "video_disk_estimated": "{written} GB miktuba, {rate} GB/siegħa stmati",
         "video_started": "Ir-reġistrazzjoni bdiet — clip kull {step} s",
-        "video_stopped": "Ir-reġistrazzjoni waqfet — {clips} clips maħluqa",
+        "video_stopped": "Ir-reġistrazzjoni waqfet — {clips} clips maħluqa f'din ir-reġistrazzjoni",
+        "video_draft_waiting": "Clips jistennew: l-avveniment huwa abbozz. Ippubblikah fuq Attimo u l-bgħit jibda waħdu.",
+        "draft_notice": "Avveniment f'abbozz: ippubblikah fuq Attimo. Sa dakinhar xejn ma jidher fil-gallerija u l-clips tal-vidjo jistgħu jibqgħu jistennew fl-aġent.",
+        "draft_published": "Avveniment ippubblikat: it-tlugħ li kien qed jistenna jerġa' jibda.",
+        "already_note": "+ {count} diġà online",
         "video_clip_ready": "Clip {index} immuntat",
         "video_clip_sent": "Clip {index} mibgħut",
         "video_frames_ready": "Inġabru {count} frejms tal-analiżi",
@@ -186,7 +191,9 @@
     "complete": {
         "with_errors": "Lest: {sent} mibgħuta, {failed} fallew",
         "success": "Lest: {count} ritratti ttellgħu b'suċċess!",
-        "already": "(li minnhom {count} diġà online, ma ntbagħtux mill-ġdid)"
+        "all_online": "Lest: xejn x'jintbagħat, ir-{count} ritratti kollha diġà online (ma ntbagħtux mill-ġdid)",
+        "sent_and_online": "Lest: {sent} ritratt(i) mibgħuta, {already} diġà online (ma ntbagħtux mill-ġdid)",
+        "sent_online_failed": "Lest: {sent} mibgħuta, {already} diġà online (ma ntbagħtux mill-ġdid), {failed} fallew"
     },
     "hd": {
         "title": "Vidjo HD",
@@ -214,6 +221,7 @@
     "nav": {
         "banner_title": "Sessjoni għaddejja: {event}",
         "banner_photos": "ritratti mibgħuta: {sent}, jistennew: {pending}",
+        "banner_photos_already": "{sent} ritratt(i) mibgħuta, {already} diġà online, {pending} jistennew",
         "banner_video_recording": "reġistrazzjoni tal-vidjo għaddejja",
         "banner_video_paused": "vidjo f'pawża",
         "banner_video_sending": "fajls tal-vidjo li jridu jintbagħtu: {count}",
@@ -224,7 +232,8 @@
     },
     "journal": {
         "export": "Esporta l-ġurnal",
-        "export_dialog": "Issejvja l-ġurnal tal-aġent",
+        "export_hint": "Esporta r-reġistru f'Documents › Attimo Agent Terrain › Journaux",
+        "folder_opened": "Il-folder jinfetaħ f'File Explorer.",
         "exported": "Ġurnal esportat: {path}"
     }
 }

@@ -21,6 +21,7 @@
         "photos_one": "{count} photo en ligne",
         "photos_other": "{count} photos en ligne",
         "no_photos": "Pas encore de photos",
+        "draft": "Brouillon",
         "checkpoints_one": "{count} checkpoint",
         "checkpoints_other": "{count} checkpoints",
         "logout_title": "Déconnexion",
@@ -113,7 +114,11 @@
         "video_disk_detail": "{written} Go écrits, {rate} Go/h mesurés",
         "video_disk_estimated": "{written} Go écrits, {rate} Go/h estimés",
         "video_started": "Captation démarrée — un clip toutes les {step} s",
-        "video_stopped": "Captation arrêtée — {clips} clip(s) produit(s)",
+        "video_stopped": "Captation arrêtée — {clips} clip(s) produit(s) par cette captation",
+        "video_draft_waiting": "Clips en attente : l'épreuve est en brouillon. Publiez-la sur Attimo, l'envoi partira de lui-même.",
+        "draft_notice": "Épreuve en brouillon : publiez-la sur Attimo. Tant qu'elle ne l'est pas, rien n'est visible dans la galerie et les clips vidéo peuvent rester en attente dans l'agent.",
+        "draft_published": "Épreuve publiée : les envois en attente repartent.",
+        "already_note": "+ {count} déjà en ligne",
         "video_clip_ready": "Clip {index} assemblé",
         "video_clip_sent": "Clip {index} envoyé",
         "video_frames_ready": "{count} image(s) d'analyse extraite(s)",
@@ -194,7 +199,9 @@
     "complete": {
         "with_errors": "Terminé : {sent} envoyées, {failed} en échec",
         "success": "Terminé : {count} photos envoyées avec succès !",
-        "already": "(dont {count} déjà en ligne, non renvoyées)"
+        "all_online": "Terminé : aucune photo à envoyer, les {count} sont déjà en ligne (non renvoyées)",
+        "sent_and_online": "Terminé : {sent} photo(s) envoyée(s), {already} déjà en ligne (non renvoyées)",
+        "sent_online_failed": "Terminé : {sent} envoyée(s), {already} déjà en ligne (non renvoyées), {failed} en échec"
     },
 
     "hd": {
@@ -224,6 +231,7 @@
     "nav": {
         "banner_title": "Session en cours : {event}",
         "banner_photos": "{sent} photo(s) envoyée(s), {pending} en attente",
+        "banner_photos_already": "{sent} photo(s) envoyée(s), {already} déjà en ligne, {pending} en attente",
         "banner_video_recording": "captation vidéo en cours",
         "banner_video_paused": "vidéo en pause",
         "banner_video_sending": "{count} fichier(s) vidéo à envoyer",
@@ -235,7 +243,8 @@
 
     "journal": {
         "export": "Exporter le journal",
-        "export_dialog": "Enregistrer le journal de l'agent",
+        "export_hint": "Exporter le journal dans Documents › Attimo Agent Terrain › Journaux",
+        "folder_opened": "Le dossier s'ouvre dans l'Explorateur de fichiers.",
         "exported": "Journal exporté : {path}"
     }
 }

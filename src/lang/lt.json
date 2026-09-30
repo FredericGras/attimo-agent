@@ -19,6 +19,7 @@
         "photos_one": "{count} nuotrauka internete",
         "photos_other": "{count} nuotraukų internete",
         "no_photos": "Dar nėra nuotraukų",
+        "draft": "Juodraštis",
         "checkpoints_one": "{count} kontrolinis taškas",
         "checkpoints_other": "{count} kontrolinių taškų",
         "logout_title": "Atsijungti",
@@ -109,7 +110,11 @@
         "video_disk_detail": "įrašyta {written} GB, išmatuota {rate} GB/val.",
         "video_disk_estimated": "įrašyta {written} GB, numatoma {rate} GB/val.",
         "video_started": "Įrašymas pradėtas — klipas kas {step} s",
-        "video_stopped": "Įrašymas sustabdytas — sukurta {clips} klipų",
+        "video_stopped": "Įrašymas sustabdytas — šiame įraše sukurta {clips} klipų",
+        "video_draft_waiting": "Klipai laukia: renginys yra juodraštis. Paskelbkite jį Attimo ir siuntimas prasidės savaime.",
+        "draft_notice": "Renginys yra juodraštis: paskelbkite jį Attimo. Iki tol galerijoje nieko nesimato, o vaizdo klipai gali laukti agente.",
+        "draft_published": "Renginys paskelbtas: laukiantys siuntimai tęsiami.",
+        "already_note": "+ {count} jau internete",
         "video_clip_ready": "Klipas {index} sumontuotas",
         "video_clip_sent": "Klipas {index} išsiųstas",
         "video_frames_ready": "Išgauta {count} analizės kadrų",
@@ -186,7 +191,9 @@
     "complete": {
         "with_errors": "Baigta: {sent} išsiųsta, {failed} nepavyko",
         "success": "Baigta: {count} nuotraukų sėkmingai įkelta!",
-        "already": "(iš jų {count} jau internete, pakartotinai nesiųstos)"
+        "all_online": "Baigta: nėra ką siųsti, visos {count} nuotraukos jau internete (iš naujo nesiųstos)",
+        "sent_and_online": "Baigta: išsiųsta {sent} nuotraukų, {already} jau internete (iš naujo nesiųstos)",
+        "sent_online_failed": "Baigta: išsiųsta {sent}, {already} jau internete (iš naujo nesiųstos), {failed} nepavyko"
     },
     "hd": {
         "title": "HD vaizdas",
@@ -214,6 +221,7 @@
     "nav": {
         "banner_title": "Vyksta seansas: {event}",
         "banner_photos": "išsiųsta nuotraukų: {sent}, laukia: {pending}",
+        "banner_photos_already": "Išsiųsta {sent} nuotraukų, {already} jau internete, {pending} laukia",
         "banner_video_recording": "vyksta vaizdo įrašymas",
         "banner_video_paused": "vaizdas pristabdytas",
         "banner_video_sending": "vaizdo failai siuntimui: {count}",
@@ -224,7 +232,8 @@
     },
     "journal": {
         "export": "Eksportuoti žurnalą",
-        "export_dialog": "Išsaugoti agento žurnalą",
+        "export_hint": "Eksportuoti žurnalą į Documents › Attimo Agent Terrain › Journaux",
+        "folder_opened": "Aplankas atsidaro failų naršyklėje.",
         "exported": "Žurnalas eksportuotas: {path}"
     }
 }

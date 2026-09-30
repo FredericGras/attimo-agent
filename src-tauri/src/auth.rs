@@ -77,6 +77,11 @@ pub struct SportEvent {
     pub is_live: bool,
     pub checkpoints: Vec<Checkpoint>,
 
+    /// Épreuve publiée (0.3.5). `false` : brouillon. Absent : inconnu, rien
+    /// n'est affiché.
+    #[serde(default)]
+    pub is_published: Option<bool>,
+
     /// Vidéos en ligne pour l'épreuve (0.3.3). Le serveur ne l'envoie pas
     /// encore : absent, rien ne s'affiche.
     #[serde(default, alias = "videos_count")]
@@ -348,6 +353,44 @@ pub async fn fetch_events(token: &str) -> Result<Vec<SportEvent>, String> {
     Ok(api_response.data.unwrap_or_default())
 }
 
+/// Publication d'une épreuve : GET /api/sport/events/{id}/status (0.3.5).
+///
+/// `None` si la réponse ne porte pas l'information.
+pub async fn fetch_event_published(token: &str, event_id: i64) -> Result<Option<bool>, String> {
+    let client = http_client()?;
+    let url = format!("{}/api/sport/events/{}/status", API_BASE_URL, event_id);
+
+    let response = client
+        .get(&url)
+        .header("Accept", "application/json")
+        .bearer_auth(token)
+        .send()
+        .await
+        .map_err(|e| format!("Erreur réseau: {}", e))?;
+
+    let status = response.status();
+
+    if status == reqwest::StatusCode::UNAUTHORIZED {
+        return Err("SESSION_EXPIRED".to_string());
+    }
+
+    if !status.is_success() {
+        return Err(format!("Erreur serveur ({})", status.as_u16()));
+    }
+
+    let corps: serde_json::Value = response
+        .json()
+        .await
+        .map_err(|e| format!("Erreur lecture réponse: {}", e))?;
+
+    Ok(publication_dans(&corps))
+}
+
+/// `data.event.is_published` de la réponse de statut.
+fn publication_dans(corps: &serde_json::Value) -> Option<bool> {
+    corps.pointer("/data/event/is_published").and_then(|v| v.as_bool())
+}
+
 /// Récupère les checkpoints d'un événement : GET /api/sport/events/{id}/checkpoints
 pub async fn fetch_checkpoints(token: &str, event_id: i64) -> Result<Vec<Checkpoint>, String> {
     let client = http_client()?;
@@ -406,5 +449,22 @@ mod tests {
         let e: SportEvent = serde_json::from_str(demain).unwrap();
         assert_eq!(e.video_count, Some(19));
         assert_eq!(e.recognition_mode.as_deref(), Some("mixed"));
+        assert_eq!(e.is_published, None);
+    }
+
+    #[test]
+    fn le_brouillon_se_lit_dans_la_liste_et_dans_le_statut() {
+        let brouillon = r#"{"id":1,"name":"V9","event_date":null,"sport_type":"running",
+            "photo_count":0,"is_live":false,"is_published":false,"checkpoints":[]}"#;
+
+        let e: SportEvent = serde_json::from_str(brouillon).unwrap();
+        assert_eq!(e.is_published, Some(false));
+
+        let statut: serde_json::Value = serde_json::from_str(
+            r#"{"success":true,"data":{"event":{"id":1,"is_live":false,"is_published":true}}}"#,
+        )
+        .unwrap();
+        assert_eq!(publication_dans(&statut), Some(true));
+        assert_eq!(publication_dans(&serde_json::json!({"success": true})), None);
     }
 }

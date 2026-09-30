@@ -19,6 +19,7 @@
         "photos_one": "{count} fotografie online",
         "photos_other": "{count} fotografii online",
         "no_photos": "Nicio fotografie încă",
+        "draft": "Ciornă",
         "checkpoints_one": "{count} punct de control",
         "checkpoints_other": "{count} puncte de control",
         "logout_title": "Deconectare",
@@ -109,7 +110,11 @@
         "video_disk_detail": "{written} GB scriși, {rate} GB/h măsurați",
         "video_disk_estimated": "{written} GB scriși, {rate} GB/h estimați",
         "video_started": "Înregistrare pornită — un clip la fiecare {step} s",
-        "video_stopped": "Înregistrare oprită — {clips} clip(uri) produse",
+        "video_stopped": "Înregistrare oprită — {clips} clip(uri) produse în această înregistrare",
+        "video_draft_waiting": "Clipuri în așteptare: evenimentul este ciornă. Publicați-l pe Attimo și trimiterea va porni singură.",
+        "draft_notice": "Eveniment în ciornă: publicați-l pe Attimo. Până atunci nu se vede nimic în galerie, iar clipurile video pot rămâne în așteptare în agent.",
+        "draft_published": "Eveniment publicat: trimiterile în așteptare se reiau.",
+        "already_note": "+ {count} deja online",
         "video_clip_ready": "Clipul {index} asamblat",
         "video_clip_sent": "Clipul {index} trimis",
         "video_frames_ready": "{count} imagini de analiză extrase",
@@ -186,7 +191,9 @@
     "complete": {
         "with_errors": "Terminat: {sent} trimise, {failed} eșuate",
         "success": "Terminat: {count} fotografii încărcate cu succes!",
-        "already": "(dintre care {count} deja online, neretrimise)"
+        "all_online": "Gata: nimic de trimis, toate cele {count} fotografii sunt deja online (netrimise din nou)",
+        "sent_and_online": "Gata: {sent} fotografie(i) trimisă(e), {already} deja online (netrimise din nou)",
+        "sent_online_failed": "Gata: {sent} trimisă(e), {already} deja online (netrimise din nou), {failed} eșuate"
     },
     "hd": {
         "title": "Video HD",
@@ -214,6 +221,7 @@
     "nav": {
         "banner_title": "Sesiune în curs: {event}",
         "banner_photos": "{sent} fotografi(i) trimise, {pending} în așteptare",
+        "banner_photos_already": "{sent} fotografie(i) trimisă(e), {already} deja online, {pending} în așteptare",
         "banner_video_recording": "înregistrare video în curs",
         "banner_video_paused": "video în pauză",
         "banner_video_sending": "{count} fișier(e) video de trimis",
@@ -224,7 +232,8 @@
     },
     "journal": {
         "export": "Exportați jurnalul",
-        "export_dialog": "Salvați jurnalul agentului",
+        "export_hint": "Exportați jurnalul în Documents › Attimo Agent Terrain › Journaux",
+        "folder_opened": "Dosarul se deschide în Explorer.",
         "exported": "Jurnal exportat: {path}"
     }
 }

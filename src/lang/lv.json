@@ -19,6 +19,7 @@
         "photos_one": "{count} foto tiešsaistē",
         "photos_other": "{count} foto tiešsaistē",
         "no_photos": "Pagaidām nav fotoattēlu",
+        "draft": "Melnraksts",
         "checkpoints_one": "{count} kontrolpunkts",
         "checkpoints_other": "{count} kontrolpunkti",
         "logout_title": "Iziet",
@@ -109,7 +110,11 @@
         "video_disk_detail": "ierakstīti {written} GB, izmērīti {rate} GB/h",
         "video_disk_estimated": "ierakstīti {written} GB, aplēsti {rate} GB/h",
         "video_started": "Ierakstīšana sākta — klips ik pēc {step} s",
-        "video_stopped": "Ierakstīšana apturēta — izveidoti {clips} klipi",
+        "video_stopped": "Ierakstīšana apturēta — šajā ierakstā izveidoti {clips} klipi",
+        "video_draft_waiting": "Klipi gaida: pasākums ir melnraksts. Publicējiet to Attimo, un sūtīšana sāksies pati.",
+        "draft_notice": "Pasākums ir melnraksts: publicējiet to Attimo. Līdz tam galerijā nekas nav redzams, un videoklipi var gaidīt aģentā.",
+        "draft_published": "Pasākums publicēts: gaidošās augšupielādes turpinās.",
+        "already_note": "+ {count} jau tiešsaistē",
         "video_clip_ready": "Klips {index} samontēts",
         "video_clip_sent": "Klips {index} nosūtīts",
         "video_frames_ready": "Iegūti {count} analīzes attēli",
@@ -186,7 +191,9 @@
     "complete": {
         "with_errors": "Gatavs: {sent} nosūtīti, {failed} neizdevušies",
         "success": "Gatavs: {count} fotoattēli veiksmīgi augšupielādēti!",
-        "already": "(no tiem {count} jau tiešsaistē, atkārtoti netika sūtīti)"
+        "all_online": "Gatavs: nav ko sūtīt, visi {count} fotoattēli jau ir tiešsaistē (atkārtoti nav sūtīti)",
+        "sent_and_online": "Gatavs: nosūtīti {sent} fotoattēli, {already} jau tiešsaistē (atkārtoti nav sūtīti)",
+        "sent_online_failed": "Gatavs: nosūtīti {sent}, {already} jau tiešsaistē (atkārtoti nav sūtīti), {failed} neizdevās"
     },
     "hd": {
         "title": "HD video",
@@ -214,6 +221,7 @@
     "nav": {
         "banner_title": "Notiek sesija: {event}",
         "banner_photos": "nosūtīti fotoattēli: {sent}, gaida: {pending}",
+        "banner_photos_already": "Nosūtīti {sent} fotoattēli, {already} jau tiešsaistē, {pending} gaida",
         "banner_video_recording": "notiek video ierakstīšana",
         "banner_video_paused": "video pauzēts",
         "banner_video_sending": "video faili nosūtīšanai: {count}",
@@ -224,7 +232,8 @@
     },
     "journal": {
         "export": "Eksportēt žurnālu",
-        "export_dialog": "Saglabāt aģenta žurnālu",
+        "export_hint": "Eksportēt žurnālu uz Documents › Attimo Agent Terrain › Journaux",
+        "folder_opened": "Mape tiek atvērta failu pārlūkā.",
         "exported": "Žurnāls eksportēts: {path}"
     }
 }

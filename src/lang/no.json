@@ -19,6 +19,7 @@
         "photos_one": "{count} bilde online",
         "photos_other": "{count} bilder online",
         "no_photos": "Ingen bilder ennå",
+        "draft": "Utkast",
         "checkpoints_one": "{count} checkpoint",
         "checkpoints_other": "{count} checkpoints",
         "logout_title": "Logg ut",
@@ -109,7 +110,11 @@
         "video_disk_detail": "{written} GB skrevet, {rate} GB/t målt",
         "video_disk_estimated": "{written} GB skrevet, {rate} GB/t anslått",
         "video_started": "Opptak startet — ett klipp hvert {step}. sekund",
-        "video_stopped": "Opptak stoppet — {clips} klipp laget",
+        "video_stopped": "Opptak stoppet — {clips} klipp laget i dette opptaket",
+        "video_draft_waiting": "Klipp venter: arrangementet er et utkast. Publiser det på Attimo, så starter sendingen av seg selv.",
+        "draft_notice": "Arrangement i utkast: publiser det på Attimo. Inntil da er ingenting synlig i galleriet, og videoklipp kan bli liggende i agenten.",
+        "draft_published": "Arrangement publisert: ventende opplastinger fortsetter.",
+        "already_note": "+ {count} allerede på nett",
         "video_clip_ready": "Klipp {index} satt sammen",
         "video_clip_sent": "Klipp {index} sendt",
         "video_frames_ready": "{count} analysebilde(r) hentet ut",
@@ -186,7 +191,9 @@
     "complete": {
         "with_errors": "Ferdig: {sent} sendt, {failed} mislykket",
         "success": "Ferdig: {count} bilder lastet opp!",
-        "already": "(hvorav {count} allerede på nett, ikke sendt på nytt)"
+        "all_online": "Ferdig: ingenting å sende, alle {count} bildene er allerede på nett (ikke sendt på nytt)",
+        "sent_and_online": "Ferdig: {sent} bilde(r) sendt, {already} allerede på nett (ikke sendt på nytt)",
+        "sent_online_failed": "Ferdig: {sent} sendt, {already} allerede på nett (ikke sendt på nytt), {failed} mislyktes"
     },
     "hd": {
         "title": "HD-video",
@@ -214,6 +221,7 @@
     "nav": {
         "banner_title": "Økt pågår: {event}",
         "banner_photos": "{sent} bilde(r) sendt, {pending} venter",
+        "banner_photos_already": "{sent} bilde(r) sendt, {already} allerede på nett, {pending} venter",
         "banner_video_recording": "videoopptak pågår",
         "banner_video_paused": "video på pause",
         "banner_video_sending": "{count} videofil(er) å sende",
@@ -224,7 +232,8 @@
     },
     "journal": {
         "export": "Eksporter logg",
-        "export_dialog": "Lagre agentens logg",
+        "export_hint": "Eksporter loggen til Documents › Attimo Agent Terrain › Journaux",
+        "folder_opened": "Mappen åpnes i Filutforsker.",
         "exported": "Logg eksportert: {path}"
     }
 }

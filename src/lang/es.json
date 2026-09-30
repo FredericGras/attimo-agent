@@ -19,6 +19,7 @@
         "photos_one": "{count} foto en línea",
         "photos_other": "{count} fotos en línea",
         "no_photos": "Aún no hay fotos",
+        "draft": "Borrador",
         "checkpoints_one": "{count} checkpoint",
         "checkpoints_other": "{count} checkpoints",
         "logout_title": "Cerrar sesión",
@@ -109,7 +110,11 @@
         "video_disk_detail": "{written} GB escritos, {rate} GB/h medidos",
         "video_disk_estimated": "{written} GB escritos, {rate} GB/h estimados",
         "video_started": "Grabación iniciada — un clip cada {step} s",
-        "video_stopped": "Grabación detenida — {clips} clip(s) creado(s)",
+        "video_stopped": "Grabación detenida — {clips} clip(s) creado(s) en esta grabación",
+        "video_draft_waiting": "Clips en espera: el evento está en borrador. Publícalo en Attimo y el envío empezará solo.",
+        "draft_notice": "Evento en borrador: publícalo en Attimo. Mientras tanto, no se ve nada en la galería y los clips de vídeo pueden quedar en espera en el agente.",
+        "draft_published": "Evento publicado: los envíos en espera se reanudan.",
+        "already_note": "+ {count} ya en línea",
         "video_clip_ready": "Clip {index} montado",
         "video_clip_sent": "Clip {index} enviado",
         "video_frames_ready": "{count} imagen(es) de análisis extraída(s)",
@@ -186,7 +191,9 @@
     "complete": {
         "with_errors": "Terminado: {sent} enviadas, {failed} fallidas",
         "success": "¡Terminado: {count} fotos subidas con éxito!",
-        "already": "(de ellas {count} ya en línea, no reenviadas)"
+        "all_online": "Terminado: nada que enviar, las {count} fotos ya están en línea (no reenviadas)",
+        "sent_and_online": "Terminado: {sent} foto(s) enviada(s), {already} ya en línea (no reenviadas)",
+        "sent_online_failed": "Terminado: {sent} enviada(s), {already} ya en línea (no reenviadas), {failed} con error"
     },
     "hd": {
         "title": "Vídeo HD",
@@ -214,6 +221,7 @@
     "nav": {
         "banner_title": "Sesión en curso: {event}",
         "banner_photos": "{sent} foto(s) enviada(s), {pending} pendiente(s)",
+        "banner_photos_already": "{sent} foto(s) enviada(s), {already} ya en línea, {pending} en espera",
         "banner_video_recording": "grabación de vídeo en curso",
         "banner_video_paused": "vídeo en pausa",
         "banner_video_sending": "{count} archivo(s) de vídeo por enviar",
@@ -224,7 +232,8 @@
     },
     "journal": {
         "export": "Exportar el registro",
-        "export_dialog": "Guardar el registro del agente",
+        "export_hint": "Exportar el registro a Documents › Attimo Agent Terrain › Journaux",
+        "folder_opened": "La carpeta se abre en el Explorador de archivos.",
         "exported": "Registro exportado: {path}"
     }
 }

@@ -19,6 +19,7 @@
         "photos_one": "{count} fotoğraf çevrimiçi",
         "photos_other": "{count} fotoğraf çevrimiçi",
         "no_photos": "Henüz fotoğraf yok",
+        "draft": "Taslak",
         "checkpoints_one": "{count} kontrol noktası",
         "checkpoints_other": "{count} kontrol noktası",
         "logout_title": "Çıkış yap",
@@ -109,7 +110,11 @@
         "video_disk_detail": "{written} GB yazıldı, ölçülen {rate} GB/saat",
         "video_disk_estimated": "{written} GB yazıldı, tahmini {rate} GB/saat",
         "video_started": "Çekim başladı — her {step} sn'de bir klip",
-        "video_stopped": "Çekim durdu — {clips} klip üretildi",
+        "video_stopped": "Çekim durdu — bu çekimde {clips} klip üretildi",
+        "video_draft_waiting": "Klipler bekliyor: etkinlik taslak durumunda. Attimo'da yayınlayın, gönderim kendiliğinden başlar.",
+        "draft_notice": "Taslak etkinlik: Attimo'da yayınlayın. O zamana kadar galeride hiçbir şey görünmez ve video klipler ajanda bekleyebilir.",
+        "draft_published": "Etkinlik yayınlandı: bekleyen yüklemeler devam ediyor.",
+        "already_note": "+ {count} zaten çevrimiçi",
         "video_clip_ready": "Klip {index} birleştirildi",
         "video_clip_sent": "Klip {index} gönderildi",
         "video_frames_ready": "{count} analiz karesi çıkarıldı",
@@ -186,7 +191,9 @@
     "complete": {
         "with_errors": "Tamamlandı: {sent} gönderildi, {failed} başarısız",
         "success": "Tamamlandı: {count} fotoğraf başarıyla yüklendi!",
-        "already": "(bunlardan {count} tanesi zaten çevrimiçiydi, yeniden gönderilmedi)"
+        "all_online": "Tamamlandı: gönderilecek bir şey yok, {count} fotoğrafın tümü zaten çevrimiçi (yeniden gönderilmedi)",
+        "sent_and_online": "Tamamlandı: {sent} fotoğraf gönderildi, {already} zaten çevrimiçi (yeniden gönderilmedi)",
+        "sent_online_failed": "Tamamlandı: {sent} gönderildi, {already} zaten çevrimiçi (yeniden gönderilmedi), {failed} başarısız"
     },
     "hd": {
         "title": "HD video",
@@ -214,6 +221,7 @@
     "nav": {
         "banner_title": "Oturum sürüyor: {event}",
         "banner_photos": "gönderilen fotoğraf: {sent}, bekleyen: {pending}",
+        "banner_photos_already": "{sent} fotoğraf gönderildi, {already} zaten çevrimiçi, {pending} bekliyor",
         "banner_video_recording": "video çekimi sürüyor",
         "banner_video_paused": "video duraklatıldı",
         "banner_video_sending": "gönderilecek video dosyası: {count}",
@@ -224,7 +232,8 @@
     },
     "journal": {
         "export": "Günlüğü dışa aktar",
-        "export_dialog": "Aracının günlüğünü kaydet",
+        "export_hint": "Günlüğü Documents › Attimo Agent Terrain › Journaux klasörüne aktar",
+        "folder_opened": "Klasör Dosya Gezgini'nde açılır.",
         "exported": "Günlük dışa aktarıldı: {path}"
     }
 }

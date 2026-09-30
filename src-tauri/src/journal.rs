@@ -16,8 +16,12 @@
 // agent.2.log… cinq fichiers au plus, 25 Mo en tout.
 //
 // Le bouton « Exporter le journal » recolle ces fichiers dans l'ordre, du
-// plus ancien au plus récent, dans un seul fichier choisi par le
-// photographe.
+// plus ancien au plus récent, dans un seul fichier.
+//
+// 0.3.5 — Ce fichier n'est plus choisi dans une boîte « Enregistrer sous » :
+// elle s'ouvrait sur le dernier dossier utilisé, souvent celui des photos,
+// et l'export y atterrissait. Il va toujours dans un dossier propre à
+// l'agent, jamais dans un dossier surveillé (`dossier_export`).
 
 use std::fs::{File, OpenOptions};
 use std::io::Write;
@@ -247,6 +251,51 @@ pub fn ecrire_lignes_ecran(lignes: &[LigneEcran]) {
     ecrire_ligne(&bloc);
 }
 
+/// Dossier des exports, sous « Documents » (0.3.5).
+pub const DOSSIER_EXPORT_AGENT: &str = "Attimo Agent Terrain";
+pub const DOSSIER_EXPORT_JOURNAUX: &str = "Journaux";
+
+/// Dossier où « Exporter le journal » écrit (0.3.5).
+///
+/// `Documents\Attimo Agent Terrain\Journaux` : facile à retrouver pour
+/// joindre le fichier à un compte rendu. Si ce dossier est, ou se trouve
+/// dans, un dossier surveillé (photos ou vidéo), l'export irait se mêler aux
+/// fichiers envoyés : on prend alors `repli`, le dossier de données de
+/// l'agent, que personne ne surveille.
+pub fn dossier_export(documents: Option<PathBuf>, surveilles: &[PathBuf], repli: PathBuf) -> PathBuf {
+    if let Some(documents) = documents {
+        let dossier = documents.join(DOSSIER_EXPORT_AGENT).join(DOSSIER_EXPORT_JOURNAUX);
+
+        if !surveilles.iter().any(|s| est_dans(&dossier, s)) {
+            return dossier;
+        }
+    }
+
+    repli
+}
+
+/// `chemin` est-il `parent`, ou un dossier de `parent` ? Comparaison
+/// insensible à la casse, comme les chemins de Windows.
+fn est_dans(chemin: &Path, parent: &Path) -> bool {
+    fn morceaux(p: &Path) -> Vec<String> {
+        p.components()
+            .filter(|c| !matches!(c, std::path::Component::CurDir))
+            .map(|c| c.as_os_str().to_string_lossy().to_lowercase())
+            .collect()
+    }
+
+    let parent = morceaux(parent);
+
+    !parent.is_empty() && morceaux(chemin).starts_with(&parent)
+}
+
+/// Nom de fichier d'export acceptable : un nom, pas un chemin.
+pub fn nom_export_valide(nom: &str) -> bool {
+    !nom.is_empty()
+        && !nom.contains(['/', '\\', ':'])
+        && (nom.ends_with(".log") || nom.ends_with(".txt"))
+}
+
 /// Recolle tous les fichiers du journal dans `destination`.
 ///
 /// Renvoie le nombre d'octets écrits.
@@ -302,6 +351,42 @@ mod tests {
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(&d).unwrap();
         d
+    }
+
+    #[test]
+    fn l_export_va_dans_documents_sauf_s_il_y_est_surveille() {
+        let documents = PathBuf::from(r"C:\Users\Fabien\Documents");
+        let repli = PathBuf::from(r"C:\Users\Fabien\AppData\Roaming\agent\exports");
+        let attendu = documents.join("Attimo Agent Terrain").join("Journaux");
+
+        // Photos et vidéo ailleurs : Documents.
+        let ailleurs = [PathBuf::from(r"D:\Course\Photos"), PathBuf::from(r"C:\Users\Fabien\Documents\Videos")];
+        assert_eq!(dossier_export(Some(documents.clone()), &ailleurs, repli.clone()), attendu);
+
+        // « Documents » surveillé, quelle que soit la casse : jamais dedans.
+        let documents_surveille = [PathBuf::from(r"c:\users\fabien\documents")];
+        assert_eq!(dossier_export(Some(documents.clone()), &documents_surveille, repli.clone()), repli);
+
+        // Le dossier de l'agent lui-même choisi comme dossier surveillé.
+        let agent_surveille = [PathBuf::from(r"C:\Users\Fabien\Documents\Attimo Agent Terrain\")];
+        assert_eq!(dossier_export(Some(documents.clone()), &agent_surveille, repli.clone()), repli);
+
+        // Un dossier voisin au nom proche n'est pas un parent.
+        let voisin = [PathBuf::from(r"C:\Users\Fabien\Documents\Attimo")];
+        assert_eq!(dossier_export(Some(documents), &voisin, repli.clone()), attendu);
+
+        // Pas de dossier Documents : le repli.
+        assert_eq!(dossier_export(None, &[], repli.clone()), repli);
+    }
+
+    #[test]
+    fn le_nom_d_export_n_est_jamais_un_chemin() {
+        assert!(nom_export_valide("attimo-agent-journal-20260930-141205.log"));
+        assert!(!nom_export_valide(r"..\..\photos\journal.log"));
+        assert!(!nom_export_valide("../journal.log"));
+        assert!(!nom_export_valide("C:journal.log"));
+        assert!(!nom_export_valide("journal.exe"));
+        assert!(!nom_export_valide(""));
     }
 
     #[test]

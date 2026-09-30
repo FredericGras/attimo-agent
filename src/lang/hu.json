@@ -19,6 +19,7 @@
         "photos_one": "{count} fotó online",
         "photos_other": "{count} fotó online",
         "no_photos": "Még nincsenek fotók",
+        "draft": "Piszkozat",
         "checkpoints_one": "{count} ellenőrzőpont",
         "checkpoints_other": "{count} ellenőrzőpont",
         "logout_title": "Kijelentkezés",
@@ -109,7 +110,11 @@
         "video_disk_detail": "{written} GB kiírva, mért {rate} GB/óra",
         "video_disk_estimated": "{written} GB kiírva, becsült {rate} GB/óra",
         "video_started": "Felvétel elindult — klip minden {step} másodpercben",
-        "video_stopped": "Felvétel leállt — {clips} klip készült",
+        "video_stopped": "Felvétel leállt — ebben a felvételben {clips} klip készült",
+        "video_draft_waiting": "Klipek várakoznak: az esemény piszkozat. Tegye közzé az Attimón, és a küldés magától elindul.",
+        "draft_notice": "Piszkozat esemény: tegye közzé az Attimón. Addig semmi sem látható a galériában, és a videoklipek az ügynökben várakozhatnak.",
+        "draft_published": "Esemény közzétéve: a várakozó feltöltések folytatódnak.",
+        "already_note": "+ {count} már online",
         "video_clip_ready": "{index}. klip összeállítva",
         "video_clip_sent": "{index}. klip elküldve",
         "video_frames_ready": "{count} elemzési képkocka kinyerve",
@@ -186,7 +191,9 @@
     "complete": {
         "with_errors": "Kész: {sent} elküldve, {failed} sikertelen",
         "success": "Kész: {count} fotó sikeresen feltöltve!",
-        "already": "(ebből {count} már online volt, nem küldtük újra)"
+        "all_online": "Kész: nincs mit küldeni, mind a(z) {count} fotó már online (nem küldve újra)",
+        "sent_and_online": "Kész: {sent} fotó elküldve, {already} már online (nem küldve újra)",
+        "sent_online_failed": "Kész: {sent} elküldve, {already} már online (nem küldve újra), {failed} sikertelen"
     },
     "hd": {
         "title": "HD-videó",
@@ -214,6 +221,7 @@
     "nav": {
         "banner_title": "Futó munkamenet: {event}",
         "banner_photos": "{sent} fénykép elküldve, {pending} várakozik",
+        "banner_photos_already": "{sent} fotó elküldve, {already} már online, {pending} várakozik",
         "banner_video_recording": "videófelvétel folyamatban",
         "banner_video_paused": "videó szüneteltetve",
         "banner_video_sending": "{count} videófájl küldendő",
@@ -224,7 +232,8 @@
     },
     "journal": {
         "export": "Napló exportálása",
-        "export_dialog": "Az ügynök naplójának mentése",
+        "export_hint": "Napló exportálása ide: Documents › Attimo Agent Terrain › Journaux",
+        "folder_opened": "A mappa megnyílik a Fájlkezelőben.",
         "exported": "Napló exportálva: {path}"
     }
 }

@@ -19,6 +19,7 @@
         "photos_one": "{count} снимка онлайн",
         "photos_other": "{count} снимки онлайн",
         "no_photos": "Все още няма снимки",
+        "draft": "Чернова",
         "checkpoints_one": "{count} контролна точка",
         "checkpoints_other": "{count} контролни точки",
         "logout_title": "Изход",
@@ -109,7 +110,11 @@
         "video_disk_detail": "записани {written} GB, измерени {rate} GB/ч.",
         "video_disk_estimated": "записани {written} GB, очаквани {rate} GB/ч.",
         "video_started": "Заснемането започна — клип на всеки {step} с",
-        "video_stopped": "Заснемането спря — създадени {clips} клипа",
+        "video_stopped": "Заснемането спря — при това заснемане са създадени {clips} клипа",
+        "video_draft_waiting": "Клиповете чакат: събитието е чернова. Публикувайте го в Attimo и изпращането ще започне само.",
+        "draft_notice": "Събитие в чернова: публикувайте го в Attimo. Дотогава нищо не се вижда в галерията, а видеоклиповете може да чакат в агента.",
+        "draft_published": "Събитието е публикувано: чакащите качвания продължават.",
+        "already_note": "+ {count} вече онлайн",
         "video_clip_ready": "Клип {index} сглобен",
         "video_clip_sent": "Клип {index} изпратен",
         "video_frames_ready": "Извлечени {count} кадъра за анализ",
@@ -186,7 +191,9 @@
     "complete": {
         "with_errors": "Готово: {sent} изпратени, {failed} неуспешни",
         "success": "Готово: {count} снимки качени успешно!",
-        "already": "(от които {count} вече онлайн, не са изпратени повторно)"
+        "all_online": "Готово: няма нищо за изпращане, всички {count} снимки вече са онлайн (не са изпратени отново)",
+        "sent_and_online": "Готово: изпратени {sent} снимки, {already} вече онлайн (не са изпратени отново)",
+        "sent_online_failed": "Готово: изпратени {sent}, {already} вече онлайн (не са изпратени отново), {failed} неуспешни"
     },
     "hd": {
         "title": "HD видео",
@@ -214,6 +221,7 @@
     "nav": {
         "banner_title": "Текуща сесия: {event}",
         "banner_photos": "изпратени снимки: {sent}, чакащи: {pending}",
+        "banner_photos_already": "Изпратени {sent} снимки, {already} вече онлайн, {pending} чакащи",
         "banner_video_recording": "тече видеозаснемане",
         "banner_video_paused": "видеото е на пауза",
         "banner_video_sending": "видеофайлове за изпращане: {count}",
@@ -224,7 +232,8 @@
     },
     "journal": {
         "export": "Експортиране на дневника",
-        "export_dialog": "Запазване на дневника на агента",
+        "export_hint": "Експортиране на дневника в Documents › Attimo Agent Terrain › Journaux",
+        "folder_opened": "Папката се отваря във File Explorer.",
         "exported": "Дневникът е експортиран: {path}"
     }
 }

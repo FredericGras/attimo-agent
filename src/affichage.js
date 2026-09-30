@@ -36,6 +36,42 @@ const Affichage = {
     },
 
     /**
+     * Bilan des photos, une fois la file vide (0.3.5).
+     *
+     * Pour l'agent, `sent` compte les photos reçues par le serveur, qu'elles
+     * viennent de partir ou qu'il les ait déjà (`already`). Ici, « envoyées »
+     * ne désigne plus que les premières : « 25 envoyées (dont 25 déjà en
+     * ligne) » disait qu'aucune n'était partie, mais pas clairement.
+     */
+    bilanPhotos(sent, failed, already, t) {
+        const envoyees = Math.max(0, sent - (already || 0));
+
+        if (!already) {
+            return failed > 0
+                ? t('complete.with_errors', { sent: envoyees, failed })
+                : t('complete.success', { count: envoyees });
+        }
+
+        if (failed > 0) {
+            return t('complete.sent_online_failed', { sent: envoyees, already, failed });
+        }
+
+        return envoyees === 0
+            ? t('complete.all_online', { count: already })
+            : t('complete.sent_and_online', { sent: envoyees, already });
+    },
+
+    /**
+     * Photos réellement envoyées, et celles déjà en ligne, non renvoyées
+     * (0.3.5) : la tuile « Envoyées » et le bandeau ne les mélangent plus.
+     */
+    comptePhotos(sent, already) {
+        const deja = already || 0;
+
+        return { envoyees: Math.max(0, sent - deja), deja };
+    },
+
+    /**
      * Temps restant, en secondes, pour envoyer `octets` à `mbps`.
      */
     resteSecondes(octets, mbps) {

@@ -19,6 +19,7 @@
         "photos_one": "{count} foto online",
         "photos_other": "{count} foto online",
         "no_photos": "Nessuna foto ancora",
+        "draft": "Bozza",
         "checkpoints_one": "{count} checkpoint",
         "checkpoints_other": "{count} checkpoint",
         "logout_title": "Esci",
@@ -109,7 +110,11 @@
         "video_disk_detail": "{written} GB scritti, {rate} GB/h misurati",
         "video_disk_estimated": "{written} GB scritti, {rate} GB/h stimati",
         "video_started": "Ripresa avviata — un clip ogni {step} s",
-        "video_stopped": "Ripresa terminata — {clips} clip prodotti",
+        "video_stopped": "Ripresa terminata — {clips} clip prodotti da questa ripresa",
+        "video_draft_waiting": "Clip in attesa: l'evento è in bozza. Pubblicalo su Attimo e l'invio partirà da solo.",
+        "draft_notice": "Evento in bozza: pubblicalo su Attimo. Fino ad allora nella galleria non è visibile nulla e le clip video possono restare in attesa nell'agente.",
+        "draft_published": "Evento pubblicato: gli invii in attesa riprendono.",
+        "already_note": "+ {count} già online",
         "video_clip_ready": "Clip {index} montato",
         "video_clip_sent": "Clip {index} inviato",
         "video_frames_ready": "{count} immagine/i di analisi estratta/e",
@@ -186,7 +191,9 @@
     "complete": {
         "with_errors": "Completato: {sent} inviate, {failed} fallite",
         "success": "Completato: {count} foto caricate con successo!",
-        "already": "(di cui {count} già online, non reinviate)"
+        "all_online": "Completato: niente da inviare, tutte le {count} foto sono già online (non reinviate)",
+        "sent_and_online": "Completato: {sent} foto inviate, {already} già online (non reinviate)",
+        "sent_online_failed": "Completato: {sent} inviate, {already} già online (non reinviate), {failed} non riuscite"
     },
     "hd": {
         "title": "Video HD",
@@ -214,6 +221,7 @@
     "nav": {
         "banner_title": "Sessione in corso: {event}",
         "banner_photos": "{sent} foto inviate, {pending} in attesa",
+        "banner_photos_already": "{sent} foto inviate, {already} già online, {pending} in attesa",
         "banner_video_recording": "ripresa video in corso",
         "banner_video_paused": "video in pausa",
         "banner_video_sending": "{count} file video da inviare",
@@ -224,7 +232,8 @@
     },
     "journal": {
         "export": "Esporta il registro",
-        "export_dialog": "Salva il registro dell'agente",
+        "export_hint": "Esporta il registro in Documents › Attimo Agent Terrain › Journaux",
+        "folder_opened": "La cartella si apre in Esplora file.",
         "exported": "Registro esportato: {path}"
     }
 }

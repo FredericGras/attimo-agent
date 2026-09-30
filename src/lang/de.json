@@ -19,6 +19,7 @@
         "photos_one": "{count} Foto online",
         "photos_other": "{count} Fotos online",
         "no_photos": "Noch keine Fotos",
+        "draft": "Entwurf",
         "checkpoints_one": "{count} Checkpoint",
         "checkpoints_other": "{count} Checkpoints",
         "logout_title": "Abmelden",
@@ -109,7 +110,11 @@
         "video_disk_detail": "{written} GB geschrieben, {rate} GB/h gemessen",
         "video_disk_estimated": "{written} GB geschrieben, {rate} GB/h geschätzt",
         "video_started": "Aufnahme gestartet — ein Clip alle {step} s",
-        "video_stopped": "Aufnahme beendet — {clips} Clip(s) erstellt",
+        "video_stopped": "Aufnahme beendet — {clips} Clip(s) in dieser Aufnahme erstellt",
+        "video_draft_waiting": "Clips warten: Die Veranstaltung ist ein Entwurf. Veröffentlichen Sie sie auf Attimo, dann startet der Versand von selbst.",
+        "draft_notice": "Veranstaltung im Entwurf: Veröffentlichen Sie sie auf Attimo. Bis dahin ist in der Galerie nichts sichtbar, und Videoclips können im Agenten warten.",
+        "draft_published": "Veranstaltung veröffentlicht: Wartende Uploads werden fortgesetzt.",
+        "already_note": "+ {count} bereits online",
         "video_clip_ready": "Clip {index} zusammengesetzt",
         "video_clip_sent": "Clip {index} gesendet",
         "video_frames_ready": "{count} Analysebild(er) extrahiert",
@@ -186,7 +191,9 @@
     "complete": {
         "with_errors": "Fertig: {sent} gesendet, {failed} fehlgeschlagen",
         "success": "Fertig: {count} Fotos erfolgreich hochgeladen!",
-        "already": "(davon {count} bereits online, nicht erneut gesendet)"
+        "all_online": "Fertig: nichts zu senden, alle {count} Fotos sind bereits online (nicht erneut gesendet)",
+        "sent_and_online": "Fertig: {sent} Foto(s) gesendet, {already} bereits online (nicht erneut gesendet)",
+        "sent_online_failed": "Fertig: {sent} gesendet, {already} bereits online (nicht erneut gesendet), {failed} fehlgeschlagen"
     },
     "hd": {
         "title": "HD-Video",
@@ -214,6 +221,7 @@
     "nav": {
         "banner_title": "Laufende Sitzung: {event}",
         "banner_photos": "{sent} Foto(s) gesendet, {pending} wartend",
+        "banner_photos_already": "{sent} Foto(s) gesendet, {already} bereits online, {pending} wartend",
         "banner_video_recording": "Videoaufnahme läuft",
         "banner_video_paused": "Video pausiert",
         "banner_video_sending": "{count} Videodatei(en) zu senden",
@@ -224,7 +232,8 @@
     },
     "journal": {
         "export": "Protokoll exportieren",
-        "export_dialog": "Agent-Protokoll speichern",
+        "export_hint": "Protokoll nach Documents › Attimo Agent Terrain › Journaux exportieren",
+        "folder_opened": "Der Ordner wird im Datei-Explorer geöffnet.",
         "exported": "Protokoll exportiert: {path}"
     }
 }
