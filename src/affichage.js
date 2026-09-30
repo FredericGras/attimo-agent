@@ -72,6 +72,38 @@ const Affichage = {
     },
 
     /**
+     * Libellé de la tuile « images d'analyse » (0.3.6).
+     *
+     * `ses` : décompte de la file pour la session (video_queue_stats).
+     * Avant, seules les images confirmées par le serveur étaient comptées :
+     * un lot de dix n'est confirmé qu'une fois les dix analysées, et la
+     * tuile restait à « 0 envoyées » pendant que le serveur produisait déjà
+     * ses lectures. Les images en cours d'envoi et celles abandonnées après
+     * trois essais sont désormais dites.
+     */
+    libelleImagesAnalyse(ses, desactivee, t) {
+        if (desactivee) {
+            return t('dashboard.video_frames_disabled');
+        }
+
+        const envoyees = ses ? ses.frames_sent || 0 : 0;
+        const enCours = ses ? ses.frames_sending || 0 : 0;
+        const echecs = ses ? ses.frames_failed || 0 : 0;
+
+        let libelle = t('dashboard.video_frames_detail', { sent: envoyees });
+
+        if (enCours > 0) {
+            libelle += ', ' + t('dashboard.video_frames_sending', { count: enCours });
+        }
+
+        if (echecs > 0) {
+            libelle += ', ' + t('dashboard.video_frames_failed', { count: echecs });
+        }
+
+        return libelle;
+    },
+
+    /**
      * Temps restant, en secondes, pour envoyer `octets` à `mbps`.
      */
     resteSecondes(octets, mbps) {

@@ -987,11 +987,17 @@ pub struct ClipStatus {
 
 /// Demande au serveur ce qu'il a déjà reçu.
 pub async fn etat_session(config: &VideoUploadConfig) -> Result<SessionStatus, String> {
-    let client = client()?;
+    etat_session_sur(client()?, API_BASE_URL, config).await
+}
 
+pub(crate) async fn etat_session_sur(
+    client: &reqwest::Client,
+    base: &str,
+    config: &VideoUploadConfig,
+) -> Result<SessionStatus, String> {
     let url = format!(
         "{}/api/sport/events/{}/clips/status?session_id={}",
-        API_BASE_URL, config.event_id, config.session_id
+        base, config.event_id, config.session_id
     );
 
     let reponse = authentifier(client.get(&url), &config.token)
@@ -1002,6 +1008,20 @@ pub async fn etat_session(config: &VideoUploadConfig) -> Result<SessionStatus, S
 
     if let Some(erreur) = statut_bloquant(&reponse) {
         return Err(erreur);
+    }
+
+    // 0.3.6 — Épreuve en brouillon : cette question est la première posée
+    // à chaque session. Son refus (« Event has no gallery. ») était lu
+    // comme une réponse illisible : la file réessayait toutes les 3 s sans
+    // jamais atteindre le cas « brouillon » prévu en 0.3.5.
+    if reponse.status().is_client_error() {
+        let (code, message, _) = lire_refus(reponse).await;
+
+        if let Some(brouillon) = refus_brouillon(code, &message) {
+            return Err(brouillon);
+        }
+
+        return Err(refus_definitif(code, &message));
     }
 
     reponse
@@ -1189,6 +1209,35 @@ mod tests {
         assert_eq!(lire_numero_max(&serde_json::json!({"clips": [{"index": 2}, {"index": 9}]})), Some(9));
         assert_eq!(lire_numero_max(&serde_json::json!({"clips": []})), None);
         assert_eq!(lire_numero_max(&serde_json::json!({"success": true})), None);
+    }
+
+    #[tokio::test]
+    async fn letat_dune_session_reconnait_une_epreuve_en_brouillon() {
+        // 0.3.6 — Premier appel de chaque session : le brouillon doit y être
+        // reconnu, pas pris pour une réponse illisible.
+        let (base, _) = crate::verification::serveur_factice::une_reponse(
+            422,
+            r#"{"message":"Event has no gallery."}"#,
+        )
+        .await;
+
+        let etat = etat_session_sur(&reqwest::Client::new(), &base, &config_test()).await;
+
+        assert_eq!(etat.unwrap_err(), EPREUVE_BROUILLON);
+    }
+
+    #[tokio::test]
+    async fn letat_dune_session_publiee_se_lit() {
+        let (base, _) = crate::verification::serveur_factice::une_reponse(
+            200,
+            r#"{"success":true,"session_id":"s1","clips":[{"index":2,"has_proxy":true,"has_hd":false,"status":"ready"}]}"#,
+        )
+        .await;
+
+        let etat = etat_session_sur(&reqwest::Client::new(), &base, &config_test()).await.unwrap();
+
+        assert_eq!(etat.clips.len(), 1);
+        assert!(etat.clips[0].has_proxy);
     }
 
     #[test]

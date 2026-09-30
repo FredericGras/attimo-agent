@@ -2828,9 +2828,10 @@ function majPanneauVideo() {
         ? t('dashboard.video_waiting_failed', { failed: ses.proxy_failed })
         : t('dashboard.video_waiting');
     document.getElementById('dash-video-frames').textContent = videoImages;
-    document.getElementById('dash-video-frames-label').textContent = videoAnalyseDesactivee
-        ? t('dashboard.video_frames_disabled')
-        : t('dashboard.video_frames_detail', { sent: ses ? ses.frames_sent : 0 });
+    // 0.3.6 — Images en cours d'envoi et abandonnées dites aussi : voir
+    // Affichage.libelleImagesAnalyse.
+    document.getElementById('dash-video-frames-label').textContent =
+        Affichage.libelleImagesAnalyse(ses, videoAnalyseDesactivee, t);
 
     // Sans captation dans cette session, seuls l'envoi et le bloc HD ont
     // un sens.
@@ -3162,6 +3163,7 @@ async function traiterUnEnvoiVideo(voie) {
 
         if (resultat.detail) {
             finBrouillon(eventId);
+            publicationProbable(eventId);
             journaliserEnvoiVideo(resultat.detail);
             rafraichirFileVideo();
             return 0;
@@ -3208,6 +3210,14 @@ async function traiterUnEnvoiVideo(voie) {
 
 const ATTENTE_BROUILLON_MS = 60000;
 
+// 0.3.6 — Publication redemandée toutes les 10 s tant que l'avis est
+// affiché (avant : chaque minute, l'avis restait après la publication).
+const VERIFICATION_PUBLICATION_MS = 10000;
+
+// Dernière vérification de publication, pour ne pas la répéter à chaque
+// envoi réussi.
+let publicationVerifieeMs = 0;
+
 // Épreuve → instant avant lequel sa file vidéo n'est pas redemandée.
 const videoAttenteBrouillon = {};
 
@@ -3234,7 +3244,7 @@ function majAvisBrouillon() {
     }
 
     if (brouillon && !brouillonTimer) {
-        brouillonTimer = setInterval(verifierPublication, ATTENTE_BROUILLON_MS);
+        brouillonTimer = setInterval(verifierPublication, VERIFICATION_PUBLICATION_MS);
     } else if (!brouillon && brouillonTimer) {
         clearInterval(brouillonTimer);
         brouillonTimer = null;
@@ -3288,6 +3298,8 @@ async function verifierPublication() {
         return;
     }
 
+    publicationVerifieeMs = Date.now();
+
     try {
         const publiee = await invoke('event_published', {
             token: AppState.token,
@@ -3305,6 +3317,24 @@ async function verifierPublication() {
     } catch (e) {
         console.error('Publication check error:', e);
     }
+}
+
+/**
+ * Un envoi vidéo de l'épreuve ouverte vient de passer (0.3.6) : sa galerie
+ * existe, elle a très probablement été publiée. Si l'avis de brouillon est
+ * affiché, la publication est vérifiée tout de suite, sans attendre le
+ * prochain passage.
+ */
+function publicationProbable(eventId) {
+    if (!epreuveEnBrouillon() || AppState.activeEvent.id !== eventId) {
+        return;
+    }
+
+    if (Date.now() - publicationVerifieeMs < 5000) {
+        return;
+    }
+
+    verifierPublication();
 }
 
 /**
@@ -3383,6 +3413,13 @@ function journaliserEnvoiVideo(detail) {
     if (detail.totals && detail.totals.bibs > 0) {
         addLogEntry(timeNow(), '—', 'success',
             t('dashboard.video_bibs_read', { count: detail.totals.bibs }));
+    }
+
+    // 0.3.6 — Images refusées trois fois par le serveur : elles quittaient
+    // la file sans rien dire.
+    if (detail.kind === 'frames' && detail.abandoned > 0) {
+        addLogEntry(timeNow(), '—', 'failed',
+            t('dashboard.video_frames_abandoned', { count: detail.abandoned }));
     }
 }
 

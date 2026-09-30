@@ -1159,6 +1159,12 @@ pub async fn process_video_queue(
                         return Ok(Some(serde_json::json!({ "throttled": attente })));
                     }
 
+                    // Épreuve en brouillon (0.3.6) : dit comme tel, la file
+                    // de l'épreuve attend sa publication.
+                    if e == crate::video_uploader::EPREUVE_BROUILLON {
+                        return Ok(Some(serde_json::json!({ "unpublished": true })));
+                    }
+
                     return Err(e);
                 }
             };

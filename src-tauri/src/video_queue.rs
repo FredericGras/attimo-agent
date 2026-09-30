@@ -137,6 +137,10 @@ pub struct QueueStats {
     /// Images d'analyse écartées sans envoi : galerie sans identification.
     pub frames_skipped: i64,
 
+    /// Images d'analyse abandonnées après trois échecs (0.3.6, comprises
+    /// dans `failed`).
+    pub frames_failed: i64,
+
     /// Fichiers sortis de la file parce qu'ils n'existent plus sur le disque.
     pub missing: i64,
 
@@ -446,6 +450,10 @@ pub fn statistiques_filtrees(
 
                 if nature == QueueKind::ClipProxy {
                     stats.proxy_failed = nombre;
+                }
+
+                if nature == QueueKind::Frames {
+                    stats.frames_failed = nombre;
                 }
             }
             "skipped" => {
@@ -1592,5 +1600,33 @@ mod tests {
 
         assert_eq!(prochain_numero_clip(&conn, EVT).unwrap(), 8);
         assert_eq!(prochain_numero_clip(&conn, 99).unwrap(), 41);
+    }
+
+    #[test]
+    fn les_images_en_cours_et_en_echec_se_comptent_a_part() {
+        // 0.3.6 — La tuile « images d'analyse » dit ce qui part, ce qui est
+        // reçu et ce qui est abandonné, au lieu de « 0 envoyées » tant que
+        // le lot n'a pas reçu sa réponse.
+        let conn = base_de_test();
+
+        let envoyee = enfiler_simple(&conn, QueueKind::Frames, "i1.jpg");
+        let en_cours = enfiler_simple(&conn, QueueKind::Frames, "i2.jpg");
+        let abandonnee = enfiler_simple(&conn, QueueKind::Frames, "i3.jpg");
+        enfiler_simple(&conn, QueueKind::Frames, "i4.jpg");
+        let clip = enfiler_simple(&conn, QueueKind::ClipProxy, "p.mp4");
+
+        marquer_envoye(&conn, envoyee).unwrap();
+        assert!(reserver(&conn, en_cours).unwrap());
+        marquer_echec_definitif(&conn, abandonnee, "refus").unwrap();
+        marquer_echec_definitif(&conn, clip, "refus").unwrap();
+
+        let stats = statistiques_filtrees(&conn, EVT, &["session_1".to_string()]).unwrap();
+
+        assert_eq!(stats.frames_sent, 1);
+        assert_eq!(stats.frames_sending, 1);
+        assert_eq!(stats.frames_pending, 1);
+        assert_eq!(stats.frames_failed, 1);
+        assert_eq!(stats.proxy_failed, 1);
+        assert_eq!(stats.failed, 2);
     }
 }

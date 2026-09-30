@@ -160,3 +160,19 @@ test('tuile « Envoyées » : seules les photos parties', () => {
     assert.deepStrictEqual({ ...A.comptePhotos(30, 4) }, { envoyees: 26, deja: 4 });
     assert.deepStrictEqual({ ...A.comptePhotos(7, undefined) }, { envoyees: 7, deja: 0 });
 });
+
+// 0.3.6 — Brouillon publié : « 21 images d'analyse — 0 envoyées » restait
+// affiché pendant que le lot partait et que le serveur l'analysait.
+test("tuile images d'analyse : en cours d'envoi dit dès le départ", () => {
+    assert.strictEqual(A.libelleImagesAnalyse({ frames_sent: 0, frames_sending: 10 }, false, t),
+        'dashboard.video_frames_detail{"sent":0}, dashboard.video_frames_sending{"count":10}');
+    assert.strictEqual(A.libelleImagesAnalyse({ frames_sent: 21, frames_sending: 0 }, false, t),
+        'dashboard.video_frames_detail{"sent":21}');
+});
+
+test("tuile images d'analyse : échecs dits, sans décompte ni galerie sans identification", () => {
+    assert.strictEqual(A.libelleImagesAnalyse({ frames_sent: 18, frames_failed: 3 }, false, t),
+        'dashboard.video_frames_detail{"sent":18}, dashboard.video_frames_failed{"count":3}');
+    assert.strictEqual(A.libelleImagesAnalyse(null, false, t), 'dashboard.video_frames_detail{"sent":0}');
+    assert.strictEqual(A.libelleImagesAnalyse({ frames_sent: 5 }, true, t), 'dashboard.video_frames_disabled');
+});
