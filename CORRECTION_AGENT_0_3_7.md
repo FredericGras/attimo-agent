@@ -6,7 +6,14 @@
 
 **Tests :** 161 tests Rust (152 avant, 9 nouveaux) et 23 tests d'interface (Node, 18 avant). Tous passent, sans avertissement du compilateur. Le contrôle des traductions est vert (28 langues). Les nouvelles gardes ont été vues rouges sur des traductions cassées exprès, puis les fichiers remis à l'identique.
 
-**Installateur :** DEV seulement (`build-preprod.bat`). La production ne bouge pas : Fabien garde sa version tant que personne n'a lancé `build-prod.bat`.
+**Installateur, non signé, déposé nulle part :** DEV seulement, étapes de `build-preprod.bat` reproduites à la main.
+
+| Édition | Fichier | Vérification |
+|---|---|---|
+| **DEV** | `src-tauri\target\release\bundle\msi\Attimo Agent Terrain DEV_0.3.7_x64_en-US.msi`, 79 Mo (NSIS à côté : `bundle\nsis\Attimo Agent Terrain DEV_0.3.7_x64-setup.exe`) | URL `dev-saas` présente, mémoire `com.attimo-gallery.agent.dev` présente, URL de production absente |
+| **PRODUCTION** | Pas compilée. | Fabien garde sa version tant que personne n'a lancé `build-prod.bat`. |
+
+**Caches de compilation :** `target\debug` et les caches de `target\release` (`build`, `deps`, `.fingerprint`, `incremental`) ont été supprimés, car ils portaient l'ancien emplacement du dossier (`C:\Users\Fred\Desktop\…`) et bloquaient la compilation. Les anciens installateurs de `bundle\nsis` n'ont pas été touchés.
 
 **État de départ :** aucun fichier suivi n'était modifié. Les deux fichiers non suivis `DIAGNOSTIC_DEBIT_AGENT.md` et `attimo-agent-debit-envoi-brief.md` sont toujours là. Je n'y ai pas touché et ils ne sont pas dans le commit.
 
