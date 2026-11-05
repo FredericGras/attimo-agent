@@ -274,7 +274,7 @@ pub fn estimer(dossier: &Path, flux: &FluxParams) -> Result<DiskEstimate, String
     let chemin = premier_parent_existant(dossier)?;
 
     let libre = fs4::available_space(&chemin)
-        .map_err(|e| format!("Impossible de lire l'espace disque : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.disk_read", e))?;
 
     let systeme = sur_disque_systeme(&chemin);
     let reserve = reserve_pour(&chemin, flux, systeme);
@@ -543,9 +543,9 @@ fn premier_parent_existant(dossier: &Path) -> Result<PathBuf, String> {
         match courant.parent() {
             Some(parent) if parent != courant => courant = parent.to_path_buf(),
             _ => {
-                return Err(format!(
-                    "Aucun dossier accessible sur ce chemin : {}",
-                    dossier.display()
+                return Err(crate::erreurs::journalisee(
+                    "err.disk_read",
+                    format!("aucun dossier accessible sur ce chemin : {}", dossier.display()),
                 ))
             }
         }

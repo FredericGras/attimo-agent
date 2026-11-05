@@ -153,16 +153,13 @@ pub async fn extraire_images(
         .join(format!("m_{:06}.mp4", segment_index));
 
     if !morceau.exists() {
-        return Err(format!(
-            "Le morceau {} est introuvable — extraction impossible.",
-            segment_index
-        ));
+        return Err(crate::erreurs::avec("err.segment_missing", &[("index", segment_index.to_string())]));
     }
 
     let dossier_images = dossier_travail.join("_analyse");
 
     std::fs::create_dir_all(&dossier_images)
-        .map_err(|e| format!("Impossible de créer le dossier d'analyse : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.create_folder", format!("dossier d'analyse : {}", e)))?;
 
     // Motif de nommage. Le numéro de morceau y figure pour éviter toute
     // collision entre extractions successives.
@@ -202,12 +199,12 @@ pub async fn extraire_images(
     let commande = app
         .shell()
         .sidecar("ffmpeg")
-        .map_err(|e| format!("FFmpeg embarqué introuvable : {}", e))?
+        .map_err(|e| crate::erreurs::journalisee("err.ffmpeg_missing", e))?
         .args(arguments);
 
     let (mut evenements, _enfant) = commande
         .spawn()
-        .map_err(|e| format!("Impossible de lancer l'extraction : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.ffmpeg_start", format!("extraction : {}", e)))?;
 
     let mut journal = String::new();
 
@@ -232,7 +229,7 @@ pub async fn extraire_images(
     let prefixe = format!("img_{:06}_", segment_index);
 
     let entrees = std::fs::read_dir(&dossier_images)
-        .map_err(|e| format!("Impossible de lire le dossier d'analyse : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.file_read", format!("dossier d'analyse : {}", e)))?;
 
     let mut chemins: Vec<PathBuf> = entrees
         .filter_map(|e| e.ok())
@@ -276,11 +273,13 @@ pub async fn extraire_images(
     }
 
     if images.is_empty() {
-        return Err(format!(
-            "Aucune image extraite du morceau {}.\n\nJournal FFmpeg :\n{}",
+        log::warn!(
+            "Aucune image extraite du morceau {}. Journal FFmpeg : {}",
             segment_index,
             derniers_caracteres(&journal, 400)
-        ));
+        );
+
+        return Err(crate::erreurs::avec("err.frames_none", &[("index", segment_index.to_string())]));
     }
 
     log::info!(

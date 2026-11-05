@@ -214,7 +214,7 @@ pub fn init_schema(conn: &Connection) -> Result<(), String> {
             ON video_queue(session_id);
         ",
     )
-    .map_err(|e| format!("Création de la file vidéo impossible : {}", e))?;
+    .map_err(|e| crate::erreurs::journalisee("err.queue", format!("Création de la file vidéo impossible : {}", e)))?;
 
     // Rattrapage des bases antérieures.
     //
@@ -268,7 +268,7 @@ pub fn enfiler(
             taille
         ],
     )
-    .map_err(|e| format!("Mise en file impossible : {}", e))?;
+    .map_err(|e| crate::erreurs::journalisee("err.queue", format!("Mise en file impossible : {}", e)))?;
 
     Ok(conn.last_insert_rowid())
 }
@@ -324,16 +324,16 @@ pub fn prochains(
 
     let mut requete = conn
         .prepare(requete)
-        .map_err(|e| format!("Lecture de la file impossible : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.queue", format!("Lecture de la file impossible : {}", e)))?;
 
     let lignes = requete
         .query_map(params![event_id, limite as i64], ligne_vers_element)
-        .map_err(|e| format!("Lecture de la file impossible : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.queue", format!("Lecture de la file impossible : {}", e)))?;
 
     let mut elements = Vec::new();
 
     for ligne in lignes {
-        elements.push(ligne.map_err(|e| format!("Lecture d'une ligne impossible : {}", e))?);
+        elements.push(ligne.map_err(|e| crate::erreurs::journalisee("err.queue", format!("Lecture d'une ligne impossible : {}", e)))?);
     }
 
     Ok(elements)
@@ -395,7 +395,7 @@ pub fn statistiques_filtrees(
              GROUP BY kind, status",
             filtre
         ))
-        .map_err(|e| format!("Statistiques impossibles : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.queue", format!("Statistiques impossibles : {}", e)))?;
 
     let lignes = requete
         .query_map(rusqlite::params_from_iter(valeurs.iter()), |ligne| {
@@ -406,11 +406,11 @@ pub fn statistiques_filtrees(
                 ligne.get::<_, i64>(3)?,
             ))
         })
-        .map_err(|e| format!("Statistiques impossibles : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.queue", format!("Statistiques impossibles : {}", e)))?;
 
     for ligne in lignes {
         let (nature, statut, nombre, octets) =
-            ligne.map_err(|e| format!("Lecture impossible : {}", e))?;
+            ligne.map_err(|e| crate::erreurs::journalisee("err.queue", format!("Lecture impossible : {}", e)))?;
 
         let nature = QueueKind::from_str(&nature);
 
@@ -485,7 +485,7 @@ pub fn statistiques_filtrees(
             rusqlite::params_from_iter(valeurs.iter()),
             |ligne| ligne.get(0),
         )
-        .map_err(|e| format!("Statistiques impossibles : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.queue", format!("Statistiques impossibles : {}", e)))?;
 
     Ok(stats)
 }
@@ -511,7 +511,7 @@ pub fn reserver(conn: &Connection, id: i64) -> Result<bool, String> {
              WHERE id = ?1 AND status = 'pending'",
             params![id],
         )
-        .map_err(|e| format!("Réservation impossible : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.queue", format!("Réservation impossible : {}", e)))?;
 
     Ok(modifiees == 1)
 }
@@ -535,7 +535,7 @@ fn variante_en_cours(conn: &Connection, element: &QueueItem) -> Result<bool, Str
             params![element.session_id, index, element.id],
             |l| l.get(0),
         )
-        .map_err(|e| format!("Lecture de la file impossible : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.queue", format!("Lecture de la file impossible : {}", e)))?;
 
     Ok(nombre > 0)
 }
@@ -659,16 +659,16 @@ fn prochains_de_nature(
              LIMIT ?2",
             filtre_nature
         ))
-        .map_err(|e| format!("Lecture de la file impossible : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.queue", format!("Lecture de la file impossible : {}", e)))?;
 
     let lignes = requete
         .query_map(params![event_id, limite as i64], ligne_vers_element)
-        .map_err(|e| format!("Lecture de la file impossible : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.queue", format!("Lecture de la file impossible : {}", e)))?;
 
     let mut elements = Vec::new();
 
     for ligne in lignes {
-        elements.push(ligne.map_err(|e| format!("Lecture d'une ligne impossible : {}", e))?);
+        elements.push(ligne.map_err(|e| crate::erreurs::journalisee("err.queue", format!("Lecture d'une ligne impossible : {}", e)))?);
     }
 
     Ok(elements)
@@ -683,7 +683,7 @@ pub fn liberer(conn: &Connection, id: i64) -> Result<(), String> {
         "UPDATE video_queue SET status = 'pending' WHERE id = ?1 AND status = 'sending'",
         params![id],
     )
-    .map_err(|e| format!("Libération impossible : {}", e))?;
+    .map_err(|e| crate::erreurs::journalisee("err.queue", format!("Libération impossible : {}", e)))?;
 
     Ok(())
 }
@@ -700,7 +700,7 @@ pub fn liberer_orphelins(conn: &Connection) -> Result<usize, String> {
             "UPDATE video_queue SET status = 'pending' WHERE status = 'sending'",
             [],
         )
-        .map_err(|e| format!("Libération impossible : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.queue", format!("Libération impossible : {}", e)))?;
 
     Ok(nombre)
 }
@@ -713,7 +713,7 @@ pub fn marquer_envoye(conn: &Connection, id: i64) -> Result<(), String> {
          WHERE id = ?1",
         params![id],
     )
-    .map_err(|e| format!("Mise à jour impossible : {}", e))?;
+    .map_err(|e| crate::erreurs::journalisee("err.queue", format!("Mise à jour impossible : {}", e)))?;
 
     Ok(())
 }
@@ -731,7 +731,7 @@ pub fn marquer_echec(conn: &Connection, id: i64, erreur: &str) -> Result<bool, S
          WHERE id = ?1",
         params![id, erreur],
     )
-    .map_err(|e| format!("Mise à jour impossible : {}", e))?;
+    .map_err(|e| crate::erreurs::journalisee("err.queue", format!("Mise à jour impossible : {}", e)))?;
 
     let tentatives: i64 = conn
         .query_row(
@@ -746,7 +746,7 @@ pub fn marquer_echec(conn: &Connection, id: i64, erreur: &str) -> Result<bool, S
             "UPDATE video_queue SET status = 'failed' WHERE id = ?1",
             params![id],
         )
-        .map_err(|e| format!("Mise à jour impossible : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.queue", format!("Mise à jour impossible : {}", e)))?;
 
         return Ok(true);
     }
@@ -766,7 +766,7 @@ pub fn marquer_echec_definitif(conn: &Connection, id: i64, erreur: &str) -> Resu
          WHERE id = ?1",
         params![id, erreur],
     )
-    .map_err(|e| format!("Mise à jour impossible : {}", e))?;
+    .map_err(|e| crate::erreurs::journalisee("err.queue", format!("Mise à jour impossible : {}", e)))?;
 
     Ok(())
 }
@@ -784,7 +784,7 @@ pub fn ecarter_images(conn: &Connection, event_id: i64) -> Result<usize, String>
            AND (event_id = ?1 OR event_id IS NULL)",
         params![event_id],
     )
-    .map_err(|e| format!("Mise à jour impossible : {}", e))
+    .map_err(|e| crate::erreurs::journalisee("err.queue", format!("Mise à jour impossible : {}", e)))
 }
 
 /// Écarte un élément précis sans l'envoyer (images d'un lot refusé).
@@ -793,7 +793,7 @@ pub fn ecarter_element(conn: &Connection, id: i64, raison: &str) -> Result<(), S
         "UPDATE video_queue SET status = 'skipped', last_error = ?2 WHERE id = ?1",
         params![id, raison],
     )
-    .map_err(|e| format!("Mise à jour impossible : {}", e))?;
+    .map_err(|e| crate::erreurs::journalisee("err.queue", format!("Mise à jour impossible : {}", e)))?;
 
     Ok(())
 }
@@ -812,16 +812,16 @@ pub fn purger_absents(conn: &Connection, event_id: i64) -> Result<Vec<QueueItem>
              FROM video_queue
              WHERE status IN ('pending', 'failed') AND (event_id = ?1 OR event_id IS NULL)",
         )
-        .map_err(|e| format!("Lecture de la file impossible : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.queue", format!("Lecture de la file impossible : {}", e)))?;
 
     let lignes = requete
         .query_map(params![event_id], ligne_vers_element)
-        .map_err(|e| format!("Lecture de la file impossible : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.queue", format!("Lecture de la file impossible : {}", e)))?;
 
     let mut absents = Vec::new();
 
     for ligne in lignes {
-        let element = ligne.map_err(|e| format!("Lecture d'une ligne impossible : {}", e))?;
+        let element = ligne.map_err(|e| crate::erreurs::journalisee("err.queue", format!("Lecture d'une ligne impossible : {}", e)))?;
 
         if !std::path::Path::new(&element.file_path).exists() {
             absents.push(element);
@@ -846,7 +846,7 @@ pub fn marquer_absent(conn: &Connection, id: i64) -> Result<(), String> {
          WHERE id = ?1",
         params![id],
     )
-    .map_err(|e| format!("Mise à jour impossible : {}", e))?;
+    .map_err(|e| crate::erreurs::journalisee("err.queue", format!("Mise à jour impossible : {}", e)))?;
 
     Ok(())
 }
@@ -863,19 +863,19 @@ pub fn bilan_hd_depuis(conn: &Connection, event_id: i64, depuis: i64) -> Result<
                AND sent_at >= datetime(?2, 'unixepoch')
              GROUP BY status",
         )
-        .map_err(|e| format!("Bilan HD impossible : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.queue", format!("Bilan HD impossible : {}", e)))?;
 
     let lignes = requete
         .query_map(params![event_id, depuis], |ligne| {
             Ok((ligne.get::<_, String>(0)?, ligne.get::<_, i64>(1)?))
         })
-        .map_err(|e| format!("Bilan HD impossible : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.queue", format!("Bilan HD impossible : {}", e)))?;
 
     let mut envoyes = 0;
     let mut absents = 0;
 
     for ligne in lignes {
-        let (statut, nombre) = ligne.map_err(|e| format!("Lecture impossible : {}", e))?;
+        let (statut, nombre) = ligne.map_err(|e| crate::erreurs::journalisee("err.queue", format!("Lecture impossible : {}", e)))?;
 
         match statut.as_str() {
             "sent" => envoyes = nombre,
@@ -900,7 +900,7 @@ pub fn prochain_numero_clip(conn: &Connection, event_id: i64) -> Result<u32, Str
             params![event_id],
             |l| l.get(0),
         )
-        .map_err(|e| format!("Lecture de la file impossible : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.queue", format!("Lecture de la file impossible : {}", e)))?;
 
     Ok(max.map(|m| m.max(0) as u32 + 1).unwrap_or(1))
 }
@@ -914,7 +914,7 @@ pub fn relancer_echecs(conn: &Connection) -> Result<usize, String> {
              WHERE status = 'failed'",
             [],
         )
-        .map_err(|e| format!("Relance impossible : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.queue", format!("Relance impossible : {}", e)))?;
 
     Ok(nombre)
 }
@@ -937,7 +937,7 @@ pub fn purger_envoyes(conn: &Connection, session_id: &str) -> Result<usize, Stri
             "DELETE FROM video_queue WHERE session_id = ?1 AND status = 'sent'",
             params![session_id],
         )
-        .map_err(|e| format!("Purge impossible : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.queue", format!("Purge impossible : {}", e)))?;
 
     Ok(nombre)
 }
@@ -1024,7 +1024,7 @@ fn ecarter(
                AND status IN ('pending', 'failed')",
             params![session_id, kind.as_str(), clip_index],
         )
-        .map_err(|e| format!("Réconciliation impossible : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.queue", format!("Réconciliation impossible : {}", e)))?;
 
     Ok((nombre, octets))
 }

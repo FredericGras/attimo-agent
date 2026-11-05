@@ -40,7 +40,6 @@ pub struct LoginResponse {
 #[derive(Debug, Serialize, Clone)]
 pub struct StartSessionResponse {
     pub session_id: i64,
-    pub message: String,
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -157,7 +156,7 @@ pub async fn start_session(
 ) -> Result<StartSessionResponse, String> {
     let folder_path = PathBuf::from(&folder);
     if !folder_path.exists() || !folder_path.is_dir() {
-        return Err(format!("Le dossier n'existe pas : {}", folder));
+        return Err(crate::erreurs::avec("err.folder_missing", &[("folder", folder.clone())]));
     }
 
     {
@@ -179,7 +178,7 @@ pub async fn start_session(
         include_existing,
         parallel,
     )
-    .map_err(|e| format!("Erreur création session: {}", e))?;
+    .map_err(|e| crate::erreurs::journalisee("err.database", format!("création de la session : {}", e)))?;
 
     info!(
         "Session #{} créée : événement='{}', dossier='{}', parallel={}",
@@ -241,7 +240,6 @@ pub async fn start_session(
 
     Ok(StartSessionResponse {
         session_id,
-        message: format!("Surveillance démarrée pour '{}'", event_name),
     })
 }
 
@@ -255,7 +253,7 @@ pub async fn pause_session(state: tauri::State<'_, AppState>) -> Result<(), Stri
             info!("Session #{} mise en pause", session.session_id);
             Ok(())
         }
-        None => Err("Aucune session active.".to_string()),
+        None => Err("err.no_session".to_string()),
     }
 }
 
@@ -277,7 +275,7 @@ pub async fn set_parallel(
             info!("Session #{} : {} envoi(s) simultané(s)", session.session_id, n);
             Ok(())
         }
-        None => Err("Aucune session active.".to_string()),
+        None => Err("err.no_session".to_string()),
     }
 }
 
@@ -316,7 +314,7 @@ pub async fn resume_session(
 
             Ok(())
         }
-        None => Err("Aucune session active.".to_string()),
+        None => Err("err.no_session".to_string()),
     }
 }
 
@@ -336,7 +334,7 @@ pub async fn stop_session(state: tauri::State<'_, AppState>) -> Result<(), Strin
 
             Ok(())
         }
-        None => Err("Aucune session active.".to_string()),
+        None => Err("err.no_session".to_string()),
     }
 }
 
@@ -347,7 +345,7 @@ pub async fn stop_session(state: tauri::State<'_, AppState>) -> Result<(), Strin
 #[tauri::command]
 pub async fn get_session_stats(session_id: i64) -> Result<database::SessionStats, String> {
     database::get_session_stats(session_id)
-        .map_err(|e| format!("Erreur base de données: {}", e))
+        .map_err(|e| crate::erreurs::journalisee("err.database", e))
 }
 
 #[tauri::command]
@@ -356,10 +354,10 @@ pub async fn retry_failed(
     session_id: i64,
 ) -> Result<u64, String> {
     let failed_files = database::get_failed_files(session_id)
-        .map_err(|e| format!("Erreur base de données: {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.database", e))?;
 
     let count = database::reset_failed_files(session_id)
-        .map_err(|e| format!("Erreur base de données: {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.database", e))?;
 
     let session_lock = state.active_session.lock().await;
     if let Some(session) = &*session_lock {
@@ -386,7 +384,7 @@ pub async fn retry_failed(
 #[tauri::command]
 pub async fn retry_file(file_id: i64) -> Result<(), String> {
     database::reset_file(file_id)
-        .map_err(|e| format!("Erreur base de données: {}", e))
+        .map_err(|e| crate::erreurs::journalisee("err.database", e))
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -508,7 +506,7 @@ pub async fn start_recording(
     let dossier = std::path::PathBuf::from(&config.output_dir).join(&session_id);
 
     std::fs::create_dir_all(&dossier)
-        .map_err(|e| format!("Impossible de créer le dossier de la captation : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.create_folder", format!("dossier de la captation : {}", e)))?;
 
     config.output_dir = dossier.to_string_lossy().to_string();
 
@@ -527,11 +525,12 @@ pub async fn start_recording(
     // que le photographe l'apprenne maintenant, quand il peut encore libérer
     // de la place ou changer de disque.
     if estimation.autonomy_secs < 600 {
-        return Err(format!(
-            "Espace disque insuffisant : {} Go utilisables pour {} Go/h. \
-             Libérez de la place ou choisissez un autre disque.",
-            estimation.usable_bytes / 1_073_741_824,
-            estimation.total_per_hour / 1_073_741_824
+        return Err(crate::erreurs::avec(
+            "err.disk_insufficient",
+            &[
+                ("usable", (estimation.usable_bytes / 1_073_741_824).to_string()),
+                ("rate", (estimation.total_per_hour / 1_073_741_824).to_string()),
+            ],
         ));
     }
 
@@ -834,7 +833,7 @@ async fn extraire_images_morceau(
     let verrou = state.active_recording.lock().await;
 
     let Some(enregistrement) = verrou.as_ref() else {
-        return Err("Aucune captation en cours.".to_string());
+        return Err("err.no_recording".to_string());
     };
 
     let dossier = enregistrement.work_dir.clone();
@@ -901,7 +900,7 @@ pub async fn upload_clip(
     let variante = match variant.as_str() {
         "proxy" => crate::video_uploader::ClipVariant::Proxy,
         "hd" => crate::video_uploader::ClipVariant::Hd,
-        autre => return Err(format!("Variante inconnue : {}", autre)),
+        autre => return Err(crate::erreurs::journalisee("err.unknown", format!("variante inconnue : {}", autre))),
     };
 
     crate::video_uploader::envoyer_clip(
@@ -992,10 +991,10 @@ pub async fn queue_video_file(
         "frames" => crate::video_queue::QueueKind::Frames,
         "clip_proxy" => crate::video_queue::QueueKind::ClipProxy,
         "clip_hd" => crate::video_queue::QueueKind::ClipHd,
-        autre => return Err(format!("Nature inconnue : {}", autre)),
+        autre => return Err(crate::erreurs::journalisee("err.unknown", format!("nature inconnue : {}", autre))),
     };
 
-    let conn = database::connexion().map_err(|e| format!("Base indisponible : {}", e))?;
+    let conn = database::connexion().map_err(|e| crate::erreurs::journalisee("err.database", e))?;
 
     crate::video_queue::enfiler(
         &conn,
@@ -1028,7 +1027,7 @@ pub async fn video_queue_stats(
     sessions: Option<Vec<String>>,
     hd_since_ms: Option<i64>,
 ) -> Result<crate::video_queue::QueueStats, String> {
-    let conn = database::connexion().map_err(|e| format!("Base indisponible : {}", e))?;
+    let conn = database::connexion().map_err(|e| crate::erreurs::journalisee("err.database", e))?;
 
     let mut stats =
         crate::video_queue::statistiques_filtrees(&conn, event_id, &sessions.unwrap_or_default())?;
@@ -1115,7 +1114,7 @@ pub async fn process_video_queue(
     let autoriser_hd = *state.allow_hd_upload.lock().await;
     let voie = crate::video_queue::Voie::depuis_texte(voie.as_deref());
 
-    let conn = database::connexion().map_err(|e| format!("Base indisponible : {}", e))?;
+    let conn = database::connexion().map_err(|e| crate::erreurs::journalisee("err.database", e))?;
 
     // Épreuve sans identification : les images arrivées entre-temps sortent
     // de la file sans partir.
@@ -1446,7 +1445,7 @@ fn decrire_absents(absents: &[crate::video_queue::QueueItem]) -> Vec<serde_json:
 /// rester « en attente » et d'échouer au clic.
 #[tauri::command]
 pub async fn purge_missing_video_files(event_id: i64) -> Result<Vec<serde_json::Value>, String> {
-    let conn = database::connexion().map_err(|e| format!("Base indisponible : {}", e))?;
+    let conn = database::connexion().map_err(|e| crate::erreurs::journalisee("err.database", e))?;
 
     let absents = crate::video_queue::purger_absents(&conn, event_id)?;
 
@@ -1572,7 +1571,7 @@ pub async fn export_journal(
     use tauri::Manager;
 
     if !crate::journal::nom_export_valide(&nom) {
-        return Err(format!("Nom de fichier refusé : {}", nom));
+        return Err(crate::erreurs::journalisee("err.export_failed", format!("nom de fichier refusé : {}", nom)));
     }
 
     let surveilles: Vec<PathBuf> = surveilles
@@ -1590,11 +1589,11 @@ pub async fn export_journal(
     if std::fs::create_dir_all(&dossier).is_err() {
         dossier = repli;
         std::fs::create_dir_all(&dossier)
-            .map_err(|e| format!("Impossible de créer {} : {}", dossier.display(), e))?;
+            .map_err(|e| crate::erreurs::journalisee("err.export_failed", format!("création de {} : {}", dossier.display(), e)))?;
     }
 
     let destination = dossier.join(&nom);
-    crate::journal::exporter(&destination)?;
+    crate::journal::exporter(&destination).map_err(|e| crate::erreurs::journalisee("err.export_failed", e))?;
 
     info!("Journal exporté : {}", destination.display());
     montrer_dans_l_explorateur(&destination);
@@ -1621,7 +1620,7 @@ fn montrer_dans_l_explorateur(fichier: &std::path::Path) {
 /// Remet en file les éléments abandonnés.
 #[tauri::command]
 pub async fn retry_video_queue() -> Result<usize, String> {
-    let conn = database::connexion().map_err(|e| format!("Base indisponible : {}", e))?;
+    let conn = database::connexion().map_err(|e| crate::erreurs::journalisee("err.database", e))?;
 
     crate::video_queue::relancer_echecs(&conn)
 }
@@ -1661,7 +1660,7 @@ pub struct FinDeCaptation {
     /// filmées sont alors perdues, et il faut le dire.
     pub morceau_final_exploitable: bool,
 
-    /// Message à afficher au photographe le cas échéant.
+    /// Code d'erreur à afficher au photographe le cas échéant.
     pub avertissement: Option<String>,
 
     pub frames: Vec<crate::frames::ExtractedFrame>,
@@ -1720,7 +1719,7 @@ async fn arreter(
         let mut verrou = state.active_recording.lock().await;
 
         let Some(poignee) = verrou.as_mut() else {
-            return Err("Aucune captation en cours.".to_string());
+            return Err("err.no_recording".to_string());
         };
 
         // Un seul arrêt à la fois (0.3.1). Le second appelant — double clic,
@@ -1806,14 +1805,15 @@ async fn arreter(
                 Err(e) => log::error!("Assemblage du dernier morceau : {}", e),
             }
         } else {
-            let message = format!(
-                "Le morceau {} n'a pas pu être refermé : les dernières \
-                 secondes filmées sont perdues.",
+            log::error!(
+                "Le morceau {} n'a pas pu être refermé : les dernières secondes filmées sont perdues.",
                 index
             );
 
-            log::error!("{}", message);
-            fin.avertissement = Some(message);
+            fin.avertissement = Some(crate::erreurs::avec(
+                "err.segment_not_closed",
+                &[("index", index.to_string())],
+            ));
         }
     }
 

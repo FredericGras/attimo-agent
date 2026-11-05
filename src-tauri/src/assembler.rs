@@ -152,7 +152,7 @@ impl ClipTracker {
         let dossier_clips = dossier_travail.join("clips");
 
         std::fs::create_dir_all(&dossier_clips)
-            .map_err(|e| format!("Impossible de créer le dossier des clips : {}", e))?;
+            .map_err(|e| crate::erreurs::journalisee("err.create_folder", format!("dossier des clips : {}", e)))?;
 
         Ok(Self {
             plan,
@@ -305,10 +305,7 @@ pub async fn assembler_clip(
             .join(format!("m_{:06}.mp4", index));
 
         if !chemin.exists() {
-            return Err(format!(
-                "Le morceau {} est introuvable — le clip ne peut pas être assemblé.",
-                index
-            ));
+            return Err(crate::erreurs::avec("err.segment_missing", &[("index", index.to_string())]));
         }
 
         // Les antislash de Windows doivent être doublés, et les apostrophes
@@ -323,7 +320,7 @@ pub async fn assembler_clip(
         .join(format!(".liste_{}.txt", index_clip));
 
     std::fs::write(&fichier_liste, &liste)
-        .map_err(|e| format!("Impossible d'écrire la liste d'assemblage : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.assembly_failed", format!("liste d'assemblage : {}", e)))?;
 
     // ─── Nom du clip ───
 
@@ -357,12 +354,12 @@ pub async fn assembler_clip(
     let commande = app
         .shell()
         .sidecar("ffmpeg")
-        .map_err(|e| format!("FFmpeg embarqué introuvable : {}", e))?
+        .map_err(|e| crate::erreurs::journalisee("err.ffmpeg_missing", e))?
         .args(arguments);
 
     let (mut evenements, _enfant) = commande
         .spawn()
-        .map_err(|e| format!("Impossible de lancer l'assemblage : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.ffmpeg_start", format!("assemblage : {}", e)))?;
 
     let mut journal = String::new();
 
@@ -385,19 +382,25 @@ pub async fn assembler_clip(
     // fichier de taille plausible qui fait foi.
 
     let metadonnees = std::fs::metadata(&chemin_clip).map_err(|_| {
-        format!(
-            "L'assemblage n'a produit aucun fichier.\n\nJournal FFmpeg :\n{}",
-            journal.chars().rev().take(500).collect::<String>().chars().rev().collect::<String>()
+        crate::erreurs::journalisee(
+            "err.assembly_failed",
+            format!(
+                "aucun fichier produit. Journal FFmpeg : {}",
+                journal.chars().rev().take(500).collect::<String>().chars().rev().collect::<String>()
+            ),
         )
     })?;
 
     let taille = metadonnees.len();
 
     if taille < 1024 {
-        return Err(format!(
-            "Le clip produit est vide ({} octets).\n\nJournal FFmpeg :\n{}",
-            taille,
-            journal.chars().rev().take(500).collect::<String>().chars().rev().collect::<String>()
+        return Err(crate::erreurs::journalisee(
+            "err.assembly_failed",
+            format!(
+                "clip vide ({} octets). Journal FFmpeg : {}",
+                taille,
+                journal.chars().rev().take(500).collect::<String>().chars().rev().collect::<String>()
+            ),
         ));
     }
 
@@ -506,11 +509,11 @@ pub async fn generer_proxy(
 ) -> Result<PathBuf, String> {
     let dossier = chemin_clip
         .parent()
-        .ok_or_else(|| "Chemin de clip invalide.".to_string())?
+        .ok_or_else(|| "err.proxy_failed".to_string())?
         .join("proxy");
 
     std::fs::create_dir_all(&dossier)
-        .map_err(|e| format!("Impossible de créer le dossier des versions légères : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.create_folder", format!("dossier des versions légères : {}", e)))?;
 
     let nom = chemin_clip
         .file_name()
@@ -555,12 +558,12 @@ pub async fn generer_proxy(
     let commande = app
         .shell()
         .sidecar("ffmpeg")
-        .map_err(|e| format!("FFmpeg embarqué introuvable : {}", e))?
+        .map_err(|e| crate::erreurs::journalisee("err.ffmpeg_missing", e))?
         .args(arguments);
 
     let (mut evenements, _enfant) = commande
         .spawn()
-        .map_err(|e| format!("Impossible de lancer la conversion : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.ffmpeg_start", format!("conversion : {}", e)))?;
 
     let mut journal = String::new();
 
@@ -575,12 +578,12 @@ pub async fn generer_proxy(
     }
 
     let metadonnees = std::fs::metadata(&chemin_proxy)
-        .map_err(|_| "La conversion n'a produit aucun fichier.".to_string())?;
+        .map_err(|e| crate::erreurs::journalisee("err.proxy_failed", format!("aucun fichier produit : {}", e)))?;
 
     if metadonnees.len() < 1024 {
-        return Err(format!(
-            "La version légère est vide ({} octets).",
-            metadonnees.len()
+        return Err(crate::erreurs::journalisee(
+            "err.proxy_failed",
+            format!("version légère vide ({} octets)", metadonnees.len()),
         ));
     }
 

@@ -12,6 +12,7 @@ mod commands;
 mod database;
 mod disk;
 mod empreinte;
+mod erreurs;
 mod frames;
 mod journal;
 mod manifest;

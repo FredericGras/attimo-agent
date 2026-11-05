@@ -26,6 +26,71 @@ function stats(champs) {
     }, champs);
 }
 
+// 0.3.7 — Les erreurs de l'agent sont des codes, traduits ici.
+test("erreur de l'agent : code seul, code et variables", () => {
+    assert.strictEqual(A.messageErreur('err.network', t), 'err.network{}');
+    assert.strictEqual(A.messageErreur('err.folder_missing|{"folder":"D:\\\\Photos \\"été\\""}', t),
+        'err.folder_missing{"folder":"D:\\\\Photos \\"été\\""}');
+    assert.strictEqual(A.messageErreur('SESSION_EXPIRED', t), 'connection.expired');
+});
+
+test("erreur de l'agent : un texte inconnu ne s'affiche jamais tel quel", () => {
+    assert.strictEqual(A.messageErreur('Base indisponible : disk I/O error', t), 'err.unknown');
+    assert.strictEqual(A.messageErreur('invalid args `token` for command', t), 'err.unknown');
+    assert.strictEqual(A.messageErreur('', t), 'err.unknown');
+    assert.strictEqual(A.messageErreur(undefined, t), 'err.unknown');
+    assert.strictEqual(A.messageErreur('err.network|{pas du json', t), 'err.unknown');
+
+    // Code absent des fichiers de langue : t() rend la clé.
+    const tSansCle = (cle) => (cle === 'err.unknown' ? 'générique' : cle);
+    assert.strictEqual(A.messageErreur('err.inconnue', tSansCle), 'générique');
+});
+
+// 0.3.7 — Détection de la langue : i18n.js est un script classique, chargé ici
+// comme le fait la page, sans écran.
+function chargerI18n(langueNavigateur) {
+    const source = fs.readFileSync(path.join(__dirname, '..', 'src', 'i18n.js'), 'utf8');
+    const ctx = { navigator: { language: langueNavigateur }, console };
+    vm.runInNewContext(source, ctx);
+    return ctx;
+}
+
+test('langue du navigateur : Brésil et Portugal distincts', () => {
+    assert.strictEqual(chargerI18n('pt-BR').detectLocale(), 'pt_BR');
+    assert.strictEqual(chargerI18n('pt-br').detectLocale(), 'pt_BR');
+    assert.strictEqual(chargerI18n('pt-PT').detectLocale(), 'pt');
+    assert.strictEqual(chargerI18n('pt').detectLocale(), 'pt');
+    assert.strictEqual(chargerI18n('pt-AO').detectLocale(), 'pt');
+});
+
+test('langue du navigateur : norvégien, anglais, autres', () => {
+    assert.strictEqual(chargerI18n('nb-NO').detectLocale(), 'no');
+    assert.strictEqual(chargerI18n('nn').detectLocale(), 'no');
+    assert.strictEqual(chargerI18n('no').detectLocale(), 'no');
+    assert.strictEqual(chargerI18n('en-US').detectLocale(), 'us');
+    assert.strictEqual(chargerI18n('en-GB').detectLocale(), 'en');
+    assert.strictEqual(chargerI18n('de-AT').detectLocale(), 'de');
+    assert.strictEqual(chargerI18n('fil-PH').detectLocale(), 'fr');
+    assert.strictEqual(chargerI18n('ja-JP').detectLocale(), 'fr');
+});
+
+test('forme web de la langue : acceptée par Intl pour les 28', () => {
+    const i18n = chargerI18n('fr-FR');
+
+    assert.strictEqual(i18n.localeWeb('pt_BR'), 'pt-BR');
+    assert.strictEqual(i18n.localeWeb('us'), 'en-US');
+    assert.strictEqual(i18n.localeWeb('fr'), 'fr');
+    assert.throws(() => new Date().toLocaleTimeString('pt_BR'), RangeError);
+
+    const langues = fs.readdirSync(path.join(__dirname, '..', 'src', 'lang')).map(f => f.replace('.json', ''));
+
+    assert.strictEqual(langues.length, 28);
+
+    for (const langue of langues) {
+        assert.doesNotThrow(() => new Date().toLocaleTimeString(i18n.localeWeb(langue)), langue);
+    }
+});
+
 test('envoi photo : les trois libellés', () => {
     assert.match(A.messageEnvoiPhoto('reseau_serveur', 3100, 2800, 300, t), /^upload\.success_timing/);
     assert.strictEqual(A.messageEnvoiPhoto('serveur', 2600, 40, 2100, t),

@@ -278,9 +278,12 @@ fn inscrire_fichier(
             "file_skipped",
             serde_json::json!({
                 "filename": filename,
-                "reason": format!(
-                    "Trop volumineux ({:.1} Mo, max 20 Mo)",
-                    file_size as f64 / 1_048_576.0
+                "reason": crate::erreurs::avec(
+                    "err.file_too_big",
+                    &[
+                        ("size", format!("{:.1}", file_size as f64 / 1_048_576.0)),
+                        ("max", (MAX_FILE_SIZE / 1_048_576).to_string()),
+                    ],
                 ),
             }),
         );
@@ -773,7 +776,7 @@ pub fn start_watching(
         },
         Config::default(),
     )
-    .map_err(|e| format!("Erreur création watcher: {}", e))?;
+    .map_err(|e| crate::erreurs::journalisee("err.watch_failed", format!("création : {}", e)))?;
 
     // ── Démarrer la surveillance du dossier ──
     let mode = if recursive {
@@ -784,7 +787,7 @@ pub fn start_watching(
 
     watcher
         .watch(folder.as_ref(), mode)
-        .map_err(|e| format!("Erreur démarrage surveillance de {}: {}", folder.display(), e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.watch_failed", format!("{} : {}", folder.display(), e)))?;
 
     info!(
         "Surveillance démarrée: {} (récursif: {})",

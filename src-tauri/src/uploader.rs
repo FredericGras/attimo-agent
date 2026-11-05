@@ -387,11 +387,11 @@ fn create_http_client() -> Result<reqwest::Client, String> {
 async fn lire_photo(file_path: &Path) -> Result<Vec<u8>, String> {
     tokio::fs::read(file_path).await.map_err(|e| {
         if e.kind() == std::io::ErrorKind::NotFound {
-            format!("Fichier introuvable: {}", file_path.display())
+            crate::erreurs::avec("err.file_not_found", &[("path", file_path.display().to_string())])
         } else if e.kind() == std::io::ErrorKind::PermissionDenied {
-            format!("Accès refusé: {}", file_path.display())
+            crate::erreurs::avec("err.file_denied", &[("path", file_path.display().to_string())])
         } else {
-            format!("Erreur lecture fichier: {}", e)
+            crate::erreurs::journalisee("err.file_read", format!("{} : {}", file_path.display(), e))
         }
     })
 }
@@ -495,7 +495,7 @@ async fn upload_single_file(
     )
     .file_name(filename.to_string())
     .mime_str("image/jpeg")
-    .map_err(|e| Echec::Erreur(format!("Erreur MIME: {}", e)))?;
+    .map_err(|e| Echec::Erreur(crate::erreurs::journalisee("err.unknown", format!("type MIME : {}", e))))?;
 
     let mut form = reqwest::multipart::Form::new()
         .part("photo", file_part)
@@ -521,17 +521,7 @@ async fn upload_single_file(
         .multipart(form)
         .send()
         .await
-        .map_err(|e| {
-            Echec::Erreur(if e.is_timeout() {
-                "Timeout (60s dépassées)".to_string()
-            } else if e.is_connect() {
-                "Impossible de contacter le serveur".to_string()
-            } else if e.is_request() {
-                "Erreur d'envoi de la requête".to_string()
-            } else {
-                format!("Erreur réseau: {}", e)
-            })
-        })?;
+        .map_err(|e| Echec::Erreur(crate::erreurs::reseau(&e)))?;
 
     let envoi_ms = fin_envoi
         .lock()
@@ -565,17 +555,17 @@ async fn upload_single_file(
 
     // Erreur 413 : fichier trop gros pour le serveur
     if status == reqwest::StatusCode::PAYLOAD_TOO_LARGE {
-        return Err(Echec::Erreur("Fichier trop volumineux pour le serveur".to_string()));
+        return Err(Echec::Erreur("err.file_too_large_server".to_string()));
     }
 
     // Erreur serveur 5xx
     if status.is_server_error() {
-        return Err(Echec::Erreur(format!("Erreur serveur ({})", status.as_u16())));
+        return Err(Echec::Erreur(crate::erreurs::statut_serveur(status.as_u16())));
     }
 
     // Autres erreurs HTTP
     if !status.is_success() {
-        return Err(Echec::Erreur(format!("Erreur HTTP ({})", status.as_u16())));
+        return Err(Echec::Erreur(crate::erreurs::statut_serveur(status.as_u16())));
     }
 
     // Temps de traitement annoncé par le serveur (0.3.1). Absent sur un
@@ -591,16 +581,15 @@ async fn upload_single_file(
     let api_response: UploadApiResponse = response
         .json()
         .await
-        .map_err(|e| Echec::Erreur(format!("Erreur lecture réponse: {}", e)))?;
+        .map_err(|e| Echec::Erreur(crate::erreurs::journalisee("err.response_unreadable", e)))?;
 
     let total_ms = debut.elapsed().as_millis() as u64;
 
     if !api_response.success {
-        return Err(Echec::Erreur(
-            api_response
-                .message
-                .unwrap_or_else(|| "Erreur inconnue du serveur".to_string()),
-        ));
+        return Err(Echec::Erreur(crate::erreurs::du_serveur(
+            api_response.message,
+            "err.server_refused",
+        )));
     }
 
     // Extraire l'ID de la photo créée sur le serveur
@@ -1106,7 +1095,7 @@ pub fn start_upload_workers(
                                 tentatives += 1;
 
                                 if tentatives >= MAX_ATTEMPTS {
-                                    let message = format!("Serveur indisponible ({})", code);
+                                    let message = crate::erreurs::avec("err.server_unavailable", &[("code", code.to_string())]);
 
                                     let _ = database::update_file_status(
                                         job.db_file_id,

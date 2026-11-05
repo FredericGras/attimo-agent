@@ -210,7 +210,7 @@ function initLogin() {
             navigateTo('events');
             loadEvents();
         } catch (error) {
-            errorDiv.textContent = error;
+            errorDiv.textContent = texteErreur(error);
             errorDiv.style.display = 'block';
         } finally {
             btn.disabled = false;
@@ -292,7 +292,7 @@ async function loadEvents() {
             const modeLabel = Affichage.modeIdentification(event.recognition_mode, t);
 
             const liveHtml = event.is_live
-                ? '<span class="event-live">● LIVE</span>'
+                ? `<span class="event-live">● ${escapeHtml(t('events.live'))}</span>`
                 : '';
 
             // Épreuve en brouillon (0.3.5) : à publier sur Attimo.
@@ -337,7 +337,7 @@ async function loadEvents() {
             navigateTo('login');
             return;
         }
-        errorDiv.textContent = error;
+        errorDiv.textContent = texteErreur(error);
         errorDiv.style.display = 'block';
     }
 }
@@ -774,7 +774,7 @@ async function chargerPeripheriquesVideo() {
 
     } catch (e) {
         selectCamera.innerHTML = `<option value="">${escapeHtml(t('config.video_devices_none'))}</option>`;
-        indice.textContent = String(e);
+        indice.textContent = texteErreur(e);
         indice.classList.add('is-warning');
     }
 }
@@ -809,7 +809,7 @@ async function sonderPeripheriqueVideo() {
         // Sans réponse du périphérique, on garde les valeurs par défaut :
         // FFmpeg négociera lui-même au lancement.
         indice.classList.add('is-warning');
-        indice.textContent = String(e);
+        indice.textContent = texteErreur(e);
     }
 }
 
@@ -1005,7 +1005,7 @@ async function rafraichirEstimationDisque() {
 
     } catch (e) {
         bloc.classList.add('is-warning');
-        principal.textContent = String(e);
+        principal.textContent = texteErreur(e);
         secondaire.textContent = '';
     }
 }
@@ -1188,7 +1188,7 @@ async function startSession() {
             addLogEntry(timeNow(), '—', 'success',
                 t('dashboard.msg_parallel', { count: AppState.parallelUploads }));
         } catch (e) {
-            addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: e }));
+            addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: texteErreur(e) }));
         }
 
         majBandeauSession();
@@ -1210,10 +1210,10 @@ async function startSession() {
 
         AppState.sessionId = result.session_id;
         AppState.photoReglages = reglages;
-        addLogEntry(timeNow(), '—', 'success', result.message);
+        addLogEntry(timeNow(), '—', 'success', t('dashboard.msg_started', { event: event.name }));
 
     } catch (error) {
-        addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error }));
+        addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: texteErreur(error) }));
     }
 
     majBoutonPausePhotos();
@@ -1501,7 +1501,7 @@ async function initRustEventListeners() {
     // ── Fichier ignoré (trop gros, etc.) ──
     await listen('file_skipped', (event) => {
         const { filename, reason } = event.payload;
-        addLogEntry(timeNow(), filename, 'retry', reason);
+        addLogEntry(timeNow(), filename, 'retry', texteErreur(reason));
     });
 
     // ── Upload démarré ──
@@ -1563,7 +1563,7 @@ async function initRustEventListeners() {
     // ── Upload échoué ──
     await listen('upload_failed', (event) => {
         const { filename, error, attempt, max_attempts } = event.payload;
-        addLogEntry(timeNow(), filename, 'failed', t('upload.failed', { attempt, max: max_attempts, error }));
+        addLogEntry(timeNow(), filename, 'failed', t('upload.failed', { attempt, max: max_attempts, error: texteErreur(error) }));
     });
 
     // ── Retry programmé ──
@@ -1641,6 +1641,23 @@ function updateUserDisplay() {
     }
 }
 
+/**
+ * Texte traduit d'une erreur venue de l'agent (0.3.7).
+ *
+ * Le Rust renvoie un code (erreurs.rs). Un texte inconnu n'apparaît pas tel
+ * quel à l'écran : message générique traduit, et le texte d'origine au journal
+ * sur le disque pour le diagnostic.
+ */
+function texteErreur(erreur) {
+    const texte = Affichage.messageErreur(erreur, t);
+
+    if (texte === t('err.unknown')) {
+        journalEnAttente.push({ heure: timeNow(), fichier: '—', statut: 'failed', message: String(erreur) });
+    }
+
+    return texte;
+}
+
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
@@ -1651,7 +1668,8 @@ function escapeHtml(text) {
 /// Utilise la locale détectée par i18n pour le format d'heure
 function timeNow() {
     const now = new Date();
-    const locale = typeof getCurrentLocale === 'function' ? getCurrentLocale() : 'fr';
+    // 0.3.7 — Forme web de la langue : `pt_BR` ferait planter Intl.
+    const locale = typeof getWebLocale === 'function' ? getWebLocale() : 'fr';
     return now.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
@@ -1756,8 +1774,8 @@ async function exporterJournal() {
         addLogEntry(timeNow(), '—', 'success', t('journal.exported', { path: destination }));
         alert(t('journal.exported', { path: destination }) + '\n\n' + t('journal.folder_opened'));
     } catch (e) {
-        addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: e }));
-        alert(t('dashboard.msg_error', { error: e }));
+        addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: texteErreur(e) }));
+        alert(t('dashboard.msg_error', { error: texteErreur(e) }));
     }
 }
 
@@ -1997,7 +2015,7 @@ async function initVideo() {
             addLogEntry(timeNow(), '—', 'retry', t('dashboard.msg_retry_queued', { count }));
             demarrerFileVideo();
         } catch (e) {
-            addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: e }));
+            addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: texteErreur(e) }));
         }
     });
 
@@ -2090,7 +2108,7 @@ async function demarrerCaptation(reprise) {
         return true;
 
     } catch (e) {
-        addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: e }));
+        addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: texteErreur(e) }));
         majPanneauVideo();
         return false;
     }
@@ -2123,11 +2141,11 @@ async function refermerCaptationCourante() {
     } catch (e) {
         // ARRET_EN_COURS : la surveillance disque arrête déjà cette
         // captation, son résultat arrivera par l'événement recording-final.
-        // « Aucune captation » : elle est déjà close. Rien à signaler.
+        // err.no_recording : elle est déjà close. Rien à signaler.
         const texte = String(e);
 
-        if (texte !== 'ARRET_EN_COURS' && !texte.includes('Aucune captation')) {
-            addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: e }));
+        if (texte !== 'ARRET_EN_COURS' && texte !== 'err.no_recording') {
+            addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: texteErreur(e) }));
         }
     }
 
@@ -2426,7 +2444,7 @@ async function surMorceauPret(evt) {
 
             await mettreImagesEnFile(res.frames, sessionEnCours);
         } catch (e) {
-            addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: e }));
+            addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: texteErreur(e) }));
         }
     }
 
@@ -2441,7 +2459,7 @@ async function surMorceauPret(evt) {
         await mettreClipEnFile(clip, sessionEnCours);
 
     } catch (e) {
-        addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: e }));
+        addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: texteErreur(e) }));
     }
 }
 
@@ -2502,7 +2520,7 @@ function videoSomme(ids, champ) {
 async function traiterFinDeCaptation(fin, sessionEnCours) {
     if (fin.avertissement) {
         addLogEntry(timeNow(), '—', 'failed',
-            t('dashboard.msg_error', { error: fin.avertissement }));
+            t('dashboard.msg_error', { error: texteErreur(fin.avertissement) }));
     }
 
     // La captation suivante — reprise, relance — continue la numérotation.
@@ -2525,7 +2543,7 @@ async function traiterFinDeCaptation(fin, sessionEnCours) {
             await mettreClipEnFile(clip, sessionEnCours, true);
         }
     } catch (e) {
-        addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: e }));
+        addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: texteErreur(e) }));
     }
 }
 
@@ -2977,7 +2995,7 @@ async function activerEnvoiHd(activer) {
     try {
         await invoke('set_hd_upload', { allow: activer });
     } catch (e) {
-        addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: e }));
+        addLogEntry(timeNow(), '—', 'failed', t('dashboard.msg_error', { error: texteErreur(e) }));
         return;
     }
 
@@ -3346,7 +3364,7 @@ function libelleEchecVideo(cle, resultat) {
         ? t('dashboard.video_clip_label', { index: resultat.clip_index })
         : t('dashboard.video_frames_label');
 
-    return t(cle, { error: `${quoi} — ${resultat.error}` });
+    return t(cle, { error: `${quoi} — ${texteErreur(resultat.error)}` });
 }
 
 /**

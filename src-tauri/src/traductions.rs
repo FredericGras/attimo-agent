@@ -4,13 +4,17 @@
 //
 // 0.3.2 — Contrôle automatique, lancé avec la suite de tests (test.bat) :
 //
-//   - les 27 fichiers de src/lang existent et sont du JSON valide ;
+//   - les 28 fichiers de src/lang existent et sont du JSON valide ;
 //   - chaque langue a toutes les clés du français, et aucune de plus ;
 //   - chaque texte porte exactement les mêmes variables {…} que le
 //     français : une variable oubliée s'afficherait telle quelle, une
 //     variable de trop ne serait jamais remplie ;
 //   - chaque clé appelée par l'interface — t('…'), data-i18n="…" — existe
-//     en français.
+//     en français ;
+//   - 0.3.7 : chaque code d'erreur renvoyé par le Rust (« err.… ») existe en
+//     français, avec les variables que le code lui passe ; aucun n'est resté
+//     en français dans une autre langue ; le portugais du Brésil garde son
+//     vocabulaire.
 //
 // Un oubli ne se découvre donc plus à l'écran, dans une langue que personne
 // ne lit à l'équipe : il fait échouer les tests.
@@ -20,9 +24,9 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 
-const LANGUES: [&str; 27] = [
-    "fr", "en", "de", "es", "it", "pt", "nl", "da", "sv", "no", "fi", "pl", "cs", "sk", "hu", "ro",
-    "bg", "hr", "sl", "et", "lv", "lt", "el", "mt", "ga", "tr", "us",
+const LANGUES: [&str; 28] = [
+    "fr", "en", "de", "es", "it", "pt", "pt_BR", "nl", "da", "sv", "no", "fi", "pl", "cs", "sk", "hu",
+    "ro", "bg", "hr", "sl", "et", "lv", "lt", "el", "mt", "ga", "tr", "us",
 ];
 
 fn dossier_interface() -> PathBuf {
@@ -181,6 +185,211 @@ fn chaque_cle_appelee_par_linterface_existe() {
     }
 
     assert!(manquantes.is_empty(), "Clés absentes de fr.json :\n{}", manquantes.join("\n"));
+}
+
+/// Sources Rust de l'agent, hors ce fichier (ses exemples ne sont pas des
+/// codes réels).
+fn sources_rust() -> Vec<(String, String)> {
+    let dossier = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src");
+
+    std::fs::read_dir(&dossier)
+        .unwrap()
+        .filter_map(|e| e.ok())
+        .map(|e| e.path())
+        .filter(|p| {
+            p.extension().map_or(false, |x| x == "rs")
+                && p.file_name().map_or(true, |n| n != "traductions.rs")
+        })
+        .map(|p| {
+            let nom = p.file_name().unwrap().to_string_lossy().to_string();
+            (nom, std::fs::read_to_string(&p).unwrap())
+        })
+        .collect()
+}
+
+/// Codes d'erreur écrits dans un source : "err.xxx".
+fn codes_erreur(source: &str) -> BTreeSet<String> {
+    let mut codes = BTreeSet::new();
+    let mut reste = source;
+
+    while let Some(position) = reste.find("\"err.") {
+        let apres = &reste[position + 1..];
+        let fin = apres.find('"').unwrap_or(0);
+        let code = &apres[..fin];
+
+        if code.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '.') {
+            codes.insert(code.to_string());
+        }
+
+        reste = &apres[fin..];
+    }
+
+    codes
+}
+
+/// Appels `avec("err.xxx", &[("nom", …), …])` : le code et ses variables.
+fn appels_avec(source: &str) -> Vec<(String, BTreeSet<String>)> {
+    let mut appels = Vec::new();
+    let mut reste = source;
+
+    while let Some(position) = reste.find("avec(") {
+        let apres = reste[position + 5..].trim_start();
+
+        reste = &reste[position + 5..];
+
+        let Some(sans_guillemet) = apres.strip_prefix("\"err.") else {
+            continue;
+        };
+
+        let fin_code = sans_guillemet.find('"').unwrap_or(0);
+        let code = format!("err.{}", &sans_guillemet[..fin_code]);
+        let corps = &sans_guillemet[fin_code..];
+        let corps = &corps[..corps.find(']').unwrap_or(corps.len())];
+
+        let mut noms = BTreeSet::new();
+        let mut morceau = corps;
+
+        while let Some(debut) = morceau.find("(\"") {
+            let suite = &morceau[debut + 2..];
+            let fin = suite.find('"').unwrap_or(0);
+            let nom = &suite[..fin];
+
+            if !nom.is_empty() && nom.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
+                noms.insert(nom.to_string());
+            }
+
+            morceau = &suite[fin..];
+        }
+
+        appels.push((code, noms));
+    }
+
+    appels
+}
+
+#[test]
+fn chaque_code_derreur_du_rust_existe_en_francais() {
+    let reference = charger("fr");
+    let mut manquants = Vec::new();
+
+    for (fichier, source) in sources_rust() {
+        for code in codes_erreur(&source) {
+            if !reference.contains_key(&code) {
+                manquants.push(format!("{} : {}", fichier, code));
+            }
+        }
+    }
+
+    assert!(manquants.is_empty(), "Codes absents de fr.json :\n{}", manquants.join("\n"));
+    assert!(reference.contains_key("err.unknown"), "le message générique doit exister");
+}
+
+#[test]
+fn chaque_code_recoit_les_variables_de_son_texte() {
+    let reference = charger("fr");
+    let mut erreurs = Vec::new();
+
+    for (fichier, source) in sources_rust() {
+        for (code, noms) in appels_avec(&source) {
+            let attendues = reference.get(&code).map(|t| variables(t)).unwrap_or_default();
+
+            if noms != attendues {
+                erreurs.push(format!("{} : {} — {:?} au lieu de {:?}", fichier, code, noms, attendues));
+            }
+        }
+    }
+
+    assert!(erreurs.is_empty(), "Variables des codes d'erreur :\n{}", erreurs.join("\n"));
+}
+
+#[test]
+fn aucun_message_derreur_nest_reste_en_francais() {
+    let reference = charger("fr");
+    let mut erreurs = Vec::new();
+
+    for langue in LANGUES.iter().filter(|l| **l != "fr") {
+        let cles = charger(langue);
+
+        for (cle, texte) in reference.iter().filter(|(c, _)| c.starts_with("err.")) {
+            if cles.get(cle) == Some(texte) {
+                erreurs.push(format!("{} : {}", langue, cle));
+            }
+        }
+    }
+
+    assert!(erreurs.is_empty(), "Restés en français :\n{}", erreurs.join("\n"));
+}
+
+#[test]
+fn chaque_langue_est_proposee_par_linterface() {
+    let source = std::fs::read_to_string(dossier_interface().join("i18n.js")).unwrap();
+
+    for langue in LANGUES {
+        assert!(source.contains(&format!("'{}'", langue)), "{} absente de i18n.js", langue);
+    }
+}
+
+#[test]
+fn le_bresilien_garde_son_vocabulaire() {
+    // Mots du Portugal, en minuscules. Contrôle identique dans son esprit à
+    // tools/i18n/check-pt-br.php du dépôt Attimo.
+    const INTERDITS: [&str; 16] = [
+        "ficheiro", "ecrã", "telemóvel", "utilizador", "palavra-passe", "transferir", "equipa",
+        "desportiv", "desporto", "contacto", "contactar", "encomenda", "definições", "aceder",
+        "registar", "detetad",
+    ];
+
+    let bresil = charger("pt_BR");
+    let portugal = charger("pt");
+    let francais = charger("fr");
+    let mut erreurs = Vec::new();
+
+    for (cle, texte) in &bresil {
+        let minuscule = texte.to_lowercase();
+
+        for mot in INTERDITS {
+            if minuscule.contains(mot) {
+                erreurs.push(format!("{} : « {} » dans {}", cle, mot, texte));
+            }
+        }
+
+        // Le gérondif du Portugal : « a enviar » au lieu de « enviando ».
+        for gerondif in [" a enviar", " a carregar", " a gravar", " a procurar"] {
+            if minuscule.contains(gerondif) {
+                erreurs.push(format!("{} : gérondif du Portugal dans {}", cle, texte));
+            }
+        }
+    }
+
+    assert!(erreurs.is_empty(), "Formes du Portugal :\n{}", erreurs.join("\n"));
+    assert_ne!(bresil, portugal, "le Brésil n'est pas une copie du Portugal");
+    assert!(
+        bresil.iter().filter(|(cle, texte)| francais.get(*cle) == Some(*texte)).count() < 15,
+        "trop de textes restés en français"
+    );
+}
+
+#[test]
+fn reconnait_les_codes_derreur_et_leurs_variables() {
+    let source = r#"
+        return Err("err.simple".to_string());
+        avec("err.deux", &[("folder", folder.clone()), ("size", format!("{:.1}", x))]);
+        avec(
+            "err.multi",
+            &[("index", i.to_string())],
+        );
+        log::info!("err. pas un code");
+    "#;
+
+    let codes = codes_erreur(source);
+    assert!(codes.contains("err.simple") && codes.contains("err.deux") && codes.contains("err.multi"));
+    assert!(!codes.iter().any(|c| c.contains(' ')));
+
+    let appels = appels_avec(source);
+    assert_eq!(appels.len(), 2);
+    assert_eq!(appels[0].0, "err.deux");
+    assert_eq!(appels[0].1, ["folder", "size"].iter().map(|s| s.to_string()).collect());
+    assert_eq!(appels[1].1, ["index"].iter().map(|s| s.to_string()).collect());
 }
 
 #[test]

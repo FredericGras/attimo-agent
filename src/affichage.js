@@ -8,6 +8,45 @@
 
 const Affichage = {
     /**
+     * Texte traduit d'une erreur venue de l'agent (0.3.7).
+     *
+     * Le Rust renvoie un code (« err.network ») ou un code et ses variables
+     * en JSON (« err.folder_missing|{"folder":"D:\\Photos"} »), voir
+     * erreurs.rs. Tout autre texte vaut le message générique : un texte en
+     * dur, dans une langue que le photographe ne lit peut-être pas, ne
+     * s'affiche jamais tel quel.
+     */
+    messageErreur(erreur, t) {
+        const brut = erreur === undefined || erreur === null ? '' : String(erreur);
+
+        if (brut === 'SESSION_EXPIRED') {
+            return t('connection.expired');
+        }
+
+        const separateur = brut.indexOf('|');
+        const cle = separateur === -1 ? brut : brut.slice(0, separateur);
+
+        if (!/^err\.\w+$/.test(cle)) {
+            return t('err.unknown');
+        }
+
+        let variables = {};
+
+        if (separateur !== -1) {
+            try {
+                variables = JSON.parse(brut.slice(separateur + 1)) || {};
+            } catch (_) {
+                return t('err.unknown');
+            }
+        }
+
+        const texte = t(cle, variables);
+
+        // t() rend la clé elle-même quand elle n'existe pas.
+        return texte === cle ? t('err.unknown') : texte;
+    },
+
+    /**
      * Libellé d'un envoi de photo réussi.
      *
      * `format` vient de l'agent (uploader.rs, format_mesure) : la

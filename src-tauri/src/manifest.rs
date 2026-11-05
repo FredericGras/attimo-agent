@@ -174,7 +174,7 @@ impl ManifestWriter {
         intervalle_analyse: f32,
     ) -> Result<Self, String> {
         std::fs::create_dir_all(dossier_travail)
-            .map_err(|e| format!("Impossible de créer le dossier de session : {}", e))?;
+            .map_err(|e| crate::erreurs::journalisee("err.create_folder", format!("dossier de session : {}", e)))?;
 
         let manifeste = Manifest {
             version: "1.3".into(),
@@ -255,14 +255,14 @@ impl ManifestWriter {
 
         if let Some(parent) = self.chemin_index.parent() {
             std::fs::create_dir_all(parent)
-                .map_err(|e| format!("Impossible de créer le dossier d'analyse : {}", e))?;
+                .map_err(|e| crate::erreurs::journalisee("err.create_folder", format!("dossier d'analyse : {}", e)))?;
         }
 
         let mut fichier = OpenOptions::new()
             .create(true)
             .append(true)
             .open(&self.chemin_index)
-            .map_err(|e| format!("Impossible d'ouvrir l'index des images : {}", e))?;
+            .map_err(|e| crate::erreurs::journalisee("err.manifest", format!("ouverture de l'index des images : {}", e)))?;
 
         for image in images {
             // Une ligne JSON par image, sans indentation : format prévu pour
@@ -273,7 +273,7 @@ impl ManifestWriter {
             );
 
             writeln!(fichier, "{}", ligne)
-                .map_err(|e| format!("Écriture impossible dans l'index : {}", e))?;
+                .map_err(|e| crate::erreurs::journalisee("err.manifest", format!("écriture de l'index : {}", e)))?;
         }
 
         self.manifeste.analyse.images_produites += images.len() as u64;
@@ -311,15 +311,15 @@ impl ManifestWriter {
     /// manifeste étant réécrit après chaque clip pendant que l'envoi le lit.
     fn ecrire(&self) -> Result<(), String> {
         let json = serde_json::to_string_pretty(&self.manifeste)
-            .map_err(|e| format!("Sérialisation du manifeste impossible : {}", e))?;
+            .map_err(|e| crate::erreurs::journalisee("err.manifest", format!("sérialisation : {}", e)))?;
 
         let temporaire = self.chemin.with_extension("json.tmp");
 
         std::fs::write(&temporaire, json)
-            .map_err(|e| format!("Écriture du manifeste impossible : {}", e))?;
+            .map_err(|e| crate::erreurs::journalisee("err.manifest", format!("écriture : {}", e)))?;
 
         std::fs::rename(&temporaire, &self.chemin)
-            .map_err(|e| format!("Renommage du manifeste impossible : {}", e))?;
+            .map_err(|e| crate::erreurs::journalisee("err.manifest", format!("renommage : {}", e)))?;
 
         Ok(())
     }

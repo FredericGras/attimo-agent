@@ -234,7 +234,7 @@ fn http_client() -> Result<reqwest::Client, String> {
         .http1_only()
         .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
         .build()
-        .map_err(|e| format!("Erreur client HTTP: {}", e))
+        .map_err(|e| crate::erreurs::journalisee("err.network", format!("client HTTP : {}", e)))
 }
 
 // ─── Appels API ───
@@ -256,10 +256,7 @@ fn http_client() -> Result<reqwest::Client, String> {
 pub async fn validate_app_password(app_password: &str) -> Result<AuthData, String> {
     // Validation locale du format avant d'appeler le serveur (économise un AR réseau)
     if !is_well_formed_app_password(app_password) {
-        return Err(
-            "Format de mot de passe invalide. Le token doit commencer par 'attimo_pat_'."
-                .to_string(),
-        );
+        return Err("err.password_format".to_string());
     }
 
     let client = http_client()?;
@@ -271,41 +268,30 @@ pub async fn validate_app_password(app_password: &str) -> Result<AuthData, Strin
         .bearer_auth(app_password)
         .send()
         .await
-        .map_err(|e| {
-            if e.is_timeout() {
-                "Délai d'attente dépassé. Vérifiez votre connexion internet.".to_string()
-            } else if e.is_connect() {
-                "Impossible de contacter le serveur Attimo. Vérifiez votre connexion internet."
-                    .to_string()
-            } else {
-                format!("Erreur réseau: {}", e)
-            }
-        })?;
+        .map_err(|e| crate::erreurs::reseau(&e))?;
 
     let status = response.status();
 
     if status == reqwest::StatusCode::UNAUTHORIZED {
-        return Err("Mot de passe d'application invalide ou révoqué.".to_string());
+        return Err("err.password_invalid".to_string());
     }
 
     if !status.is_success() {
-        return Err(format!("Erreur serveur ({})", status.as_u16()));
+        return Err(crate::erreurs::statut_serveur(status.as_u16()));
     }
 
     let api_response: MeApiResponse = response
         .json()
         .await
-        .map_err(|e| format!("Erreur lecture réponse: {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.response_unreadable", e))?;
 
     if !api_response.success {
-        return Err(api_response
-            .message
-            .unwrap_or_else(|| "Échec de validation.".to_string()));
+        return Err(crate::erreurs::du_serveur(api_response.message, "err.response_unreadable"));
     }
 
     let user_data = api_response
         .user
-        .ok_or("Données utilisateur manquantes dans la réponse.")?;
+        .ok_or("err.response_unreadable")?;
 
     Ok(AuthData {
         token: app_password.to_string(),
@@ -329,7 +315,7 @@ pub async fn fetch_events(token: &str) -> Result<Vec<SportEvent>, String> {
         .bearer_auth(token)
         .send()
         .await
-        .map_err(|e| format!("Erreur réseau: {}", e))?;
+        .map_err(|e| crate::erreurs::reseau(&e))?;
 
     let status = response.status();
 
@@ -338,16 +324,16 @@ pub async fn fetch_events(token: &str) -> Result<Vec<SportEvent>, String> {
     }
 
     if !status.is_success() {
-        return Err(format!("Erreur serveur ({})", status.as_u16()));
+        return Err(crate::erreurs::statut_serveur(status.as_u16()));
     }
 
     let api_response: EventsApiResponse = response
         .json()
         .await
-        .map_err(|e| format!("Erreur lecture réponse: {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.response_unreadable", e))?;
 
     if !api_response.success {
-        return Err(api_response.message.unwrap_or_else(|| "Erreur inconnue.".to_string()));
+        return Err(crate::erreurs::du_serveur(api_response.message, "err.response_unreadable"));
     }
 
     Ok(api_response.data.unwrap_or_default())
@@ -366,7 +352,7 @@ pub async fn fetch_event_published(token: &str, event_id: i64) -> Result<Option<
         .bearer_auth(token)
         .send()
         .await
-        .map_err(|e| format!("Erreur réseau: {}", e))?;
+        .map_err(|e| crate::erreurs::reseau(&e))?;
 
     let status = response.status();
 
@@ -375,13 +361,13 @@ pub async fn fetch_event_published(token: &str, event_id: i64) -> Result<Option<
     }
 
     if !status.is_success() {
-        return Err(format!("Erreur serveur ({})", status.as_u16()));
+        return Err(crate::erreurs::statut_serveur(status.as_u16()));
     }
 
     let corps: serde_json::Value = response
         .json()
         .await
-        .map_err(|e| format!("Erreur lecture réponse: {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.response_unreadable", e))?;
 
     Ok(publication_dans(&corps))
 }
@@ -403,7 +389,7 @@ pub async fn fetch_checkpoints(token: &str, event_id: i64) -> Result<Vec<Checkpo
         .bearer_auth(token)
         .send()
         .await
-        .map_err(|e| format!("Erreur réseau: {}", e))?;
+        .map_err(|e| crate::erreurs::reseau(&e))?;
 
     let status = response.status();
 
@@ -412,16 +398,16 @@ pub async fn fetch_checkpoints(token: &str, event_id: i64) -> Result<Vec<Checkpo
     }
 
     if !status.is_success() {
-        return Err(format!("Erreur serveur ({})", status.as_u16()));
+        return Err(crate::erreurs::statut_serveur(status.as_u16()));
     }
 
     let api_response: CheckpointsApiResponse = response
         .json()
         .await
-        .map_err(|e| format!("Erreur lecture réponse: {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.response_unreadable", e))?;
 
     if !api_response.success {
-        return Err(api_response.message.unwrap_or_else(|| "Erreur inconnue.".to_string()));
+        return Err(crate::erreurs::du_serveur(api_response.message, "err.response_unreadable"));
     }
 
     Ok(api_response.data.unwrap_or_default())

@@ -3,7 +3,7 @@
 // Détection automatique de la langue OS + traductions
 // ═══════════════════════════════════════════════════════
 //
-// 27 langues supportées — identiques à Attimo Gallery.
+// 28 langues supportées — identiques à Attimo Gallery.
 // Détecte la langue de l'OS du photographe au lancement,
 // charge le fichier JSON correspondant, et traduit l'UI.
 //
@@ -12,10 +12,10 @@
 //   - JS dynamique  : t('upload.success', { duration: '2.3', speed: '450' })
 //
 
-// ─── Langues supportées (27) ───
+// ─── Langues supportées (28) ───
 
 const SUPPORTED_LOCALES = [
-    'fr', 'en', 'de', 'es', 'it', 'pt', 'nl',
+    'fr', 'en', 'de', 'es', 'it', 'pt', 'pt_BR', 'nl',
     'da', 'sv', 'no', 'fi',
     'pl', 'cs', 'sk', 'hu', 'ro', 'bg', 'hr', 'sl',
     'et', 'lv', 'lt',
@@ -62,7 +62,7 @@ async function initI18n() {
     }
 
     // Mettre à jour <html lang="xx">
-    document.documentElement.lang = currentLocale === 'us' ? 'en' : currentLocale;
+    document.documentElement.lang = getWebLocale();
 
     // Traduire le DOM statique
     translateDOM();
@@ -74,21 +74,35 @@ async function initI18n() {
  * Détecte la langue de l'OS du photographe.
  *
  * navigator.language retourne par ex. "fr-FR", "en-US", "de-DE".
- * On extrait le code 2 lettres et on cherche dans SUPPORTED_LOCALES.
+ * On garde la langue, avant le premier tiret, et on cherche dans
+ * SUPPORTED_LOCALES.
  *
- * Cas spécial : "en-US" → code "us" (Anglais US distinct de "en" British).
- * Tout autre "en-*" (en-GB, en-AU, en-CA) → code "en".
+ * Cas spéciaux (0.3.7 pour les deux derniers) :
+ *   - "en-US" → "us" (Anglais US distinct de "en" British) ; tout autre "en-*"
+ *     (en-GB, en-AU, en-CA) → "en" ;
+ *   - "pt-BR" → "pt_BR" (Brésil, distinct du Portugal) ; tout autre "pt-*" →
+ *     "pt" ;
+ *   - "nb" et "nn" (Windows en norvégien) → "no".
  */
 function detectLocale() {
-    const browserLang = (navigator.language || navigator.userLanguage || 'fr').toLowerCase();
+    return localeDepuisNavigateur(navigator.language || navigator.userLanguage || 'fr');
+}
 
-    // Cas spécial : en-US → us
-    if (browserLang === 'en-us') {
+function localeDepuisNavigateur(langue) {
+    const parties = String(langue).toLowerCase().replace(/_/g, '-').split('-');
+    const code = parties[0];
+
+    if (code === 'en' && parties.includes('us')) {
         return 'us';
     }
 
-    // Extraire le code 2 lettres (ex: "fr-FR" → "fr", "de-DE" → "de")
-    const code = browserLang.substring(0, 2);
+    if (code === 'pt' && parties.includes('br')) {
+        return 'pt_BR';
+    }
+
+    if (code === 'nb' || code === 'nn') {
+        return 'no';
+    }
 
     return SUPPORTED_LOCALES.includes(code) ? code : DEFAULT_LOCALE;
 }
@@ -199,4 +213,20 @@ function translateDOM() {
  */
 function getCurrentLocale() {
     return currentLocale;
+}
+
+/**
+ * La locale active sous sa forme web (0.3.7), pour <html lang>, Intl et
+ * toLocale… : "pt_BR" fait planter Intl (RangeError), "us" n'est pas une langue.
+ */
+function getWebLocale() {
+    return localeWeb(currentLocale);
+}
+
+function localeWeb(locale) {
+    if (locale === 'us') {
+        return 'en-US';
+    }
+
+    return String(locale).replace(/_/g, '-');
 }

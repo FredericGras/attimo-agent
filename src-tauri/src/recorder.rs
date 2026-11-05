@@ -113,15 +113,11 @@ impl RecordingConfig {
     /// tard.
     pub fn plan(&self) -> Result<SegmentPlan, String> {
         if self.clip_duration_secs == 0 {
-            return Err("La durée d'un clip ne peut pas être nulle.".into());
+            return Err("err.clip_duration_zero".into());
         }
 
         if self.overlap_secs >= self.clip_duration_secs {
-            return Err(
-                "Le chevauchement doit rester inférieur à la durée du clip, \
-                 sans quoi les clips se répéteraient sans jamais avancer."
-                    .into(),
-            );
+            return Err("err.overlap_too_long".into());
         }
 
         let step_secs = self.clip_duration_secs - self.overlap_secs;
@@ -130,7 +126,7 @@ impl RecordingConfig {
         // Un morceau trop court multiplie les fichiers et les ouvertures
         // disque ; trop long, il rend le premier clip très tardif.
         if segment_secs < 1 {
-            return Err("Ces réglages ne permettent pas un découpage propre.".into());
+            return Err("err.split_invalid".into());
         }
 
         Ok(SegmentPlan {
@@ -297,7 +293,7 @@ pub async fn start_recording(
     let dossier_morceaux = PathBuf::from(&config.output_dir).join("_morceaux");
 
     std::fs::create_dir_all(&dossier_morceaux)
-        .map_err(|e| format!("Impossible de créer le dossier de travail : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.create_folder", format!("dossier de travail : {}", e)))?;
 
     let motif = dossier_morceaux
         .join("m_%06d.mp4")
@@ -317,12 +313,12 @@ pub async fn start_recording(
     let commande = app
         .shell()
         .sidecar("ffmpeg")
-        .map_err(|e| format!("FFmpeg embarqué introuvable : {}", e))?
+        .map_err(|e| crate::erreurs::journalisee("err.ffmpeg_missing", e))?
         .args(arguments);
 
     let (mut evenements, enfant) = commande
         .spawn()
-        .map_err(|e| format!("Impossible de lancer l'enregistrement : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.ffmpeg_start", format!("enregistrement : {}", e)))?;
 
     let running = Arc::new(AtomicBool::new(true));
 

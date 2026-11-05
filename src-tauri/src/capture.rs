@@ -322,12 +322,12 @@ async fn executer_ffmpeg(app: &AppHandle, arguments: Vec<String>) -> Result<Stri
     let commande = app
         .shell()
         .sidecar("ffmpeg")
-        .map_err(|e| format!("FFmpeg embarqué introuvable : {}", e))?
+        .map_err(|e| crate::erreurs::journalisee("err.ffmpeg_missing", e))?
         .args(arguments);
 
     let (mut evenements, _enfant) = commande
         .spawn()
-        .map_err(|e| format!("Impossible de lancer FFmpeg : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.ffmpeg_start", format!("périphériques : {}", e)))?;
 
     let mut sortie = String::new();
 
@@ -356,7 +356,7 @@ pub async fn check_ffmpeg(app: &AppHandle) -> Result<String, String> {
         .lines()
         .next()
         .map(|l| l.trim().to_string())
-        .ok_or_else(|| "FFmpeg n'a produit aucune réponse.".to_string())
+        .ok_or_else(|| "err.ffmpeg_start".to_string())
 }
 
 // ═══════════════════════════════════════════════════════════════════════

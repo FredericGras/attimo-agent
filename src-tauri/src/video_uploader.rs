@@ -340,7 +340,7 @@ fn client() -> Result<&'static reqwest::Client, String> {
         .connect_timeout(Duration::from_secs(20))
         .pool_idle_timeout(Duration::from_secs(90))
         .build()
-        .map_err(|e| format!("Impossible de créer le client réseau : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.network", format!("client réseau : {}", e)))?;
 
     Ok(CLIENT.get_or_init(|| nouveau))
 }
@@ -426,9 +426,20 @@ fn refus_brouillon(code: u16, message: &str) -> Option<String> {
 /// Traduit un refus du serveur (4xx) en erreur définitive.
 fn refus_definitif(code: u16, message: &str) -> String {
     if message.is_empty() {
-        format!("{}Requête refusée par le serveur ({})", PREFIXE_DEFINITIF, code)
+        format!(
+            "{}{}",
+            PREFIXE_DEFINITIF,
+            crate::erreurs::avec("err.refused_code", &[("code", code.to_string())])
+        )
     } else {
-        format!("{}{} ({})", PREFIXE_DEFINITIF, message, code)
+        format!(
+            "{}{}",
+            PREFIXE_DEFINITIF,
+            crate::erreurs::avec(
+                "err.refused_detail",
+                &[("detail", message.to_string()), ("code", code.to_string())],
+            )
+        )
     }
 }
 
@@ -450,13 +461,7 @@ fn authentifier(requete: reqwest::RequestBuilder, token: &str) -> reqwest::Reque
 /// Un photographe en pleine course n'a que faire du détail technique : il
 /// doit savoir s'il attend, s'il se reconnecte, ou s'il rappelle.
 fn message_erreur(e: &reqwest::Error) -> String {
-    if e.is_timeout() {
-        "Délai dépassé — réseau trop lent ou saturé.".to_string()
-    } else if e.is_connect() {
-        "Serveur injoignable — vérifier la connexion.".to_string()
-    } else {
-        format!("Erreur réseau : {}", e)
-    }
+    crate::erreurs::reseau(e)
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -484,16 +489,16 @@ pub async fn envoyer_clip(
     // simultanés ne doublent plus cette charge.
     let mut fichier = tokio::fs::File::open(chemin)
         .await
-        .map_err(|e| format!("Lecture du clip impossible : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.file_read", format!("clip : {}", e)))?;
 
     let taille = fichier
         .metadata()
         .await
-        .map_err(|e| format!("Lecture du clip impossible : {}", e))?
+        .map_err(|e| crate::erreurs::journalisee("err.file_read", format!("clip : {}", e)))?
         .len() as usize;
 
     if taille == 0 {
-        return Err("Le clip est vide.".to_string());
+        return Err("err.clip_empty".to_string());
     }
 
     let nom_fichier = chemin
@@ -519,7 +524,7 @@ pub async fn envoyer_clip(
         fichier
             .read_exact(&mut tranche)
             .await
-            .map_err(|e| format!("Lecture du clip impossible : {}", e))?;
+            .map_err(|e| crate::erreurs::journalisee("err.file_read", format!("clip : {}", e)))?;
 
         // Les photos d'abord : un clip HD de 500 Mo ne doit pas monopoliser
         // la liaison pendant qu'une rafale attend, d'où une pause possible à
@@ -533,7 +538,7 @@ pub async fn envoyer_clip(
         let part = reqwest::multipart::Part::bytes(tranche)
             .file_name(nom_fichier.clone())
             .mime_str("application/octet-stream")
-            .map_err(|e| format!("Type de contenu invalide : {}", e))?;
+            .map_err(|e| crate::erreurs::journalisee("err.unknown", format!("type de contenu : {}", e)))?;
 
         let formulaire = reqwest::multipart::Form::new()
             .part("chunk", part)
@@ -573,12 +578,10 @@ pub async fn envoyer_clip(
         let corps: ChunkResponse = reponse
             .json()
             .await
-            .map_err(|e| format!("Réponse inattendue du serveur : {}", e))?;
+            .map_err(|e| crate::erreurs::journalisee("err.response_unreadable", e))?;
 
         if !corps.success {
-            return Err(corps
-                .message
-                .unwrap_or_else(|| "Le serveur a refusé le morceau.".to_string()));
+            return Err(crate::erreurs::du_serveur(corps.message, "err.server_refused"));
         }
 
         compter_octets(longueur as u64, variant == ClipVariant::Hd);
@@ -633,11 +636,7 @@ pub async fn envoyer_clip(
         }
 
         if code == 422 {
-            return Err(if message.is_empty() {
-                "Le serveur n'a pas pu assembler le clip.".to_string()
-            } else {
-                message
-            });
+            return Err(crate::erreurs::du_serveur(Some(message), "err.server_assembly"));
         }
 
         return Err(refus_definitif(code, &message));
@@ -646,17 +645,15 @@ pub async fn envoyer_clip(
     let corps: FinalizeResponse = reponse
         .json()
         .await
-        .map_err(|e| format!("Réponse inattendue du serveur : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.response_unreadable", e))?;
 
     if !corps.success {
-        return Err(corps
-            .message
-            .unwrap_or_else(|| "Le serveur a refusé le clip.".to_string()));
+        return Err(crate::erreurs::du_serveur(corps.message, "err.server_refused"));
     }
 
     corps
         .clip
-        .ok_or_else(|| "Le serveur n'a pas renvoyé les informations du clip.".to_string())
+        .ok_or_else(|| "err.response_unreadable".to_string())
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -736,7 +733,7 @@ pub async fn envoyer_lot_images(
     }
 
     if lot.len() > FRAMES_PAR_LOT {
-        return Err(format!("Lot trop gros : {} images, {} au plus.", lot.len(), FRAMES_PAR_LOT));
+        return Err(crate::erreurs::journalisee("err.unknown", format!("lot trop gros : {} images, {} au plus", lot.len(), FRAMES_PAR_LOT)));
     }
 
     let client = client()?;
@@ -753,7 +750,7 @@ pub async fn envoyer_lot_images(
     for (rang, image) in lot.iter().enumerate() {
         let octets = tokio::fs::read(&image.path)
             .await
-            .map_err(|e| format!("Lecture de l'image impossible : {}", e))?;
+            .map_err(|e| crate::erreurs::journalisee("err.file_read", format!("image d'analyse : {}", e)))?;
 
         octets_lot += octets.len() as u64;
 
@@ -765,7 +762,7 @@ pub async fn envoyer_lot_images(
         let part = reqwest::multipart::Part::bytes(octets)
             .file_name(nom)
             .mime_str("image/jpeg")
-            .map_err(|e| format!("Type de contenu invalide : {}", e))?;
+            .map_err(|e| crate::erreurs::journalisee("err.unknown", format!("type de contenu : {}", e)))?;
 
         formulaire = formulaire
             .part(format!("frames[{}][image]", rang), part)
@@ -816,12 +813,10 @@ pub async fn envoyer_lot_images(
     let corps: FramesResponse = reponse
         .json()
         .await
-        .map_err(|e| format!("Réponse inattendue du serveur : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.response_unreadable", e))?;
 
     if !corps.success {
-        return Err(corps
-            .message
-            .unwrap_or_else(|| "Le serveur a refusé les images.".to_string()));
+        return Err(crate::erreurs::du_serveur(corps.message, "err.server_refused"));
     }
 
     compter_octets(octets_lot, false);
@@ -936,7 +931,7 @@ pub(crate) async fn numero_max_serveur_sur(
     let corps: serde_json::Value = reponse
         .json()
         .await
-        .map_err(|e| format!("Réponse inattendue du serveur : {}", e))?;
+        .map_err(|e| crate::erreurs::journalisee("err.response_unreadable", e))?;
 
     Ok(lire_numero_max(&corps))
 }
@@ -1027,7 +1022,7 @@ pub(crate) async fn etat_session_sur(
     reponse
         .json()
         .await
-        .map_err(|e| format!("Réponse inattendue du serveur : {}", e))
+        .map_err(|e| crate::erreurs::journalisee("err.response_unreadable", e))
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1114,7 +1109,7 @@ mod tests {
     fn reconnait_une_erreur_de_saturation() {
         assert_eq!(attente_si_sature("SATURE:30"), Some(30));
         assert_eq!(attente_si_sature("SESSION_EXPIRED"), None);
-        assert_eq!(attente_si_sature("Délai dépassé"), None);
+        assert_eq!(attente_si_sature("err.timeout"), None);
     }
 
     #[test]
@@ -1268,12 +1263,22 @@ mod tests {
     fn distingue_les_erreurs_definitives() {
         assert!(est_definitive(&refus_definitif(404, "Event not found.")));
         assert!(est_definitive(ANALYSE_DESACTIVEE));
-        assert!(!est_definitive("Délai dépassé — réseau trop lent ou saturé."));
+        assert!(!est_definitive("err.timeout"));
         assert!(!est_definitive("SATURE:30"));
 
+        // L'écran reçoit un code avec le message du serveur et le statut, sans
+        // le préfixe technique.
         assert_eq!(
             message_lisible(&refus_definitif(404, "Event not found.")),
-            "Event not found. (404)"
+            crate::erreurs::avec(
+                "err.refused_detail",
+                &[("detail", "Event not found.".to_string()), ("code", "404".to_string())],
+            )
+        );
+
+        assert_eq!(
+            message_lisible(&refus_definitif(404, "")),
+            crate::erreurs::avec("err.refused_code", &[("code", "404".to_string())])
         );
     }
 }
