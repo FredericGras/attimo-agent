@@ -108,7 +108,7 @@ test('bloc HD après une purge : introuvables, et non « tous envoyés »', () =
     assert.strictEqual(b.jauge, 100);
 });
 
-test('bloc HD : les introuvables ne bloquent plus la barre (cas B6 de Fabien)', () => {
+test('bloc HD : les introuvables ne bloquent plus la barre (cas B6 de la recette)', () => {
     // 13 clips : 5 envoyables, 8 introuvables. Pendant l'envoi…
     const pendant = A.blocHd(stats({ hd_pending: 3, hd_sent: 2, hd_missing: 8, hd_bytes_pending: 90000000 }), true, null, t);
 

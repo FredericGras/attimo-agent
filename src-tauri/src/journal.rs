@@ -355,24 +355,24 @@ mod tests {
 
     #[test]
     fn l_export_va_dans_documents_sauf_s_il_y_est_surveille() {
-        let documents = PathBuf::from(r"C:\Users\Fabien\Documents");
-        let repli = PathBuf::from(r"C:\Users\Fabien\AppData\Roaming\agent\exports");
+        let documents = PathBuf::from(r"C:\Users\Photographe\Documents");
+        let repli = PathBuf::from(r"C:\Users\Photographe\AppData\Roaming\agent\exports");
         let attendu = documents.join("Attimo Agent Terrain").join("Journaux");
 
         // Photos et vidéo ailleurs : Documents.
-        let ailleurs = [PathBuf::from(r"D:\Course\Photos"), PathBuf::from(r"C:\Users\Fabien\Documents\Videos")];
+        let ailleurs = [PathBuf::from(r"D:\Course\Photos"), PathBuf::from(r"C:\Users\Photographe\Documents\Videos")];
         assert_eq!(dossier_export(Some(documents.clone()), &ailleurs, repli.clone()), attendu);
 
         // « Documents » surveillé, quelle que soit la casse : jamais dedans.
-        let documents_surveille = [PathBuf::from(r"c:\users\fabien\documents")];
+        let documents_surveille = [PathBuf::from(r"c:\users\photographe\documents")];
         assert_eq!(dossier_export(Some(documents.clone()), &documents_surveille, repli.clone()), repli);
 
         // Le dossier de l'agent lui-même choisi comme dossier surveillé.
-        let agent_surveille = [PathBuf::from(r"C:\Users\Fabien\Documents\Attimo Agent Terrain\")];
+        let agent_surveille = [PathBuf::from(r"C:\Users\Photographe\Documents\Attimo Agent Terrain\")];
         assert_eq!(dossier_export(Some(documents.clone()), &agent_surveille, repli.clone()), repli);
 
         // Un dossier voisin au nom proche n'est pas un parent.
-        let voisin = [PathBuf::from(r"C:\Users\Fabien\Documents\Attimo")];
+        let voisin = [PathBuf::from(r"C:\Users\Photographe\Documents\Attimo")];
         assert_eq!(dossier_export(Some(documents), &voisin, repli.clone()), attendu);
 
         // Pas de dossier Documents : le repli.

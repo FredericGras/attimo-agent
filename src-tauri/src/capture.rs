@@ -6,7 +6,7 @@
 //
 // Ce module pilote FFmpeg, embarqué comme binaire compagnon dans
 // src-tauri/binaries/. Le photographe n'a rien à installer : c'est un
-// enseignement direct de l'outil PowerShell de Fabien, où l'absence de
+// enseignement direct d'un outil PowerShell de terrain, où l'absence de
 // FFmpeg sur le poste était la première cause d'échec.
 //
 // ─── PREMIÈRE BRIQUE : voir le matériel ────────────────────────────────

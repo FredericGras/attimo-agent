@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.3.7",
   "description": "Attimo Agent Terrain — Application desktop pour upload live terrain vers Attimo",
-  "author": "Frédéric Gras",
+  "author": "Attimo",
   "type": "module",
   "scripts": {
     "tauri": "tauri"
