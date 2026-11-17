@@ -71,10 +71,17 @@ test('langue du navigateur : norvégien, anglais, autres', () => {
     assert.strictEqual(chargerI18n('en-GB').detectLocale(), 'en');
     assert.strictEqual(chargerI18n('de-AT').detectLocale(), 'de');
     assert.strictEqual(chargerI18n('fil-PH').detectLocale(), 'fr');
-    assert.strictEqual(chargerI18n('ja-JP').detectLocale(), 'fr');
+    assert.strictEqual(chargerI18n('ko-KR').detectLocale(), 'fr');
 });
 
-test('forme web de la langue : acceptée par Intl pour les 28', () => {
+// 0.3.8 — Le japonais.
+test('langue du navigateur : japonais', () => {
+    assert.strictEqual(chargerI18n('ja-JP').detectLocale(), 'ja');
+    assert.strictEqual(chargerI18n('ja').detectLocale(), 'ja');
+    assert.strictEqual(chargerI18n('ja').localeWeb('ja'), 'ja');
+});
+
+test('forme web de la langue : acceptée par Intl pour les 29', () => {
     const i18n = chargerI18n('fr-FR');
 
     assert.strictEqual(i18n.localeWeb('pt_BR'), 'pt-BR');
@@ -84,7 +91,7 @@ test('forme web de la langue : acceptée par Intl pour les 28', () => {
 
     const langues = fs.readdirSync(path.join(__dirname, '..', 'src', 'lang')).map(f => f.replace('.json', ''));
 
-    assert.strictEqual(langues.length, 28);
+    assert.strictEqual(langues.length, 29);
 
     for (const langue of langues) {
         assert.doesNotThrow(() => new Date().toLocaleTimeString(i18n.localeWeb(langue)), langue);

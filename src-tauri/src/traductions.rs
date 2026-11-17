@@ -4,7 +4,7 @@
 //
 // 0.3.2 — Contrôle automatique, lancé avec la suite de tests (test.bat) :
 //
-//   - les 28 fichiers de src/lang existent et sont du JSON valide ;
+//   - les 29 fichiers de src/lang existent et sont du JSON valide ;
 //   - chaque langue a toutes les clés du français, et aucune de plus ;
 //   - chaque texte porte exactement les mêmes variables {…} que le
 //     français : une variable oubliée s'afficherait telle quelle, une
@@ -15,6 +15,7 @@
 //     français, avec les variables que le code lui passe ; aucun n'est resté
 //     en français dans une autre langue ; le portugais du Brésil garde son
 //     vocabulaire.
+//   - 0.3.8 : le japonais est écrit en japonais, pas recopié du français.
 //
 // Un oubli ne se découvre donc plus à l'écran, dans une langue que personne
 // ne lit à l'équipe : il fait échouer les tests.
@@ -24,9 +25,9 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 
-const LANGUES: [&str; 28] = [
+const LANGUES: [&str; 29] = [
     "fr", "en", "de", "es", "it", "pt", "pt_BR", "nl", "da", "sv", "no", "fi", "pl", "cs", "sk", "hu",
-    "ro", "bg", "hr", "sl", "et", "lv", "lt", "el", "mt", "ga", "tr", "us",
+    "ro", "bg", "hr", "sl", "et", "lv", "lt", "el", "mt", "ga", "tr", "us", "ja",
 ];
 
 fn dossier_interface() -> PathBuf {
@@ -365,6 +366,27 @@ fn le_bresilien_garde_son_vocabulaire() {
     assert_ne!(bresil, portugal, "le Brésil n'est pas une copie du Portugal");
     assert!(
         bresil.iter().filter(|(cle, texte)| francais.get(*cle) == Some(*texte)).count() < 15,
+        "trop de textes restés en français"
+    );
+}
+
+#[test]
+fn le_japonais_est_ecrit_en_japonais() {
+    // 0.3.8 — Hors unités et exemples techniques (« KB/s », « attimo_pat_... »),
+    // chaque texte porte des kana ou des kanji.
+    fn japonais(c: char) -> bool {
+        matches!(c, '\u{3040}'..='\u{30FF}' | '\u{4E00}'..='\u{9FFF}')
+    }
+
+    let japon = charger("ja");
+    let francais = charger("fr");
+
+    let sans_japonais: Vec<&String> =
+        japon.iter().filter(|(_, texte)| !texte.chars().any(japonais)).map(|(cle, _)| cle).collect();
+
+    assert!(sans_japonais.len() < 10, "textes sans japonais : {:?}", sans_japonais);
+    assert!(
+        japon.iter().filter(|(cle, texte)| francais.get(*cle) == Some(*texte)).count() < 10,
         "trop de textes restés en français"
     );
 }

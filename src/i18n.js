@@ -3,7 +3,7 @@
 // Détection automatique de la langue OS + traductions
 // ═══════════════════════════════════════════════════════
 //
-// 28 langues supportées — identiques à Attimo Gallery.
+// 29 langues supportées — celles d'Attimo Gallery, et le japonais (0.3.8).
 // Détecte la langue de l'OS du photographe au lancement,
 // charge le fichier JSON correspondant, et traduit l'UI.
 //
@@ -12,14 +12,16 @@
 //   - JS dynamique  : t('upload.success', { duration: '2.3', speed: '450' })
 //
 
-// ─── Langues supportées (28) ───
+// ─── Langues supportées (29) ───
+//
+// 0.3.8 — 'ja' (日本語) : un Windows japonais (« ja-JP ») le reçoit tel quel.
 
 const SUPPORTED_LOCALES = [
     'fr', 'en', 'de', 'es', 'it', 'pt', 'pt_BR', 'nl',
     'da', 'sv', 'no', 'fi',
     'pl', 'cs', 'sk', 'hu', 'ro', 'bg', 'hr', 'sl',
     'et', 'lv', 'lt',
-    'el', 'mt', 'ga', 'tr', 'us'
+    'el', 'mt', 'ga', 'tr', 'us', 'ja'
 ];
 
 const DEFAULT_LOCALE = 'fr';
